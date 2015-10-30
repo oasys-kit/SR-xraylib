@@ -7,7 +7,70 @@ def enoise(x):
 FIGURE_ERROR = 0
 SLOPE_ERROR = 1
 
-def create_simulated_1D_file(mirror_length, step, random_seed, error_type, rms):
+GAUSSIAN = 0
+FRACTAL = 0
+
+def create_random_rough_surface_1D(n_surface_points=100, mirror_length=200.0, rms_height=3e-9, correlation_length=0.03, profile_type=GAUSSIAN):
+    # function [f,x] = rsgeng1D(N,rL,h,cl)
+    # %
+    # % [f,x] = rsgeng1D(N,rL,h,cl)
+    # %
+    # % generates a 1-dimensional random rough surface f(x) with N surface points.
+    # % The surface has a Gaussian height distribution function and a Gaussian
+    # % autocovariance function, where rL is the length of the surface, h is the
+    # % RMS height and cl is the correlation length.
+    # %
+    # % Input:    N   - number of surface points
+    # %           rL  - length of surface
+    # %           h   - rms height
+    # %           cl  - correlation length
+    # %
+    # % Output:   f   - surface heights
+    # %           x   - surface points
+    # %
+    # % Last updated: 2010-07-26 (David Bergström).
+    # %
+    #
+
+    if profile_type==GAUSSIAN:
+        # format long;
+        #
+        # x = linspace(-rL/2,rL/2,N);
+        x_coords = numpy.linspace(-mirror_length / 2, mirror_length / 2, n_surface_points)
+
+        #
+        # Z = h.*randn(1,N); % uncorrelated Gaussian random rough surface distribution
+        #                      % with mean 0 and standard deviation h
+        #
+        uncorrelated_gaussian_random_rough_surface = rms_height * numpy.random.randn(1.0, n_surface_points)
+        uncorrelated_gaussian_random_rough_surface.shape = -1
+
+        # % Gaussian filter
+        # F = exp(-x.^2/(cl^2/2));
+        gaussian_filter = numpy.exp(-x_coords**2 / (correlation_length ** 2 / 2))
+        #
+        # % correlation of surface using convolution (faltung), inverse
+        # % Fourier transform and normalizing prefactors
+        # f = sqrt(2/sqrt(pi))*sqrt(rL/N/cl)*ifft(fft(Z).*fft(F));
+        y_values = numpy.sqrt(2/numpy.sqrt(numpy.pi))*numpy.sqrt(mirror_length / n_surface_points / correlation_length) * numpy.fft.ifft(numpy.fft.fft(uncorrelated_gaussian_random_rough_surface) * numpy.fft.fft(gaussian_filter))
+    elif profile_type==FRACTAL:
+        x_coords = numpy.linspace(-0.5*mirror_length,0.5*mirror_length,N)
+        xstep = mirror_length/(n_surface_points-1)
+        freq = numpy.linspace(1/(1*mirror_length),1/(4*xstep),500)
+        ampl = freq**(-0.9)
+        phases = numpy.random.rand(freq.size)*2*numpy.pi
+        ymirr = numpy.zeros(n_surface_points)
+        for i in range(len(freq)):
+            ymirr += (ampl[i] *  numpy.sin(2*numpy.pi*freq[i]*x_coords + phases[i]))
+
+        y_values = ymirr / ymirr.std() * rms_height
+    else:
+        raise Exception("Profile type not recognized")
+
+    return x_coords, y_values
+
+
+def create_simulated_1D_file_APS(mirror_length=200.0, step=1, random_seed=8787, error_type=FIGURE_ERROR, rms=1e-6):
     """
     :param mirror_length: "Enter mirror length, even"
     :param step: "Step for length "
@@ -17,10 +80,10 @@ def create_simulated_1D_file(mirror_length, step, random_seed, error_type, rms):
     :return: x coords, y values
     """
     if(step ==0):
-        mirror_length=200.0		#Number of points surface wave
-        step=1			#Spacing surface wave
+        mirror_length=200.0	#Number of points surface wave
+        step=1			      #Spacing surface wave
         random_seed=8787
-        error_type=0
+        error_type=FIGURE_ERROR
         rms=0.1e-6
 
     numpy.random.seed(seed=random_seed)
@@ -65,8 +128,8 @@ def create_simulated_1D_file(mirror_length, step, random_seed, error_type, rms):
 
     return error_profile_x, error_profile
 
-def create_simulated_2D_profile(mirror_length, step_l, random_seed_l, error_type_l, rms_l,
-                                mirror_width, step_w, random_seed_w, error_type_w, rms_w):
+def create_simulated_2D_profile_APS(mirror_length=200.0, step_l=1.0, random_seed_l=8787, error_type_l=FIGURE_ERROR, rms_l=1e-6,
+                                    mirror_width=20.0, step_w=1.0, random_seed_w=8788, error_type_w=FIGURE_ERROR, rms_w=1e-6):
     """
     :param mirror_length: "Enter mirror length, even"
     :param step_l: "Step folr length "
@@ -86,16 +149,16 @@ def create_simulated_2D_profile(mirror_length, step_l, random_seed_l, error_type
         mirror_length=200		#Number of points surface wave
         step_l=1			#Spacing surface wave
         random_seed_l=0.1
-        error_type_l=0
+        error_type_l=FIGURE_ERROR
         rms_l=0.1e-6
         mirror_width=20		#Number of points surface wave
         step_w=1			#Spacing surface wave
         random_seed_w=0.2
-        error_type_w=0
+        error_type_w=FIGURE_ERROR
         rms_w=1e-6
 
-    WW_x, WW = create_simulated_1D_file(mirror_width, step_w, random_seed_w, error_type_w, rms_w)
-    SF_x, SF = create_simulated_1D_file(mirror_length, step_l, random_seed_l, error_type_l, rms_l)
+    WW_x, WW = create_simulated_1D_file_APS(mirror_width, step_w, random_seed_w, error_type_w, rms_w)
+    SF_x, SF = create_simulated_1D_file_APS(mirror_length, step_l, random_seed_l, error_type_l, rms_l)
 
     npoL = SF.size
     npoW = WW.size
@@ -106,17 +169,17 @@ def create_simulated_2D_profile(mirror_length, step_l, random_seed_l, error_type
 
     return WW_x, SF_x, s
 
-def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width, step_w, random_seed_w, error_type_w, rms_w):
+def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, step_w=1.0, random_seed_w=8787, error_type_w=FIGURE_ERROR, rms_w=1e-6):
     numpy.random.seed(seed=random_seed_w)
 
     if step_w == 0:
         mirror_width=20		#Number of points surface wave
         step_w=1			#Spacing surface wave
         random_seed_w=0.2
-        error_type_w=0
+        error_type_w=FIGURE_ERROR
         rms_w=1e-6
 
-    WW_x, WW = create_simulated_1D_file(mirror_width, step_w, random_seed_w, error_type_w, rms_w)
+    WW_x, WW = create_simulated_1D_file_APS(mirror_width, step_w, random_seed_w, error_type_w, rms_w)
     SF_x, SF = profile_1D_x, profile_1D_y
 
     npoL = SF.size
@@ -128,13 +191,19 @@ def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width, step_w, 
 
     return WW_x, SF_x, s
 
+#########################################################
+#
+# TESTS
+#
+#########################################################
+
 def test_1d():
     mirrorLength = 200.0 # mm
     Step = 1.0
     RandomSeed = 898882
     SEorFE = FIGURE_ERROR # 0 = Figure, 1=Slope
     RMS = 1e-7 # mm (0.1 nm)
-    wName_x,wName = create_simulated_1D_file(mirrorLength, Step, RandomSeed, SEorFE, RMS)
+    wName_x,wName = create_simulated_1D_file_APS(mirrorLength, Step, RandomSeed, SEorFE, RMS)
 
     return wName_x,wName
 
@@ -151,7 +220,7 @@ def test_2d():
     SEorFEW = FIGURE_ERROR
     RMSW = 1e-8
 
-    x,y,z = create_simulated_2D_profile(mirrorLength, Step, RandomSeed, SEorFE, RMS, mirrorWidth, StepW, RandomSeedW, SEorFEW, RMSW)
+    x,y,z = create_simulated_2D_profile_APS(mirrorLength, Step, RandomSeed, SEorFE, RMS, mirrorWidth, StepW, RandomSeedW, SEorFEW, RMSW)
 
     return x,y,z
 
@@ -165,6 +234,29 @@ def package_dirname(package):
     filename = package.__file__
     dirname = os.path.dirname(filename)
     return dirname
+
+def test_1d_rrs():
+    N = 1000
+    mirror_length = 1.0
+    height_rms = 3e-9
+
+    profile_type = 0 # 0=Fractal, 1=Gaussian
+
+    if profile_type == 0:
+        x, f = create_random_rough_surface_1D(n_surface_points=N,
+                                              mirror_length=mirror_length,
+                                              rms_height=height_rms,
+                                              profile_type=FRACTAL)
+    elif profile_type == 1:
+        correlation_length = 0.03
+        x, f = create_random_rough_surface_1D(n_surface_points=N,
+                                              mirror_length=mirror_length,
+                                              rms_height=height_rms,
+                                              correlation_length=correlation_length,
+                                              profile_type=GAUSSIAN)
+
+    return x,f
+
 
 def test_2d_from_1d():
     values = numpy.loadtxt(package_dirname("srxraylib.metrology") + "/mirror_1d.txt")
@@ -189,7 +281,7 @@ if __name__ == "__main__":
     except:
         raise ImportError
 
-    test_number = 3 # 0 = all
+    test_number = 0 # 0 = all
 
     if test_number == 1 or test_number == 0:
 
@@ -251,4 +343,15 @@ if __name__ == "__main__":
 
         fig.colorbar(surf, shrink=0.5, aspect=5)
 
+        plt.show()
+
+    if test_number == 4 or test_number == 0:
+
+        wName_x,wName = test_1d_rrs()
+
+        f1 = plt.figure(1)
+        plt.plot(wName_x,wName)
+        plt.title("heights profile")
+        plt.xlabel("Y [mm]")
+        plt.ylabel("Z [um]")
         plt.show()
