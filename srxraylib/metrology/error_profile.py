@@ -120,7 +120,6 @@ def create_simulated_1D_file_APS(mirror_length=200.0, step=1, random_seed=8787, 
     if (error_type == SLOPE_ERROR): # :TODO check this passage!!!!!
         SF_DIF = numpy.gradient(error_profile, step)
         V_sdev = SF_DIF.std()
-        SF_DIF *= rms / V_sdev
         error_profile *= rms / V_sdev
     elif error_type == FIGURE_ERROR:
         V_sdev = error_profile.std()
