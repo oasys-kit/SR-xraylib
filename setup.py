@@ -13,7 +13,7 @@ except ImportError:
 
 NAME = 'srxraylib'
 
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 ISRELEASED = False
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
@@ -130,12 +130,14 @@ if not release:
 
 PACKAGES = [
     "srxraylib",
+    "srxraylib.metrology",
     "srxraylib.sources",
     "srxraylib.util",
     "srxraylib.wavefront",
 ]
 
 PACKAGE_DATA = {
+    "srxraylib.metrology": ["*.txt"],
     "srxraylib.sources": ["data/*.*"],
     "srxraylib.util": ["data/*.*"],
     "srxraylib.wavefront": ["data/*.*"],
