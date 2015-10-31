@@ -213,7 +213,7 @@ def test_2d():
     SEorFE = FIGURE_ERROR # 0 = Figure, 1=Slope
     RMS = 1e-7 # mm (0.1 nm)
 
-    mirrorWidth = 100.0
+    mirrorWidth = 10.0
     StepW = 1.0
     RandomSeedW = 7243364
     SEorFEW = FIGURE_ERROR
@@ -280,7 +280,7 @@ if __name__ == "__main__":
     except:
         raise ImportError
 
-    test_number = 0 # 0 = all
+    test_number = 2 # 0 = all
 
     if test_number == 1 or test_number == 0:
 
@@ -297,6 +297,8 @@ if __name__ == "__main__":
 
         WW_x,SF_x,s = test_2d()
 
+        print(WW_x.size,SF_x.size,s.shape)
+
         print(WW_x.size,SF_x.size,s.size,WW_x.size*SF_x.size)
         from mpl_toolkits.mplot3d import Axes3D
         from matplotlib import cm
@@ -311,9 +313,12 @@ if __name__ == "__main__":
         surf = ax.plot_surface(X, Y, s, rstride=1, cstride=1, cmap=cm.coolwarm,
                 linewidth=0, antialiased=False)
         #ax.set_zlim(-1.01, 1.01)
+        ax.set_xlabel("X (cm)")
+        ax.set_ylabel("Y (cm)")
+        ax.set_zlabel("Z (µm)")
 
         ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        ax.zaxis.set_major_formatter(FormatStrFormatter('%.06f'))
 
         fig.colorbar(surf, shrink=0.5, aspect=5)
 
