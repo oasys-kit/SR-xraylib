@@ -239,7 +239,7 @@ def test_1d_rrs():
     mirror_length = 1.0
     height_rms = 3e-9
 
-    profile_type = 0 # 0=Fractal, 1=Gaussian
+    profile_type = 1 # 0=Fractal, 1=Gaussian
 
     if profile_type == 0:
         x, f = create_random_rough_surface_1D(n_surface_points=N,
