@@ -1556,7 +1556,7 @@ def dabam_summary(nmax=None,latex=0):
         else:
             txt += dm._text_line()+"\n"
     return(txt)
-
+'''
 def dabam_summary_dictionary():
     nmax = 1000000  # this is like infinity
     out = []
@@ -1572,6 +1572,28 @@ def dabam_summary_dictionary():
         tmp = dm._dictionary_line()
 
         out.append(tmp)
+    return(out)
+'''
+
+def dabam_summary_dictionary(surface=None, slp_err_from=None, slp_err_to=None, length_from=None, length_to=None):
+    nmax = 1000000  # this is like infinity
+    out = []
+    for i in range(nmax):
+        dm = dabam()
+        dm.set_input_outputFileRoot("")  # avoid output files
+        dm.set_input_silent(1)
+        dm.set_entry(i+1)
+        try:
+            dm.load()
+        except:
+            break
+        tmp = dm._dictionary_line()
+
+        add_element = True
+        if not surface is None: add_element = tmp["surface"] == surface
+        if add_element and not slp_err_from is None and not slp_err_to is None: add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
+        if add_element and not length_from is None and not length_to is None: add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
+        if add_element: out.append(tmp)
     return(out)
 
 
