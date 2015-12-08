@@ -1227,6 +1227,21 @@ class dabam(object):
             1e9*self.zHeights.std(),   \
             ("       " if self.metadata['CALC_HEIGHT_RMS'] is None else "(%5.2f)"%(self.metadata['CALC_HEIGHT_RMS'])),  ))
 
+    def _dictionary_line(self):
+        """
+        to create a dictionary with profile data for automatic compilation of profile summary
+        :return:
+        """
+        return  {  \
+            "entry":self.get_input_value("entryNumber"),   \
+            "surface":self.metadata['SURFACE_SHAPE'],
+            "length":(self.y[-1]-self.y[0]),   \
+            "slp_err":self.zSlopes.std(),      \
+            "slp_err_user":self.metadata['CALC_SLOPE_RMS'], \
+            "hgt_err":self.zHeights.std(), \
+            "hgt_err_user": self.metadata['CALC_HEIGHT_RMS'] }
+
+
 #
 # main functions (these function are sitting here for autoconsistency of dabam.py, otherwise can be in a dependency)
 #
@@ -1395,7 +1410,7 @@ def func_ellipse_slopes(x, p, q, theta, shift):
     # (x0,y0) are the coordinates of the center of the mirror
     # x0 = (p*p - q*q) / 4 / c
     x0 = (p - q) / 2 / epsilon
-    y0 = -b * numpy.sqrt(1.0 - ((x0/a)**2))
+    y0 = -b * numpy.sqrt(numpy.abs(1.0 - ((x0/a)**2)))
 
     # the versor normal to the surface at the mirror center is -grad(ellipse)
     xnor = -2 * x0 / a**2
@@ -1520,7 +1535,7 @@ def dabam_summary(nmax=None,latex=0):
     if nmax is None:
         nmax = 1000000  # this is like infinity
     if latex ==0:
-        txt = "Entry    shape  Length[mm]  hgt_err [um]  slp_err [urad]\n"
+        txt = "Entry    shape  Length[mm]  slp_err [urad]  hgt_err [um]\n"
     else:
         txt = ""
 
@@ -1541,6 +1556,23 @@ def dabam_summary(nmax=None,latex=0):
         else:
             txt += dm._text_line()+"\n"
     return(txt)
+
+def dabam_summary_dictionary():
+    nmax = 1000000  # this is like infinity
+    out = []
+    for i in range(nmax):
+        dm = dabam()
+        dm.set_input_outputFileRoot("")  # avoid output files
+        dm.set_input_silent(1)
+        dm.set_entry(i+1)
+        try:
+            dm.load()
+        except:
+            break
+        tmp = dm._dictionary_line()
+
+        out.append(tmp)
+    return(out)
 
 
 #
