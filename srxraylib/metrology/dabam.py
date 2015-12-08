@@ -71,24 +71,24 @@ class dabam(object):
             'summary':False,         # get summary of DABAM profiles
             }
         #to load profiles: TODO: rename some variables to more meaningful names
-        self.h             =  None # metadata
-        self.a             =  None # raw datafile
-        self.sy            =  None # abscissa along the mirror
-        self.sz1           =  None # undetrended slope profile
-        self.sz            =  None # detrended slope profile
-        self.zprof1        =  None # undetrended heights profile
-        self.zprof         =  None # detrended heights profile
-        self.coeffs        =  None # information on detrending (polynomial coeffs)
-        self.f             =  None # frequency of Power Spectral Density
-        self.psdHeights    =  None # Power Spectral Density of Heights profile
-        self.psdSlopes     =  None # Power Spectral Density of slopes profile
-        self.adpsdHeights  =  None # Antiderivative of PDF of Heights profile
-        self.adpsdSlopes   =  None # Antiderivative of PDF of Slopes profile
-        self.histoSlopes   =  None # to store slopes histogram
-        self.histoHeights  =  None # to store heights histogram
-        self.momentsSlopes =  None # to store moments of the slopes profile
-        self.momentsHeights = None # to store moments of the heights profile
-        self.powerlaw       = {"hgt_pendent":None, "hgt_shift":None, "slp_pendent":None, "slp_shift":None,
+        self.metadata              =  None # metadata
+        self.rawdata               =  None # raw datafile
+        self.y                     =  None # abscissa along the mirror
+        self.zSlopesUndetrended    =  None # undetrended slope profile
+        self.zSlopes               =  None # detrended slope profile
+        self.zHeightsUndetrended   =  None # undetrended heights profile
+        self.zHeights              =  None # detrended heights profile
+        self.coeffs                =  None # information on detrending (polynomial coeffs)
+        self.f                     =  None # frequency of Power Spectral Density
+        self.psdHeights            =  None # Power Spectral Density of Heights profile
+        self.psdSlopes             =  None # Power Spectral Density of slopes profile
+        self.csdHeights            =  None # Antiderivative of PDF of Heights profile
+        self.csdSlopes             =  None # Antiderivative of PDF of Slopes profile
+        self.histoSlopes           =  None # to store slopes histogram
+        self.histoHeights          =  None # to store heights histogram
+        self.momentsSlopes         =  None # to store moments of the slopes profile
+        self.momentsHeights        = None # to store moments of the heights profile
+        self.powerlaw              = {"hgt_pendent":None, "hgt_shift":None, "slp_pendent":None, "slp_shift":None,
                                 "index_from":None,"index_to":None} # to store a dictionary with the results of fitting the PSDs
 
     #
@@ -213,7 +213,7 @@ class dabam(object):
         if key == 'useHeightsOrSlopes': return 'Force calculations using profile heights (0) or slopes (1). If -1, used metadata keyword FILE_FORMAT. Default=%d'%self.get_input_value("useHeightsOrSlopes")
         if key == 'useAbscissasColumn': return 'Use abscissas column index. Default=%d'%self.get_input_value("useAbscissasColumn")
         if key == 'useOrdinatesColumn': return 'Use ordinates column index. Default=%d'%self.get_input_value("useOrdinatesColumn")
-        if key == 'plot':               return 'Plot: all heights slopes psd_h psd_s lambda_h lambda_s. histo_s histo_h acf_h acf_s. Default=%s'%repr(self.get_input_value("plot"))
+        if key == 'plot':               return 'Plot: all heights slopes psd_h psd_s csd_h csd_s. histo_s histo_h acf_h acf_s. Default=%s'%repr(self.get_input_value("plot"))
         if key == 'runTests':           return 'Run test cases'
         if key == 'summary':            return 'gets a summary of all DABAM profiles'
         return ''
@@ -254,7 +254,12 @@ class dabam(object):
     #
     # load profile and store data. This is the main action!!
     #
-    def load(self):
+    def load(self,entry=None):
+
+        if entry is None:
+            pass
+        else:
+            self.set_input_entryNumber(entry)
 
         # load data and metadata
         self._load_file_metadata()
@@ -275,8 +280,8 @@ class dabam(object):
         self._calc_histograms()
 
         #calculate moments
-        self.momentsHeights = moment(self.zprof)
-        self.momentsSlopes = moment(self.sz)
+        self.momentsHeights = moment(self.zHeights)
+        self.momentsSlopes = moment(self.zSlopes)
 
         # write files
         if self.get_input_value("outputFileRoot") != "":
@@ -309,24 +314,24 @@ class dabam(object):
         #self.set_input_setDetrending(-1)
         self.set_input_useHeightsOrSlopes(0)
         self.set_input_localFileRoot("<none (from python variable)>")
-        self.a = numpy.vstack((x,y)).T
-        self.h = {}
-        self.h["SURFACE_SHAPE"] = ""
-        self.h["FACILITY"] = ""
-        self.h["CALC_SLOPE_RMS"] = None
-        self.h["CALC_HEIGHT_RMS"] = None
+        self.rawdata = numpy.vstack((x,y)).T
+        self.metadata = {}
+        self.metadata["SURFACE_SHAPE"] = ""
+        self.metadata["FACILITY"] = ""
+        self.metadata["CALC_SLOPE_RMS"] = None
+        self.metadata["CALC_HEIGHT_RMS"] = None
 
-        self.h["X1_FACTOR"] = 1.0
-        self.h["Y1_FACTOR"] = 1.0
+        self.metadata["X1_FACTOR"] = 1.0
+        self.metadata["Y1_FACTOR"] = 1.0
 
         self.set_input_useAbscissasColumn(0)
         self.set_input_useOrdinatesColumn(1)
 
         if type == 'heights':
-            self.h["FILE_FORMAT"] = 2
+            self.metadata["FILE_FORMAT"] = 2
             self.set_input_useHeightsOrSlopes(0)
         elif type == 'slopes':
-            self.h["FILE_FORMAT"] = 1
+            self.metadata["FILE_FORMAT"] = 1
             self.set_input_useHeightsOrSlopes(1)
         else:
             raise Exception("dabam.load_external_profile: Unknown type")
@@ -342,8 +347,8 @@ class dabam(object):
         self._calc_histograms()
 
         #calculate moments
-        self.momentsHeights = moment(self.zprof)
-        self.momentsSlopes = moment(self.sz)
+        self.momentsHeights = moment(self.zHeights)
+        self.momentsSlopes = moment(self.zSlopes)
 
         # write files
         if self.get_input_value("outputFileRoot") != "":
@@ -367,56 +372,56 @@ class dabam(object):
     #
 
     def stdev_profile_heights(self):
-        return self.zprof.std()
+        return self.zHeights.std()
 
     def stdev_profile_slopes(self):
-        return self.sz.std()
+        return self.zSlopes.std()
 
     def stdev_psd_heights(self):
-        return numpy.sqrt(self.adpsdHeights[-1])
+        return numpy.sqrt(self.csdHeights[-1])
 
     def stdev_psd_slopes(self):
-        return numpy.sqrt(self.adpsdSlopes[-1])
+        return numpy.sqrt(self.csdSlopes[-1])
 
     def stdev_user_heights(self):
-        if self.h['CALC_HEIGHT_RMS'] != None:
-            if self.h['CALC_HEIGHT_RMS_FACTOR'] != None:
-                return float(self.h['CALC_HEIGHT_RMS']) * float(self.h['CALC_HEIGHT_RMS_FACTOR'])
+        if self.metadata['CALC_HEIGHT_RMS'] != None:
+            if self.metadata['CALC_HEIGHT_RMS_FACTOR'] != None:
+                return float(self.metadata['CALC_HEIGHT_RMS']) * float(self.metadata['CALC_HEIGHT_RMS_FACTOR'])
             else:
-                return float(self.h['CALC_HEIGHT_RMS'])
+                return float(self.metadata['CALC_HEIGHT_RMS'])
 
     def stdev_user_slopes(self):
-       if self.h['CALC_SLOPE_RMS'] != None:
-            if self.h['CALC_SLOPE_RMS_FACTOR'] != None:
-                return float(self.h['CALC_SLOPE_RMS']) * float(self.h['CALC_SLOPE_RMS_FACTOR'])
+       if self.metadata['CALC_SLOPE_RMS'] != None:
+            if self.metadata['CALC_SLOPE_RMS_FACTOR'] != None:
+                return float(self.metadata['CALC_SLOPE_RMS']) * float(self.metadata['CALC_SLOPE_RMS_FACTOR'])
             else:
-                return float(self.h['CALC_SLOPE_RMS'])
+                return float(self.metadata['CALC_SLOPE_RMS'])
 
-    def lambda_heights(self):
-        return numpy.sqrt(self.adpsdHeights)/self.stdev_psd_heights()
+    def csd_heights(self):
+        return numpy.sqrt(self.csdHeights)/self.stdev_psd_heights()
 
-    def lambda_slopes(self):
-        return numpy.sqrt(self.adpsdSlopes)/self.stdev_psd_slopes()
+    def csd_slopes(self):
+        return numpy.sqrt(self.csdSlopes)/self.stdev_psd_slopes()
 
     def autocorrelation_heights(self):
-        c1,c2,c3 = autocorrelationfunction(self.sy,self.zprof)
+        c1,c2,c3 = autocorrelationfunction(self.y,self.zHeights)
         return c3
 
     def autocorrelation_slopes(self):
-        c1,c2,c3  = autocorrelationfunction(self.sy,self.sz)
+        c1,c2,c3  = autocorrelationfunction(self.y,self.zSlopes)
         return c3
     #
     # info
     #
     def info_profiles(self):
 
-        if self.zprof is None:
+        if self.zHeights is None:
             return "Error: no loaded profile."
 
         txt = ""
 
         if int(self.get_input_value("setDetrending")) == -2: # this is the default
-            if (self.h['SURFACE_SHAPE']).lower() == "elliptical":
+            if (self.metadata['SURFACE_SHAPE']).lower() == "elliptical":
                 polDegree = -3     # elliptical detrending
             else:
                 polDegree = 1      # linear detrending
@@ -433,10 +438,10 @@ class dabam(object):
             txt += 'Remote directory:\n   %s\n'%self.server
         txt += 'Data File:     %s\n'%self.file_data()
         txt += 'Metadata File: %s\n'%self.file_metadata()
-        txt += 'Surface shape: %s\n'%(self.h['SURFACE_SHAPE'])
-        txt += 'Facility:      %s\n'%(self.h['FACILITY'])
-        txt += 'Scan length: %.3f mm\n'%(1e3*(self.sy[-1]-self.sy[0]))
-        txt += 'Number of points: %d\n'%(len(self.sy))
+        txt += 'Surface shape: %s\n'%(self.metadata['SURFACE_SHAPE'])
+        txt += 'Facility:      %s\n'%(self.metadata['FACILITY'])
+        txt += 'Scan length: %.3f mm\n'%(1e3*(self.y[-1]-self.y[0]))
+        txt += 'Number of points: %d\n'%(len(self.y))
 
         txt += '\n'
 
@@ -473,8 +478,8 @@ class dabam(object):
         txt += '         from PSD:                   %.3f urad\n' %( 1e6*self.stdev_psd_slopes())
         if self.stdev_user_slopes() != None:
             txt += '         from USER (metadata):       %.3f urad\n'   %(1e6*self.stdev_user_slopes())
-        txt += '         Peak-to-valley: no detrend: %.3f urad\n'   %(1e6*(self.sz1.max() - self.sz1.min()))
-        txt += '                       with detrend: %.3f urad\n'   %(1e6*(self.sz.max() - self.sz.min() ))
+        txt += '         Peak-to-valley: no detrend: %.3f urad\n'   %(1e6*(self.zSlopesUndetrended.max() - self.zSlopesUndetrended.min()))
+        txt += '                       with detrend: %.3f urad\n'   %(1e6*(self.zSlopes.max() - self.zSlopes.min() ))
         txt += '         Skewness: %.3f, Kurtosis: %.3f\n'   %(self.momentsSlopes[2],self.momentsSlopes[3])
         beta = -self.powerlaw["slp_pendent"]
         txt += '         PSD power law fit: beta:%.3f, Df: %.3f\n'   %(beta,(5-beta)/2)
@@ -485,8 +490,8 @@ class dabam(object):
         txt += '         from PSD:                   %.3f nm\n'   %(1e9*self.stdev_psd_heights() )
         if self.stdev_user_heights() != None:
             txt += '         from USER (metadata):       %.3f nm\n'   %(1e9*self.stdev_user_heights())
-        txt += '         Peak-to-valley: no detrend: %.3f nm\n'   %(1e9*(self.zprof1.max() - self.zprof1.min()))
-        txt += '                       with detrend: %.3f nm\n'   %(1e9*(self.zprof.max() - self.zprof.min() ))
+        txt += '         Peak-to-valley: no detrend: %.3f nm\n'   %(1e9*(self.zHeightsUndetrended.max() - self.zHeightsUndetrended.min()))
+        txt += '                       with detrend: %.3f nm\n'   %(1e9*(self.zHeights.max() - self.zHeights.min() ))
         txt += '         Skewness: %.3f, Kurtosis: %.3f\n'   %(self.momentsHeights[2],self.momentsHeights[3])
         beta = -self.powerlaw["hgt_pendent"]
         txt += '         PSD power law fit: beta:%.3f, Df: %.3f\n'   %(beta,(5-beta)/2)
@@ -504,7 +509,7 @@ class dabam(object):
         what = self.get_input_value("plot")
 
         if what == "all":
-            what = ["heights","slopes","psd_h","psd_s","lambda_h","lambda_s","histo_s","histo_h"]
+            what = ["heights","slopes","psd_h","psd_s","csd_h","cds_s","histo_s","histo_h"]
         else:
             what = what.split(" ")
 
@@ -512,13 +517,13 @@ class dabam(object):
             print("plotting: ",iwhat)
             if (iwhat == "heights" ):
                 f1 = plt.figure(1)
-                plt.plot(1e3*self.sy,1e6*self.zprof)
+                plt.plot(1e3*self.y,1e6*self.zHeights)
                 plt.title("heights profile")
                 plt.xlabel("Y [mm]")
                 plt.ylabel("Z [um]")
             elif (iwhat == "slopes"):
                 f2 = plt.figure(2)
-                plt.plot(1e3*self.sy,1e6*self.sz)
+                plt.plot(1e3*self.y,1e6*self.zSlopes)
                 plt.title("slopes profile")
                 plt.xlabel("Y [mm]")
                 plt.ylabel("Zp [urad]")
@@ -546,18 +551,18 @@ class dabam(object):
                 plt.title("PSD of slopes profile (beta=%.2f,Df=%.2f)"%(beta,(5-beta)/2))
                 plt.xlabel("f [m^-1]")
                 plt.ylabel("PSD [rad^3]")
-            elif (iwhat == "lambda_h"):
+            elif (iwhat == "csd_h"):
                 f5 = plt.figure(5)
-                plt.semilogx(self.f,self.lambda_heights())
-                plt.title("sqrt(Antiderivative(PDF_s))/StDev of heights profile")
+                plt.semilogx(self.f,self.csd_heights())
+                plt.title("Cumulative Spectral Density of heights profile")
                 plt.xlabel("f [m^-1]")
-                plt.ylabel("lambda_h")
-            elif (iwhat == "lambda_s"):
+                plt.ylabel("csd_h")
+            elif (iwhat == "csd_s"):
                 f6 = plt.figure(6)
-                plt.semilogx(self.f,self.lambda_slopes())
-                plt.title("sqrt(Antiderivative(PDF_h))/StDev of slopes profile")
+                plt.semilogx(self.f,self.csd_slopes())
+                plt.title("Cumulative Spectral Density  of slopes profile")
                 plt.xlabel("f [m^-1]")
-                plt.ylabel("lambda_s")
+                plt.ylabel("csd_s")
             elif (iwhat == "histo_s" ):
                 f7 = plt.figure(7)
                 plt.plot(1e6*self.histoSlopes["x_path"],self.histoSlopes["y1_path"])
@@ -574,20 +579,20 @@ class dabam(object):
                 plt.ylabel("counts")
             elif (iwhat == "acf_h" ):
                 f9 = plt.figure(9)
-                c1,c2,c3 = autocorrelationfunction(self.sy,self.zprof)
+                c1,c2,c3 = autocorrelationfunction(self.y,self.zHeights)
                 plt.plot(c1[0:-1],c2)
                 plt.title("Heights autocovariance. Autocorrelation length (acf_h=0.5)=%.3f m"%(c3))
                 plt.xlabel("Length [m]")
                 plt.ylabel("acf")
             elif (iwhat == "acf_s" ):
                 f10 = plt.figure(10)
-                c1,c2,c3 = autocorrelationfunction(self.sy,self.sz)
+                c1,c2,c3 = autocorrelationfunction(self.y,self.zSlopes)
                 plt.plot(c1[0:-1],c2)
                 plt.title("Slopes autocovariance. Autocorrelation length (acf_s=0.5)=%.3f m"%(c3))
                 plt.xlabel("Length [m]")
                 plt.ylabel("acf_s")
             else:
-                print("Plotting options are: heights slopes psd_h psd_s lambda_h lambda_s acf_h acf_s")
+                print("Plotting options are: heights slopes psd_h psd_s csd_h csd_s acf_h acf_s")
                 return None
         plt.show()
 
@@ -702,12 +707,12 @@ class dabam(object):
             ur = u.read()
             ur1 = ur.decode(encoding='UTF-8')
             h = json.loads(ur1) # dictionnary with metadata
-            self.h = h
+            self.metadata = h
         else:
             try:
                 with open(self.file_metadata(), mode='r') as f1:
                     h = json.load(f1)
-                self.h = h
+                self.metadata = h
             except:
                 print ("_load_file_metadata: Error accessing local file: "+self.file_metadata())
 
@@ -724,7 +729,7 @@ class dabam(object):
 
             ur = u.read()
 
-            skipLines = self.h['FILE_HEADER_LINES']
+            skipLines = self.metadata['FILE_HEADER_LINES']
 
             if sys.version_info[0] == 2:
                 ur = StringIO(unicode(ur))
@@ -732,13 +737,13 @@ class dabam(object):
                 ur = StringIO(ur.decode(encoding='ASCII'))
 
             a = numpy.loadtxt(ur, skiprows=skipLines )
-            self.a = a
+            self.rawdata = a
         else:
             try:
-                skipLines = self.h['FILE_HEADER_LINES']
+                skipLines = self.metadata['FILE_HEADER_LINES']
                 import os
                 a = numpy.loadtxt(self.file_data(), skiprows=skipLines) #, dtype="float64" )
-                self.a = a
+                self.rawdata = a
             except:
                 print ("Error accessing local file: "+self.file_data())
 
@@ -753,23 +758,23 @@ class dabam(object):
         #;
         #; convert to SI units (m,rad)
         #;
-        a = self.a.copy()
+        a = self.rawdata.copy()
 
-        a[:,0] = a[:,0]*self.h['X1_FACTOR']
-        a[:,1] = a[:,1]*self.h['Y1_FACTOR']
+        a[:,0] = a[:,0]*self.metadata['X1_FACTOR']
+        a[:,1] = a[:,1]*self.metadata['Y1_FACTOR']
         ncols = a.shape[1]
 
-        if int(self.h["FILE_FORMAT"]) <= 2:
+        if int(self.metadata["FILE_FORMAT"]) <= 2:
             for i in range(2,ncols):    # X1 Y1 Y2 Y3...
-                a[:,i] = a[:,i]*self.h['Y%d_FACTOR'%i]
-        elif int(self.h["FILE_FORMAT"]) == 3: #X1 Y1 X2 Y2 etc
+                a[:,i] = a[:,i]*self.metadata['Y%d_FACTOR'%i]
+        elif int(self.metadata["FILE_FORMAT"]) == 3: #X1 Y1 X2 Y2 etc
             ngroups = int(ncols / 2)
             icol = 1
             for i in range(2,ngroups):    # X1 Y1 Y2 Y3...
                 icol += 1
-                a[:,icol] = a[:,icol]*self.h['X%d_FACTOR'%i]
+                a[:,icol] = a[:,icol]*self.metadata['X%d_FACTOR'%i]
                 icol += 1
-                a[:,icol] = a[:,icol]*self.h['Y%d_FACTOR'%i]
+                a[:,icol] = a[:,icol]*self.metadata['Y%d_FACTOR'%i]
 
         #
         #; apply multiplicative factor
@@ -792,13 +797,13 @@ class dabam(object):
         col_ordinates = int( self.get_input_value("useOrdinatesColumn") )
 
         col_ordinates_title = 'unknown'
-        if self.h['FILE_FORMAT'] == 1:  # slopes in Col2
+        if self.metadata['FILE_FORMAT'] == 1:  # slopes in Col2
             col_ordinates_title = 'slopes'
-        if self.h['FILE_FORMAT'] == 2:  # heights in Col2
+        if self.metadata['FILE_FORMAT'] == 2:  # heights in Col2
             col_ordinates_title = 'heights'
-        if self.h['FILE_FORMAT'] == 3:  # slopes in Col2, file X1 Y1 X2 Y2
+        if self.metadata['FILE_FORMAT'] == 3:  # slopes in Col2, file X1 Y1 X2 Y2
             col_ordinates_title = 'slopes'
-        if self.h['FILE_FORMAT'] == 4:  # heights in Col2, file X1 Y1 X2 Y2
+        if self.metadata['FILE_FORMAT'] == 4:  # heights in Col2, file X1 Y1 X2 Y2
             col_ordinates_title = 'heights'
 
         if int(self.get_input_value("useHeightsOrSlopes")) == -1:  #default, keep current
@@ -852,7 +857,7 @@ class dabam(object):
         # define detrending to apply: >0 polynomial prder, -1=None, -2=Default, -3=elliptical
 
         if int(self.get_input_value("setDetrending")) == -2: # this is the default
-            if (self.h['SURFACE_SHAPE']).lower() == "elliptical":
+            if (self.metadata['SURFACE_SHAPE']).lower() == "elliptical":
                 polDegree = -3     # elliptical detrending
             else:
                 polDegree = 1      # linear detrending
@@ -877,10 +882,10 @@ class dabam(object):
 
             if not(self.get_input_value("silent")):
                 print("Detrending an ellipse...")
-            if ("ELLIPSE_DESIGN_P" in self.h) and ("ELLIPSE_DESIGN_Q" in self.h) and ("ELLIPSE_DESIGN_THETA" in self.h):
-                ell_p = self.h["ELLIPSE_DESIGN_P"]
-                ell_q = self.h["ELLIPSE_DESIGN_Q"]
-                ell_theta = self.h["ELLIPSE_DESIGN_THETA"]
+            if ("ELLIPSE_DESIGN_P" in self.metadata) and ("ELLIPSE_DESIGN_Q" in self.metadata) and ("ELLIPSE_DESIGN_THETA" in self.metadata):
+                ell_p = self.metadata["ELLIPSE_DESIGN_P"]
+                ell_q = self.metadata["ELLIPSE_DESIGN_Q"]
+                ell_theta = self.metadata["ELLIPSE_DESIGN_THETA"]
 
                 fitfunc_ell_slopes  =  lambda p, x: func_ellipse_slopes(x, p[0], p[1], p[2], p[3])
 
@@ -912,11 +917,11 @@ class dabam(object):
         if polDegree == -4: # ellipse (design)
             if not(self.get_input_value("silent")):
                 print("Detrending an ellipse...")
-            if ("ELLIPSE_DESIGN_P" in self.h) and ("ELLIPSE_DESIGN_Q" in self.h) and ("ELLIPSE_DESIGN_THETA" in self.h):
+            if ("ELLIPSE_DESIGN_P" in self.metadata) and ("ELLIPSE_DESIGN_Q" in self.metadata) and ("ELLIPSE_DESIGN_THETA" in self.metadata):
                 coeffs = numpy.zeros(4)
-                coeffs[0] = self.h["ELLIPSE_DESIGN_P"]
-                coeffs[1] = self.h["ELLIPSE_DESIGN_Q"]
-                coeffs[2] = self.h["ELLIPSE_DESIGN_THETA"]
+                coeffs[0] = self.metadata["ELLIPSE_DESIGN_P"]
+                coeffs[1] = self.metadata["ELLIPSE_DESIGN_Q"]
+                coeffs[2] = self.metadata["ELLIPSE_DESIGN_THETA"]
                 coeffs[3] = 0.0
                 fitfunc_ell_slopes  =  lambda p, x: func_ellipse_slopes(x, p[0], p[1], p[2], p[3])
                 szGuess = fitfunc_ell_slopes(coeffs, sy)
@@ -932,20 +937,20 @@ class dabam(object):
         zprof = cdf(sy,sz)
         zprof1 = cdf(sy,sz1)
 
-        self.sy = sy
-        self.sz1 = sz1
-        self.sz = sz
-        self.zprof1 = zprof1
-        self.zprof = zprof
+        self.y = sy
+        self.zSlopesUndetrended = sz1
+        self.zSlopes = sz
+        self.zHeightsUndetrended = zprof1
+        self.zHeights = zprof
         self.coeffs = coeffs
 
 
     def _calc_psd(self):
-        sy    = self.sy
+        sy    = self.y
         #sz1    = self.sz1
-        sz    = self.sz
+        sz    = self.zSlopes
         #zprof1    = self.zprof1
-        zprof     = self.zprof
+        zprof     = self.zHeights
 
         #;
         #; calculate PSD on both profile and slope, and also then their antiderivative
@@ -960,8 +965,8 @@ class dabam(object):
         self.f = f
         self.psdHeights   = psdHeights
         self.psdSlopes    = psdSlopes
-        self.adpsdHeights = adpsdHeights
-        self.adpsdSlopes  = adpsdSlopes
+        self.csdHeights = adpsdHeights
+        self.csdSlopes  = adpsdSlopes
 
         #fit PSD to a power law
         x = numpy.log10(self.f)
@@ -1012,7 +1017,7 @@ class dabam(object):
         # bins = numpy.ceil( (self.sz.max()-self.sz.min())/binsize )
 
         bins = int(self.get_input_value("nbinS"))
-        hz,hy_left = numpy.histogram(self.sz, bins = bins)
+        hz,hy_left = numpy.histogram(self.zSlopes, bins = bins)
 
 
         hy_center = hy_left[0:-1]+0.5*(hy_left[1]-hy_left[0]) #calculate positions of the center of the bins
@@ -1030,10 +1035,10 @@ class dabam(object):
         hz_path = numpy.array(hz_path)
 
         #Gaussian with StDev of data
-        g = numpy.exp( -numpy.power(hy_center-self.sz.mean(),2)/2/numpy.power(self.stdev_profile_slopes(),2) )
+        g = numpy.exp( -numpy.power(hy_center-self.zSlopes.mean(),2)/2/numpy.power(self.stdev_profile_slopes(),2) )
         g = g/g.sum()*hz.sum()
 
-        g_path = numpy.exp( -numpy.power(hy_path-self.sz.mean(),2)/2/numpy.power(self.stdev_profile_slopes(),2) )
+        g_path = numpy.exp( -numpy.power(hy_path-self.zSlopes.mean(),2)/2/numpy.power(self.stdev_profile_slopes(),2) )
         g_path = g_path/g_path.sum()*hz_path.sum()
 
 
@@ -1046,7 +1051,7 @@ class dabam(object):
         # binsize = float(self.get_input_value("binH"))
         # bins = numpy.ceil( (self.zprof.max()-self.zprof.min())/binsize )
         bins = int(self.get_input_value("nbinH"))
-        hz,hy_left = numpy.histogram(self.zprof, bins = bins)
+        hz,hy_left = numpy.histogram(self.zHeights, bins = bins)
 
         hy_center = hy_left[0:-1]+0.5*(hy_left[1]-hy_left[0]) #calculate positions of the center of the bins
         hy_right  = hy_left[0:-1]+1.0*(hy_left[1]-hy_left[0]) #calculate positions of the right edge of the bins
@@ -1063,10 +1068,10 @@ class dabam(object):
         hz_path = numpy.array(hz_path)
 
         #Gaussian with StDev of data
-        g = numpy.exp( -numpy.power(hy_center-self.zprof.mean(),2)/2/numpy.power(self.stdev_profile_heights(),2) )
+        g = numpy.exp( -numpy.power(hy_center-self.zHeights.mean(),2)/2/numpy.power(self.stdev_profile_heights(),2) )
         g = g/g.sum()*hz.sum()
 
-        g_path = numpy.exp( -numpy.power(hy_path-self.zprof.mean(),2)/2/numpy.power(self.stdev_profile_heights(),2) )
+        g_path = numpy.exp( -numpy.power(hy_path-self.zHeights.mean(),2)/2/numpy.power(self.stdev_profile_heights(),2) )
         g_path = g_path/g_path.sum()*hz_path.sum()
 
         self.histoHeights = {"x":hy_center, "y1":hz, "y2":g, "x_path":hy_path, "y1_path":hz_path, "y2_path":g_path}
@@ -1077,7 +1082,7 @@ class dabam(object):
         # write header file
         outFile = self.get_input_value("outputFileRoot") + "Header.txt"
         with open(outFile, mode='w') as f1:
-            json.dump(self.h, f1, indent=2)
+            json.dump(self.metadata, f1, indent=2)
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" containing metadata written to disk.")
 
@@ -1085,13 +1090,13 @@ class dabam(object):
         # Dump heights and slopes profiles to files
         #
         outFile = self.get_input_value("outputFileRoot")+'Heights.dat'
-        dd=numpy.concatenate( (self.sy.reshape(-1,1), self.zprof.reshape(-1,1)),axis=1)
+        dd=numpy.concatenate( (self.y.reshape(-1,1), self.zHeights.reshape(-1,1)),axis=1)
         numpy.savetxt(outFile,dd,comments="#",header="F %s\nS 1  heights profile\nN 2\nL  coordinate[m]  height[m]"%(outFile))
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" containing heights profile written to disk.")
 
         outFile = self.get_input_value("outputFileRoot")+'Slopes.dat'
-        dd=numpy.concatenate( (self.sy.reshape(-1,1), self.sz.reshape(-1,1)),axis=1)
+        dd=numpy.concatenate( (self.y.reshape(-1,1), self.zSlopes.reshape(-1,1)),axis=1)
         numpy.savetxt(outFile,dd,comments="#",header="F %s\nS 1  slopes profile\nN 2\nL  coordinate[m]  slopes[rad]"%(outFile))
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" written to disk.")
@@ -1099,11 +1104,11 @@ class dabam(object):
 
         #write psd file
         dd = numpy.concatenate( (self.f, self.psdHeights, self.psdSlopes, \
-                                 numpy.sqrt(self.adpsdHeights)/self.stdev_psd_heights(), \
-                                 numpy.sqrt(self.adpsdSlopes)/self.stdev_psd_slopes() \
+                                 numpy.sqrt(self.csdHeights)/self.stdev_psd_heights(), \
+                                 numpy.sqrt(self.csdSlopes)/self.stdev_psd_slopes() \
                                  ) ,axis=0).reshape(5,-1).transpose()
         outFile = self.get_input_value("outputFileRoot")+'PSD.dat'
-        header = "F %s\nS 1  power spectral density\nN 5\nL  freq[m^-1]  psd_heights[m^3]  psd_slopes[rad^3]  lambda(psd_h)  lambda(psd_s)"%(outFile)
+        header = "F %s\nS 1  power spectral density\nN 5\nL  freq[m^-1]  psd_heights[m^3]  psd_slopes[rad^3]  csd_h  csd_s"%(outFile)
         numpy.savetxt(outFile,dd,comments="#",header=header)
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" written to disk.")
@@ -1142,8 +1147,8 @@ class dabam(object):
         mirror_width = float(self.get_input_value("shadowWidth")) # in cm
 
         # units to cm
-        y = (self.sy).copy() * 100.0 # from m to cm
-        z = (self.zprof).copy() * 100.0 # from m to cm
+        y = (self.y).copy() * 100.0 # from m to cm
+        z = (self.zHeights).copy() * 100.0 # from m to cm
 
         # set origin at the center of the mirror. TODO: allow any point for origin
         z = z - z.min()
@@ -1187,24 +1192,24 @@ class dabam(object):
         if table_number == 1:
             return  ('%d & %s & %d & %.2f  (%.2f %s) & %.2f  (%.2f %s) \\\\'%(   \
                 self.get_input_value("entryNumber"),   \
-                self.h['SURFACE_SHAPE'],
-                int(1e3*(self.sy[-1]-self.sy[0])),   \
-                1e6*self.sz.std(),      \
+                self.metadata['SURFACE_SHAPE'],
+                int(1e3*(self.y[-1]-self.y[0])),   \
+                1e6*self.zSlopes.std(),      \
                 1e6*self.stdev_psd_slopes(),           \
-                ("" if self.h['CALC_SLOPE_RMS'] is None else ",%.2f"%(self.h['CALC_SLOPE_RMS'])),    \
+                ("" if self.metadata['CALC_SLOPE_RMS'] is None else ",%.2f"%(self.metadata['CALC_SLOPE_RMS'])),    \
                 1e9*self.stdev_psd_heights(),           \
-                1e9*self.zprof.std(),   \
-                ("" if self.h['CALC_HEIGHT_RMS'] is None else ",%.2f"%(self.h['CALC_HEIGHT_RMS'])),  ))
+                1e9*self.zHeights.std(),   \
+                ("" if self.metadata['CALC_HEIGHT_RMS'] is None else ",%.2f"%(self.metadata['CALC_HEIGHT_RMS'])),  ))
         else:
             return  ('%d & %.2f & %.2f & %d & %.2f & %.2f & %.2f & %d & %.2f\\\\'%(   \
                 self.get_input_value("entryNumber"),   \
                 self.momentsHeights[2], \
                 self.momentsHeights[3],\
-                ((autocorrelationfunction(self.sy,self.zprof))[2])*1e3, \
+                ((autocorrelationfunction(self.y,self.zHeights))[2])*1e3, \
                 -self.powerlaw["hgt_pendent"], \
                 self.momentsSlopes[2], \
                 self.momentsSlopes[3],\
-                ((autocorrelationfunction(self.sy,self.sz))[2])*1e3, \
+                ((autocorrelationfunction(self.y,self.zSlopes))[2])*1e3, \
                 -self.powerlaw["slp_pendent"], \
                 ))
 
@@ -1215,12 +1220,12 @@ class dabam(object):
         """
         return  ('%3d  %12s %8.2f  %.2f %s %.2f %s'%(   \
             self.get_input_value("entryNumber"),   \
-            self.h['SURFACE_SHAPE'],
-            int(1e3*(self.sy[-1]-self.sy[0])),   \
-            1e6*self.sz.std(),      \
-            ("       " if self.h['CALC_SLOPE_RMS'] is None else "(%5.2f)"%(self.h['CALC_SLOPE_RMS'])),    \
-            1e9*self.zprof.std(),   \
-            ("       " if self.h['CALC_HEIGHT_RMS'] is None else "(%5.2f)"%(self.h['CALC_HEIGHT_RMS'])),  ))
+            self.metadata['SURFACE_SHAPE'],
+            int(1e3*(self.y[-1]-self.y[0])),   \
+            1e6*self.zSlopes.std(),      \
+            ("       " if self.metadata['CALC_SLOPE_RMS'] is None else "(%5.2f)"%(self.metadata['CALC_SLOPE_RMS'])),    \
+            1e9*self.zHeights.std(),   \
+            ("       " if self.metadata['CALC_HEIGHT_RMS'] is None else "(%5.2f)"%(self.metadata['CALC_HEIGHT_RMS'])),  ))
 
 #
 # main functions (these function are sitting here for autoconsistency of dabam.py, otherwise can be in a dependency)
@@ -1503,7 +1508,7 @@ def moment(array,substract_one_in_variance_n=False):
     return m0,m1,m2,m3
 
 
-def dabam_summary(nmax=25,latex=0):
+def dabam_summary(nmax=None,latex=0):
     """
     create a text with the summary of all dabam entries
 
@@ -1511,6 +1516,9 @@ def dabam_summary(nmax=25,latex=0):
     :param latex:
     :return:
     """
+
+    if nmax is None:
+        nmax = 1000000  # this is like infinity
     if latex ==0:
         txt = "Entry    shape  Length[mm]  hgt_err [um]  slp_err [urad]\n"
     else:
@@ -1522,7 +1530,10 @@ def dabam_summary(nmax=25,latex=0):
         dm.set_input_outputFileRoot("")  # avoid output files
         dm.set_input_silent(1)
         dm.set_entry(i+1)
-        dm.load()
+        try:
+            dm.load()
+        except:
+            break
         if latex == 1:
             txt += dm._latex_line(table_number=1)+"\n"
         elif latex == 2:
