@@ -116,12 +116,12 @@ if __name__ == "__main__":
 
     wavefront = Wavefront1D.initialize_wavefront_from_range(wavelenght=1e-2, number_of_points=1000000, x_min=-1, x_max=1)
     wavefront.set_plane_wave_from_amplitude_and_phase(2, 1.0)
-    #wavefront.apply_ideal_lens(100)
     wavefront.apply_slit(-0.4, 0.4)
+    wavefront.apply_ideal_lens(100)
 
     import matplotlib.pylab as plt
     f1 = plt.figure(1)
-    plt.plot(wavefront.get_abscissas(), numpy.degrees(wavefront.get_intensity()))
+    plt.plot(wavefront.get_abscissas(), wavefront.get_intensity())
     plt.title("Manolo for President")
     plt.xlabel("X (m)")
     plt.ylabel("I V^2 m^-2")
