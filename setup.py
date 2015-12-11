@@ -133,14 +133,14 @@ PACKAGES = [
     "srxraylib.metrology",
     "srxraylib.sources",
     "srxraylib.util",
-    "srxraylib.wavefront",
+    "srxraylib.waveoptics",
 ]
 
 PACKAGE_DATA = {
     "srxraylib.metrology": ["*.txt"],
     "srxraylib.sources": ["data/*.*"],
     "srxraylib.util": ["data/*.*"],
-    "srxraylib.wavefront": ["data/*.*"],
+    "srxraylib.optics": ["data/*.*"],
 }
 
 
