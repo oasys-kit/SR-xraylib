@@ -64,15 +64,28 @@ class Wavefront1D(object):
     def get_complex_amplitude_from_abscissa(self, abscissa_value):
         return self.electric_field_array.interpolate_value(abscissa_value)
 
+    def get_complex_amplitude_from_abscissas(self, abscissa_values):
+        return self.electric_field_array.interpolate_values(abscissa_values)
+
     def get_amplitude_from_abscissa(self, abscissa_value):
         return numpy.absolute(self.get_complex_amplitude_from_abscissa(abscissa_value))
+
+    def get_amplitude_from_abscissas(self, abscissa_values):
+        return numpy.absolute(self.get_complex_amplitude_from_abscissas(abscissa_values))
 
     def get_phase_from_abscissa(self, abscissa_value):
         complex_amplitude = self.get_complex_amplitude_from_abscissa(abscissa_value)
         return numpy.arctan2(numpy.imag(complex_amplitude), numpy.real(complex_amplitude))
 
+    def get_phase_from_abscissas(self, abscissa_values):
+        complex_amplitudes = self.get_complex_amplitude_from_abscissas(abscissa_values)
+        return numpy.arctan2(numpy.imag(complex_amplitudes), numpy.real(complex_amplitudes))
+
     def get_intensity_from_abscissa(self, abscissa_value):
         return self.get_amplitude_from_abscissa(abscissa_value)**2
+
+    def get_intensity_from_abscissas(self, abscissa_values):
+        return self.get_amplitude_from_abscissas(abscissa_values)**2
 
     def set_plane_wave_from_complex_amplitude(self, complex_amplitude=(1.0 + 0.0j)):
         self.electric_field_array.np_array = numpy.full(self.electric_field_array.size(), complex_amplitude, dtype=complex)
