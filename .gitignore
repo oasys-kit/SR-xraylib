@@ -1,0 +1,5 @@
+dist*
+build/*
+.idea/*
+srxraylib.egg-info/*
+*.pyc
