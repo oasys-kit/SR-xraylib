@@ -372,10 +372,10 @@ class dabam(object):
     #
 
     def stdev_profile_heights(self):
-        return self.zHeights.std()
+        return self.zHeights.std(ddof=1)
 
     def stdev_profile_slopes(self):
-        return self.zSlopes.std()
+        return self.zSlopes.std(ddof=1)
 
     def stdev_psd_heights(self):
         return numpy.sqrt(self.csdHeights[-1])
@@ -904,9 +904,9 @@ class dabam(object):
 
                 if not(self.get_input_value("silent")):
                     print("Ellipse design parameters found in metadata: p=%f m,q=%f m,theta=%f rad, shift=%f nm, Slopes_Std=%f urad"%
-                          (ell_p,ell_q,ell_theta,0.0,1e6*(sz1-szGuess).std() ))
+                          (ell_p,ell_q,ell_theta,0.0,1e6*(sz1-szGuess).std(ddof=1) ))
                     print("Optimized ellipse                          : p=%f m,q=%f m,theta=%f rad, shift=%f nm, Slopes_Std=%f urad\n"%
-                          (coeffs[0],coeffs[1],coeffs[2],coeffs[3],1e6*sz.std() ))
+                          (coeffs[0],coeffs[1],coeffs[2],coeffs[3],1e6*sz.std(ddof=1) ))
             else:
                 if not(self.get_input_value("silent")):
                     print("Ellipse design parameters NOT FOUND in metadata. Guessing parameters (may be unrealistic!)")
@@ -1194,23 +1194,22 @@ class dabam(object):
                 self.get_input_value("entryNumber"),   \
                 self.metadata['SURFACE_SHAPE'],
                 int(1e3*(self.y[-1]-self.y[0])),   \
-                1e6*self.zSlopes.std(),      \
+                1e6*self.zSlopes.std(ddof=1),      \
                 1e6*self.stdev_psd_slopes(),           \
                 ("" if self.metadata['CALC_SLOPE_RMS'] is None else ",%.2f"%(self.metadata['CALC_SLOPE_RMS'])),    \
                 1e9*self.stdev_psd_heights(),           \
-                1e9*self.zHeights.std(),   \
+                1e9*self.zHeights.std(ddof=1),   \
                 ("" if self.metadata['CALC_HEIGHT_RMS'] is None else ",%.2f"%(self.metadata['CALC_HEIGHT_RMS'])),  ))
         else:
-            return  ('%d & %.2f & %.2f & %d & %.2f & %.2f & %.2f & %d & %.2f\\\\'%(   \
+            return  ('%d & %d & %.2f & %.2f & %d & %.2f & %.2f & %.2f\\\\'%(   \
                 self.get_input_value("entryNumber"),   \
+                self.y.size, \
                 self.momentsHeights[2], \
                 self.momentsHeights[3],\
                 ((autocorrelationfunction(self.y,self.zHeights))[2])*1e3, \
                 -self.powerlaw["hgt_pendent"], \
                 self.momentsSlopes[2], \
                 self.momentsSlopes[3],\
-                ((autocorrelationfunction(self.y,self.zSlopes))[2])*1e3, \
-                -self.powerlaw["slp_pendent"], \
                 ))
 
     def _text_line(self):
@@ -1222,9 +1221,9 @@ class dabam(object):
             self.get_input_value("entryNumber"),   \
             self.metadata['SURFACE_SHAPE'],
             int(1e3*(self.y[-1]-self.y[0])),   \
-            1e6*self.zSlopes.std(),      \
+            1e6*self.zSlopes.std(ddof=1),      \
             ("       " if self.metadata['CALC_SLOPE_RMS'] is None else "(%5.2f)"%(self.metadata['CALC_SLOPE_RMS'])),    \
-            1e9*self.zHeights.std(),   \
+            1e9*self.zHeights.std(ddof=1),   \
             ("       " if self.metadata['CALC_HEIGHT_RMS'] is None else "(%5.2f)"%(self.metadata['CALC_HEIGHT_RMS'])),  ))
 
     def _dictionary_line(self):
@@ -1236,9 +1235,9 @@ class dabam(object):
             "entry":self.get_input_value("entryNumber"),   \
             "surface":self.metadata['SURFACE_SHAPE'],
             "length":(self.y[-1]-self.y[0]),   \
-            "slp_err":self.zSlopes.std(),      \
+            "slp_err":self.zSlopes.std(ddof=1),      \
             "slp_err_user":self.metadata['CALC_SLOPE_RMS'], \
-            "hgt_err":self.zHeights.std(), \
+            "hgt_err":self.zHeights.std(ddof=1), \
             "hgt_err_user": self.metadata['CALC_HEIGHT_RMS'] }
 
 
@@ -1498,7 +1497,7 @@ def write_shadowSurface(s,xx,yy,outFile='presurface.dat'):
         fs.close()
         #print ("File "+outFile+" written to disk (for SHADOW).")
 
-def moment(array,substract_one_in_variance_n=False):
+def moment(array,substract_one_in_variance_n=True):
     """
     Calculate the first four statistical moments of a 1D array
     :param array:
