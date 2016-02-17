@@ -604,15 +604,20 @@ def slopes(z,x,y,silent=1, return_only_rms=0):
     ;
     ; MODIFICATION HISTORY:
     ;       MSR 1994 written
-    ;       08-04-15 srio@esrf.eu makes calculations in double precision.
+    ;       2016-02-17 luca.rebuffi@elettra.eu modified calculation of nx,ny
+    ;       2015-04-08 srio@esrf.eu makes calculations in double precision.
     ;       2014-09-11 documented
     ;       2012-02-10 srio@esrf.eu python version
     ;-
     ;
     """
 
-    nx = z.shape[0]
-    ny = z.shape[1]
+    # make error when surface is reloaded form file
+    #nx = z.shape[0]
+    #ny = z.shape[1]
+
+    nx = x.size
+    ny = y.size
 
     slope = numpy.zeros((2,nx,ny))
 
