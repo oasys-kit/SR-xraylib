@@ -860,8 +860,6 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
     #;
     #; Figure out the limit of photon energy.
     #;
-    curv_max = 0.0
-    curv_min = 1.0e20
 
     curv_max = numpy.abs(curv).max()
     curv_min = numpy.abs(curv).min()
@@ -1015,9 +1013,9 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
     #;
     #; Compute gamma and the beam energy
     #;
-    gamma = 1.0/numpy.sqrt(1 - numpy.power(betay[1],2) - \
-                               numpy.power(betax[1],2) - \
-                               numpy.power(betaz[1],2))
+    gamma = 1.0/numpy.sqrt(1.0 - numpy.power(betay[1],2) - \
+                                 numpy.power(betax[1],2) - \
+                                 numpy.power(betaz[1],2))
     bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
     print("\nwiggler_cdf: Electron beam energy (from velocities) = %f GeV "%(bener))
     print("\nwiggler_cdf: gamma (from velocities) = %f GeV "%(gamma))
@@ -1032,9 +1030,13 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
     curv_max = numpy.abs(curv).max()
     curv_min = numpy.abs(curv).min()
 
+    if curv_min == 0.0: curv_min = 1e-15
 
+    print("wiggler_cdf: Curvature (min)) = %f m^-1 "%(curv_min))
+    print("wiggler_cdf:           (max)    %f m^-1 "%(curv_max))
     print("wiggler_cdf: Radius of curvature (max) = %f m "%(1.0/curv_min))
     print("wiggler_cdf:                     (min) = %f m "%(1.0/curv_max))
+
 
     TOANGS  =  m2ev*1e10 
     phot_min = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_min
@@ -1122,59 +1124,59 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
 
 
 def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
-                       ener_gev=6.04, per=0.125, kValue=14.0, trajFile=""):
+                       ener_gev=6.04, per=0.125, kValue=14.0, trajFile="",
+                       shift_x_flag=0,shift_x_value=0.0,
+                       shift_betax_flag=0,shift_betax_value=0.0):
     r"""
-     NAME:
-           wiggler_trajectory
-    
-     PURPOSE:
-           Calculates the trajectory of the electrons under a magnetic
-        field in Z direction. 
-    
-     CATEGORY:
-           Synchrotron radiation
-    
-     CALLING SEQUENCE:
-        wiggler_trajectory [,Keywords]
-    
-     INPUTS:
-        Keywords should be used to define input parameters. 
-    
-     INPUT KEYWORD PARAMETERS (if no input structure is chosen):
-           b_from:      A Flag for the type of inpyt magnetic field: 
+    Calculates the trajectory of the electrons under a magnetic field in Z direction.
+
+     PROCEDURE:
+        Based on btraj.f, a utility written in 10/91 by M. Sanchez del Rio and C. Vettier to input
+        asymmetric wigglers in SHADOW.
+
+        See formulae in ESRF red book    pag CIV-297
+    :param b_from: A Flag for the type of inpyt magnetic field:
                    0: kValue (deflecting parameters) is given
                    1: A file with the magnetic field (y[m] B[T]) is given
                    2: A file with the magnetic field harmonics (n Bn[T]) is given
-           inData:      A string with the file with the file name containing 
-                        the field information (for b_from:1,2), or a [2,npoint]
-                        numpy array with the field information.
-           nPer:        Number of periods  (for b_from:1,2,3)
-           per:         Wiggler period in meters  (for b_from:1,3)
-           ener_gev:    The electron energy in GeV
-           nTrajPoints: Number of trajectory points
-           kValue:      The K (deflecting parameter) value
-           TrajFile:    The name of a file where the resut is written. (Default:
-                        "" no written file).
-    
-    
-     OUTPUTS:
-           (traj,pars)
+    :param inData: A string with the file with the file name containing the field information (for b_from:1,2),
+                    or a [2,npoint] numpy array with the field information.
+    :param nPer: Number of periods
+    :param nTrajPoints: Number of trajectory points (per period)
+    :param ener_gev: The electron energy in GeV
+    :param per:  Wiggler period in meters  (for b_from:1,3)
+    :param kValue: The K (deflecting parameter) value
+    :param trajFile: The name of a file where the resut is written. (Default: "" no written file).
+    :param shift_x_flag: a flag to indicate how to shift x (electron transversal coordinate):
+                        0 = No shift
+                        1 = Half excursion
+                        2 = Minimum
+                        3 = Maximum
+                        4 = Value at zero
+                        5 = User value
+    :param shift_x_value: The user value for shift x (if shift_x_flag=5)
+    :param shift_betax_flag: a flag to indicate how to shift the betax coordinate (electron transversal velocity):
+                        0 = No shift
+                        1 = Half excursion
+                        2 = Minimum
+                        3 = Maximum
+                        4 = Value at zero
+                        5 = User value
+    :param shift_betax_value: The user value for shift betax (if shift_betax_flag=5)
+    :return:           (traj,pars)
            traj: a variable to store the output matrix (8 colums with:
            x[m]  y[m]  z[m]  BetaX  BetaY  BetaZ  Curvature  B[T] )
            pars: a variable with text info
-    
-     PROCEDURE:
-        Based on btraj.f, a utility writtem in 10/91 by M. Sanchez del Rio
-          and C. Vettier to input asymmetric wigglers in SHADOW. 
-    
-        See formulae in ESRF red book    pag CIV-297
-    
+
+
      MODIFICATION HISTORY:
            Written by:     M. Sanchez del Rio, srio@esrf.fr, 2002-07-17
-        2002-07-17 srio@esrf.fr 
+        2002-07-17 srio@esrf.fr
         2012-10-08 srio@esrf.eu python version
-    
+
+     TODO: implement the elliptical wiggler (Bx!=0)
     """
+
 
     if b_from == 0:
         nharm = 1
@@ -1262,9 +1264,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
     betax = -codata_c*1e-9/ener_gev*betax
     betay = numpy.sqrt(beta0*beta0 - betax*betax)
     emc = codata_ec/gamma/codata_me/codata_c
-    curv = emc*bz/beta0
     #;
-    #;    calculates positions as the integral of speeds
+    #;    calculates positions as the integral of velocities
     #;
     yx = numpy.zeros(nTrajPoints)
     if b_from == 1:
@@ -1313,12 +1314,61 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
         pars += "\nB harmonics from file or array."
         pars += "\nNumber of harmonics = %d "%(nharm)
 
+    #
+    # calculate curvature
+    #
+
+    curv = emc*bz/beta0
+
+    #
+    # correct orbits
+    #
+    if shift_betax_flag == 0: # no shift
+        shift_betax_local = 0.0
+    elif shift_betax_flag == 1:  # shift half value
+        shift_betax_local = -0.5 * (betax.max() + betax.min())
+    elif shift_betax_flag == 2:  # shift min
+        shift_betax_local = -betax.min()
+    elif shift_betax_flag == 3:  # shift max
+        shift_betax_local = -betax.max()
+    elif shift_betax_flag == 4: # valus at zero
+        shift_betax_local = -numpy.interp(0.0,yy,betax)
+    elif shift_betax_flag == 5:  # user value
+        shift_betax_local = shift_betax_value
+    else:
+        raise "Unknown value for shift_betax_flag"
+
+    if shift_betax_local != 0.0:
+        betax += shift_betax_local
+        betay = numpy.sqrt(beta02 - betax**2)
+        yx += shift_betax_local * yy
+
+
+    if shift_x_flag == 0: # no shift
+        shift_x_local = 0.0
+    elif shift_x_flag == 1: # half excursion
+        shift_x_local = -0.5 * ( yx.max() + yx.min() )
+    elif shift_x_flag == 2: # min
+        shift_x_local = -yx.min()
+    elif shift_x_flag == 3: # max
+        shift_x_local = -yx.max()
+    elif shift_x_flag == 4: # valus at zero
+        shift_x_local = -numpy.interp(0.0,yy,yx)
+    elif shift_x_flag == 5: # user value
+        shift_x_local =  shift_x_value
+    else:
+        raise "Unknown value for shift_x_flag"
+
+    if shift_x_local != 0.0:
+        yx +=  shift_x_local
+
     #;
     #;    creates trajectory and file 
     #;
 
     nPointsTot = nTrajPoints+(nPer-1)*(nTrajPoints-1)
     traj = numpy.zeros((8,nPointsTot))
+
 
     ii = -1
     for j in range(nPer):
@@ -1362,7 +1412,7 @@ def wiggler_nphoton(r_m,electronEnergy=1.0,photonEnergy=1000.0,polarization=0):
            Calculates the synchrotron radiation spectrum versus bending radius
         Assumptions:
             Electron current = 1 mA
-            Horizontal divergence = 1mA
+            Horizontal divergence = 1mrad
             Energy bandwidth = 1 eV
     
      CATEGORY:
