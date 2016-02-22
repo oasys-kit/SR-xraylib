@@ -1,9 +1,9 @@
 
 # THIS FILE IS GENERATED FROM OASYS SETUP.PY
-short_version = '1.0.1'
-version = '1.0.1'
-full_version = '1.0.1.dev0+0220d80'
-git_revision = '0220d80919b77662751a9b611c386ec6e6e1d683'
+short_version = '1.0.2'
+version = '1.0.2'
+full_version = '1.0.2.dev0+5e132f5'
+git_revision = '5e132f5a47979202b51b8ec3a1874bc272c17581'
 release = False
 
 if not release:
