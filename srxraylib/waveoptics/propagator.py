@@ -7,10 +7,10 @@ def propagate_1D_fresnel(wavefront, propagation_distance):
     fft_scale = numpy.fft.fftfreq(wavefront.size())/wavefront.delta()
 
     fft = numpy.fft.fft(wavefront.get_complex_amplitude())
-    fft *= numpy.exp((-1.0j) * numpy.pi * wavefront.get_wavelenght() * propagation_distance * fft_scale**2)
+    fft *= numpy.exp((-1.0j) * numpy.pi * wavefront.get_wavelength() * propagation_distance * fft_scale**2)
     ifft = numpy.fft.ifft(fft)
 
-    return Wavefront1D(wavefront.get_wavelenght(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
+    return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
 
 
 if __name__ == "__main__":
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     distance = 3.6
     npoints = 1000
 
-    wavefront = Wavefront1D.initialize_wavefront_from_range(wavelenght=wavelength, number_of_points=npoints, x_min=-detector_size/2, x_max=detector_size/2)
+    wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=wavelength, number_of_points=npoints, x_min=-detector_size/2, x_max=detector_size/2)
     wavefront.set_plane_wave_from_complex_amplitude((2.0+1.0j))
     wavefront.apply_slit(-aperture_diameter/2, aperture_diameter/2)
 

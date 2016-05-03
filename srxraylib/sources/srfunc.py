@@ -79,6 +79,7 @@ except ImportError:
     print("Failed to import scipy. Finding alternative ways.")
     codata_c = numpy.array(299792458.0)
     codata_mee = numpy.array(9.10938291e-31)
+    codata_me = numpy.array(0.510999)
     codata_h = numpy.array(6.62606957e-34)
     codata_ec = numpy.array(1.602176565e-19)
 

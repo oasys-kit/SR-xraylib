@@ -10,25 +10,25 @@ from srxraylib.util.data_structures import ScaledArray, ScaledMatrix
 #------------------------------------------------
 
 class Wavefront1D(object):
-    wavelenght = 0.0
+    wavelength = 0.0
     electric_field_array = None
 
-    def __init__(self, wavelenght=1e-10, electric_field_array=None):
-        self.wavelenght = wavelenght
+    def __init__(self, wavelength=1e-10, electric_field_array=None):
+        self.wavelength = wavelength
         self.electric_field_array = electric_field_array
 
     @classmethod
-    def initialize_wavefront(cls, wavelenght=1e-10, number_of_points=1000):
-        return Wavefront1D(wavelenght, ScaledArray.initialize(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex)))
+    def initialize_wavefront(cls, wavelength=1e-10, number_of_points=1000):
+        return Wavefront1D(wavelength, ScaledArray.initialize(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex)))
 
     @classmethod
-    def initialize_wavefront_from_steps(cls, wavelenght=1e-10, number_of_points=1000, x_start=0.0, x_step=0.0):
-        return Wavefront1D(wavelenght, ScaledArray.initialize_from_steps(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
+    def initialize_wavefront_from_steps(cls, wavelength=1e-10, number_of_points=1000, x_start=0.0, x_step=0.0):
+        return Wavefront1D(wavelength, ScaledArray.initialize_from_steps(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
                                                                          initial_scale_value=x_start,
                                                                          scale_step=x_step))
     @classmethod
-    def initialize_wavefront_from_range(cls, wavelenght=1e-10, number_of_points=1000, x_min=0.0, x_max=0.0):
-        return Wavefront1D(wavelenght, ScaledArray.initialize_from_range(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
+    def initialize_wavefront_from_range(cls, wavelength=1e-10, number_of_points=1000, x_min=0.0, x_max=0.0):
+        return Wavefront1D(wavelength, ScaledArray.initialize_from_range(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
                                                                          min_scale_value=x_min,
                                                                          max_scale_value=x_max))
     def size(self):
@@ -40,11 +40,11 @@ class Wavefront1D(object):
     def offset(self):
         return self.electric_field_array.offset()
 
-    def get_wavelenght(self):
-        return self.wavelenght
+    def get_wavelength(self):
+        return self.wavelength
 
     def get_wavenumber(self):
-        return 2*numpy.pi/self.wavelenght
+        return 2*numpy.pi/self.wavelength
 
     def get_abscissas(self):
         return self.electric_field_array.scale
@@ -127,7 +127,7 @@ class Wavefront1D(object):
 
 if __name__ == "__main__":
 
-    wavefront = Wavefront1D.initialize_wavefront_from_range(wavelenght=1e-2, number_of_points=1000000, x_min=-1, x_max=1)
+    wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=1e-2, number_of_points=1000000, x_min=-1, x_max=1)
     wavefront.set_plane_wave_from_amplitude_and_phase(2, 1.0)
     wavefront.apply_slit(-0.4, 0.4)
     wavefront.apply_ideal_lens(100)
