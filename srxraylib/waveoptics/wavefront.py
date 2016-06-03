@@ -1,5 +1,15 @@
 
 import numpy
+
+try:
+    import srxraylib
+except:
+    import sys
+    sys.path.append("./../../")
+    print("Importing srxraylib from local directory: ./../../")
+    import srxraylib
+
+
 from srxraylib.util.data_structures import ScaledArray, ScaledMatrix
 
 #------------------------------------------------
@@ -67,17 +77,17 @@ class Wavefront1D(object):
     def get_complex_amplitude_from_abscissas(self, abscissa_values):
         return self.electric_field_array.interpolate_values(abscissa_values)
 
-    def get_amplitude_from_abscissa(self, abscissa_value):
+    def get_amplitude_from_abscissa(self, abscissa_value): # singular!
         return numpy.absolute(self.get_complex_amplitude_from_abscissa(abscissa_value))
 
-    def get_amplitude_from_abscissas(self, abscissa_values):
+    def get_amplitude_from_abscissas(self, abscissa_values): # plural!
         return numpy.absolute(self.get_complex_amplitude_from_abscissas(abscissa_values))
 
-    def get_phase_from_abscissa(self, abscissa_value):
+    def get_phase_from_abscissa(self, abscissa_value): # singular!
         complex_amplitude = self.get_complex_amplitude_from_abscissa(abscissa_value)
         return numpy.arctan2(numpy.imag(complex_amplitude), numpy.real(complex_amplitude))
 
-    def get_phase_from_abscissas(self, abscissa_values):
+    def get_phase_from_abscissas(self, abscissa_values): # plural!
         complex_amplitudes = self.get_complex_amplitude_from_abscissas(abscissa_values)
         return numpy.arctan2(numpy.imag(complex_amplitudes), numpy.real(complex_amplitudes))
 
@@ -125,20 +135,68 @@ class Wavefront1D(object):
 
         self.rescale_amplitudes(window)
 
-if __name__ == "__main__":
+def test_plane_wave(do_plot=0):
+    import copy
+    #
+    # plane wave
+    #
+
+    value_amplitude = 5.0
+    value_phase = numpy.pi
 
     wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=1e-2, number_of_points=1000000, x_min=-1, x_max=1)
-    wavefront.set_plane_wave_from_amplitude_and_phase(2, 1.0)
+    wavefront.set_plane_wave_from_amplitude_and_phase(value_amplitude,value_phase)
     wavefront.apply_slit(-0.4, 0.4)
-    wavefront.apply_ideal_lens(100)
 
-    import matplotlib.pylab as plt
-    f1 = plt.figure(1)
-    plt.plot(wavefront.get_abscissas(), wavefront.get_intensity())
-    plt.title("Manolo for President")
-    plt.xlabel("X (m)")
-    plt.ylabel("I V^2 m^-2")
-    plt.show()
+    # TODO write "duplicate" methods in wavefront and ScaledArrtay
+
+    wavefront_focused = copy.deepcopy(wavefront)
+    wavefront_focused.apply_ideal_lens(100)
+
+    #
+    # some tests
+    #
+    test_value1 = wavefront.get_amplitude_from_abscissas(0.01) - value_amplitude
+    assert ( numpy.abs(test_value1) < 1e-6)
+
+    test_value2  = wavefront.get_amplitude_from_abscissas(-4)
+    assert ( numpy.abs(test_value2) < 1e-6)
+
+    if do_plot:
+
+        import matplotlib.pylab as plt
+        #
+        f1 = plt.figure(1)
+        plt.plot(wavefront.get_abscissas(), wavefront.get_intensity())
+        plt.title("Plane wave defined in [-1,1] and clipped by a [-.4,.4] slit")
+        plt.xlabel("X (m)")
+        plt.ylabel("Intensity")
+
+        f2 = plt.figure(2)
+        plt.plot(wavefront.get_abscissas(), wavefront.get_amplitude())
+        plt.title("Plane wave defined in [-1,1] and clipped by a [-.4,.4] slit")
+        plt.xlabel("X (m)")
+        plt.ylabel("Amplitude")
+
+        f3 = plt.figure(3)
+        plt.plot(wavefront.get_abscissas(), wavefront.get_phase())
+        plt.title("Plane wave defined in [-1,1] and clipped by a [-.4,.4] slit")
+        plt.xlabel("X (m)")
+        plt.ylabel("Phase [rad]")
+
+        f4 = plt.figure(4)
+        plt.plot(wavefront.get_abscissas(), wavefront_focused.get_phase())
+        plt.title("Plane wave after ideal lens")
+        plt.xlabel("X (m)")
+        plt.ylabel("Phase [rad]")
+
+        print(wavefront.get_complex_amplitude())
+        plt.show()
+
+if __name__ == "__main__":
+    test_plane_wave(do_plot=1)
+
+
 
 
 
