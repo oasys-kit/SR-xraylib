@@ -1,16 +1,10 @@
 import numpy
 
-try:
-    import srxraylib
-except:
-    import sys
-    sys.path.append("./../../")
-    print("Importing srxraylib from local directory: ./../../")
-    import srxraylib
 
 from srxraylib.util.data_structures import ScaledArray
 from srxraylib.waveoptics.wavefront import Wavefront1D
 
+# TODO: check resulting amplitude normalization
 
 def propagate_1D_fraunhofer(wavefront, propagation_distance):
     """
@@ -56,6 +50,26 @@ def propagate_1D_fresnel(wavefront, propagation_distance):
 
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
 
+
+def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
+    """
+    1D Fresnel propagator using direct convolution
+    :param wavefront:
+    :param propagation_distance:
+    :return:
+    """
+
+    # instead of numpy.convolve, this can be used:
+    # from scipy.signal import fftconvolve
+
+    kernel = numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() * wavefront.get_abscissas()**2 / 2 / propagation_distance)
+    kernel *= numpy.exp(1j*2*numpy.pi/wavefront.get_wavelength() * propagation_distance)
+    kernel /=  1j * wavefront.get_wavelength() * propagation_distance
+    tmp = numpy.convolve(wavefront.get_complex_amplitude(),kernel,mode='same')
+
+    return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(tmp, wavefront.offset(), wavefront.delta()))
+
+
 def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[None]):
     """
     1D Fresnel-Kirchhoff propagator via simplified integral
@@ -87,13 +101,13 @@ def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[N
 # tests/example cases
 #
 
-def test_fraunhofer_1D(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wavefront_length=800e-6,distance=0,npoints=1000):
+def test_propagate_1D_fraunhofer(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wavefront_length=800e-6,distance=0,npoints=1000):
     print("#                                                            ")
     print("# far field (fraunhofer) diffraction from a square aperture  ")
     print("#                                                            ")
 
     wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=wavelength, number_of_points=npoints, x_min=-wavefront_length/2, x_max=wavefront_length/2)
-    wavefront.set_plane_wave_from_complex_amplitude((2.0+1.0j))
+    wavefront.set_plane_wave_constant_complex_amplitude((2.0+1.0j))
 
     wavefront.apply_slit(-aperture_diameter/2, aperture_diameter/2)
 
@@ -107,7 +121,7 @@ def test_fraunhofer_1D(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wav
     intensity_theory /= intensity_theory.max()
 
 
-    if do_plot:
+    if do_plot == 1:
         import matplotlib.pylab as plt
         f1 = plt.figure(1)
         intensity_calculated =  wavefront_1.get_intensity()
@@ -121,6 +135,15 @@ def test_fraunhofer_1D(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wav
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(0.95, 0.95))
         plt.show()
+    elif do_plot == 2:
+        from srxraylib.plot.gol import plot
+        intensity_calculated =  wavefront_1.get_intensity()
+        intensity_calculated /= intensity_calculated.max()
+        plot(wavefront_1.get_abscissas()*1e6,intensity_calculated,
+             wavefront_1.get_abscissas()*1e6,intensity_theory,
+             legend=["Calculated (FT)","Theoretical"],legend_position=(0.95, 0.95),
+             title="Fraunhofer Diffraction of a square slit of %3.1f um at wavelength of %3.1f A"%(aperture_diameter*1e6,wavelength*1e10),
+             xtitle="X (urad)", ytitle="Intensity",xrange=[-60,60])
 
 
 
@@ -130,7 +153,7 @@ def test_propagate_1D_fresnel(do_plot=0,wavelength=1.24e-10,aperture_diameter=40
     print("#                                                             ")
 
     wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=wavelength, number_of_points=npoints, x_min=-wavefront_length/2, x_max=wavefront_length/2)
-    wavefront.set_plane_wave_from_complex_amplitude((2.0+1.0j))
+    wavefront.set_plane_wave_constant_complex_amplitude((2.0+1.0j))
     wavefront.apply_slit(-aperture_diameter/2, aperture_diameter/2)
 
     wavefront_1 = propagate_1D_fresnel(wavefront, distance)
@@ -139,7 +162,7 @@ def test_propagate_1D_fresnel(do_plot=0,wavelength=1.24e-10,aperture_diameter=40
     wavefront_2a.apply_ideal_lens(distance/2)
     wavefront_2b = propagate_1D_fresnel(wavefront_2a, distance/2)
 
-    if do_plot:
+    if do_plot == 1:
         import matplotlib.pylab as plt
         f1 = plt.figure(1)
 
@@ -158,7 +181,67 @@ def test_propagate_1D_fresnel(do_plot=0,wavelength=1.24e-10,aperture_diameter=40
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(1.0,0.95))
         plt.show()
+    elif do_plot == 2:
+        from srxraylib.plot.gol import plot
+        normalized_intensity = wavefront_1.get_intensity()
+        normalized_intensity /= normalized_intensity.max()
 
+        normalized_intensity2 = wavefront_2b.get_intensity()
+        normalized_intensity2 /= normalized_intensity2.max()
+
+        plot(wavefront_1.get_abscissas()*1e6, normalized_intensity,
+             wavefront_2b.get_abscissas()*1e6, normalized_intensity2,
+             legend=["Propagated at %3.1f m"%distance,"Focused %3.1f:%3.1f"%(distance/2,distance/2)],legend_position=(1.0,0.95),
+             title="Fresnel Diffraction of a square slit",
+             xtitle="X (um)", ytitle="Intensity",xrange=[-60,60])
+
+def test_propagate_1D_fresnel_convolution(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wavefront_length=800e-6,distance=3.6,npoints=1000):
+    print("#                                                             ")
+    print("# near field (fresnel) diffraction from a square aperture     ")
+    print("#                                                             ")
+
+    wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=wavelength, number_of_points=npoints, x_min=-wavefront_length/2, x_max=wavefront_length/2)
+    wavefront.set_plane_wave_constant_complex_amplitude((2.0+1.0j))
+    wavefront.apply_slit(-aperture_diameter/2, aperture_diameter/2)
+
+    wavefront_1 = propagate_1D_fresnel_convolution(wavefront, distance)
+
+    wavefront_2a = propagate_1D_fresnel_convolution(wavefront, distance/2)
+    wavefront_2a.apply_ideal_lens(distance/2)
+    wavefront_2b = propagate_1D_fresnel_convolution(wavefront_2a, distance/2)
+
+    if do_plot == 1:
+        import matplotlib.pylab as plt
+        f1 = plt.figure(1)
+
+        normalized_intensity = wavefront_1.get_intensity()
+        normalized_intensity /= normalized_intensity.max()
+        plt.plot(wavefront_1.get_abscissas()*1e6, normalized_intensity, label="Propagated at %3.1f m"%distance)
+
+        normalized_intensity2 = wavefront_2b.get_intensity()
+        normalized_intensity2 /= normalized_intensity2.max()
+        plt.plot(wavefront_2b.get_abscissas()*1e6, normalized_intensity2, label="Focused %3.1f:%3.1f"%(distance/2,distance/2))
+
+        plt.title("Fresnel Diffraction (VIA CONVOLUTION) of a square slit")
+        plt.xlabel("X (um)")
+        plt.ylabel("Intensity")
+        plt.xlim([-60, 60])
+        ax = plt.subplot(111)
+        ax.legend(bbox_to_anchor=(1.0,0.95))
+        plt.show()
+    elif do_plot == 2:
+        from srxraylib.plot.gol import plot
+        normalized_intensity = wavefront_1.get_intensity()
+        normalized_intensity /= normalized_intensity.max()
+
+        normalized_intensity2 = wavefront_2b.get_intensity()
+        normalized_intensity2 /= normalized_intensity2.max()
+
+        plot(wavefront_1.get_abscissas()*1e6, normalized_intensity,
+             wavefront_2b.get_abscissas()*1e6, normalized_intensity2,
+             legend=["Propagated at %3.1f m"%distance,"Focused %3.1f:%3.1f"%(distance/2,distance/2)],legend_position=(1.0,0.95),
+             title="Fresnel Diffraction (VIA CONVOLUTION) of a square slit",
+             xtitle="X (um)", ytitle="Intensity",xrange=[-60,60])
 
 def test_propagate_1D_integral(do_plot=0,wavelength=1.24e-10,aperture_diameter=40e-6,wavefront_length=800e-6,distance=3.6,npoints=1000):
     print("#                                                             ")
@@ -166,7 +249,7 @@ def test_propagate_1D_integral(do_plot=0,wavelength=1.24e-10,aperture_diameter=4
     print("#                                                             ")
 
     wavefront = Wavefront1D.initialize_wavefront_from_range(wavelength=wavelength, number_of_points=npoints, x_min=-wavefront_length/2, x_max=wavefront_length/2)
-    wavefront.set_plane_wave_from_complex_amplitude((2.0+1.0j))
+    wavefront.set_plane_wave_constant_complex_amplitude((2.0+1.0j))
     wavefront.apply_slit(-aperture_diameter/2, aperture_diameter/2)
 
     detector_abscissas = numpy.linspace(-60e-6,60e-6,npoints)
@@ -176,7 +259,7 @@ def test_propagate_1D_integral(do_plot=0,wavelength=1.24e-10,aperture_diameter=4
     wavefront_2a.apply_ideal_lens(distance/2)
     wavefront_2b = propagate_1D_integral(wavefront_2a, distance/2, detector_abscissas=detector_abscissas)
 
-    if do_plot:
+    if do_plot == 1:
         import matplotlib.pylab as plt
         f1 = plt.figure(1)
         normalized_intensity = wavefront_1.get_intensity()
@@ -189,18 +272,33 @@ def test_propagate_1D_integral(do_plot=0,wavelength=1.24e-10,aperture_diameter=4
         normalized_intensity2 /= normalized_intensity2.max()
         plt.plot(wavefront_2b.get_abscissas()*1e6, normalized_intensity2, label="Focused %3.1f:%3.1f"%(distance/2,distance/2))
 
-        plt.title("Fresnel_Kirchhoff integral diffraction of a square slit")
+        plt.title("Fresnel-Kirchhoff integral diffraction of a square slit")
         plt.xlabel("X (um)")
         plt.ylabel("Intensity")
         plt.xlim([-60, 60])
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(1.0,0.95))
         plt.show()
+    elif do_plot == 2:
+        from srxraylib.plot.gol import plot
+
+        normalized_intensity = wavefront_1.get_intensity()
+        normalized_intensity /= normalized_intensity.max()
+
+        normalized_intensity2 = wavefront_2b.get_intensity()
+        normalized_intensity2 /= normalized_intensity2.max()
+
+        plot(wavefront_1.get_abscissas()*1e6, normalized_intensity,
+             wavefront_2b.get_abscissas()*1e6, normalized_intensity2,
+             legend=["Propagated at %3.1f m"%distance,"Focused %3.1f:%3.1f"%(distance/2,distance/2)],legend_position=(1.0,0.95),
+             title="Fresnel_Kirchhoff integral diffraction of a square slit",
+             xtitle="X (um)", ytitle="Intensity",xrange=[-60,60])
 
 
 
 if __name__ == "__main__":
 
-    test_fraunhofer_1D(do_plot=1)
-    test_propagate_1D_fresnel(do_plot=1)
-    test_propagate_1D_integral(do_plot=1)
+    test_propagate_1D_fraunhofer(do_plot=2)
+    test_propagate_1D_fresnel(do_plot=2)
+    test_propagate_1D_fresnel_convolution(do_plot=2)
+    test_propagate_1D_integral(do_plot=2)
