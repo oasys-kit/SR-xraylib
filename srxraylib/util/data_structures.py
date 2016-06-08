@@ -23,13 +23,18 @@ class ScaledMatrix(object):
 
         self.stored_shape = self._shape()
 
-
+        #
+        # write now interpolator means that the interpolator is up to date and stored in the
+        # interpolated value. interpolator must be changed to False when something of the wavefront
+        # is changed. When interpolation is requiref, compute_interpolator() is called.
+        # Withouth loss of generality, Wavefront2D can always be initialize with
+        # interpolator=False. Then it will be switched on when needed.
+        # It has been implemented for saving time in recomputing the interpolator if it is not needed
         self.interpolator = interpolator
         self.interpolator_value = None
 
         if interpolator:
             self.compute_interpolator()
-
 
     @classmethod
     def initialize(cls, np_array_z = numpy.zeros((0,0)),interpolator=False):
@@ -89,26 +94,28 @@ class ScaledMatrix(object):
 
     def set_z_value(self, x_index, y_index, z_value):
         self.z_values[x_index][y_index] = z_value
+        self.interpolator = False
 
     def set_z_values(self, new_value):
         if new_value.shape != self.shape():
             raise Exception("New data set must have same shape as old one")
         else:
             self.z_values = new_value
+            self.interpolator = False
 
     def interpolate_value(self, x_coord, y_coord):
         if self.interpolator == False:
-            raise Exception("interpolator not set")
+            self.compute_interpolator()
         return self.interpolator_value[0].ev(x_coord, y_coord) + 1j * self.interpolator_value[1].ev(x_coord, y_coord)
 
     def compute_interpolator(self):
         from scipy import interpolate
         print("<><><><><> Computing interpolator...")
-        self.interpolator = True
         self.interpolator_value = (
             interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.real(self.z_values)),
             interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.imag(self.z_values)),
             )
+        self.interpolator = True
 
     '''
     Equivalent to the IGOR command: SetScale /P (wave, min value, max value)
@@ -126,6 +133,7 @@ class ScaledMatrix(object):
             elif axis == 1: self.y_coord = scale
 
             self.stored_shape = self._shape()
+            self.interpolator = False
 
     '''
     Equivalent to the IGOR command: SetScale /I (wave, min value, max value)
@@ -136,6 +144,7 @@ class ScaledMatrix(object):
             if max_scale_value <= min_scale_value: raise Exception("Max Scale Value ("+ str(max_scale_value) + ") must be > Min Scale Vale(" + str(min_scale_value) + ")")
 
             self.set_scale_from_steps(axis, min_scale_value, (max_scale_value - min_scale_value)/((self.stored_shape[axis])-1))
+            self.interpolator = False
 
 #######################################
 
