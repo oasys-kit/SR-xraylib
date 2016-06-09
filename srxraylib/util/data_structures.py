@@ -357,9 +357,10 @@ def test_ScaledMatrix(do_plot=0):
     #
 
     x = numpy.arange(100,200,2.0)
-    y = numpy.arange(200,300,1.0)
+    y = numpy.arange(200,250,1.0)
     Z = numpy.array(numpy.meshgrid(y,x))  # Z[0] contains Y, Z[1] contains X
-    print("x,Y,Z shape", x.shape, y.shape, Z.shape)
+
+    print("x,Y,Z shape",x.shape,y.shape,Z.shape)
 
     #
     # scaledMatrix.initialize + set_scale_from_steps

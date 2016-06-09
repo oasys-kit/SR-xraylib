@@ -129,13 +129,17 @@ class Wavefront2D(object):
     def set_plane_wave_from_amplitude_and_phase(self, amplitude=1.0, phase=0.0):
         self.set_plane_wave_from_complex_amplitude(amplitude*numpy.cos(phase) + 1.0j*amplitude*numpy.sin(phase))
 
-    def set_spherical_wave(self, amplitude=1.0, radius=1.0):
+    def set_spherical_wave(self, complex_amplitude=1.0, radius=1.0):
+        """
+
+        :param complex_amplitude:
+        :param radius:  Positive radius is divergent wavefront, negative radius is convergent
+        :return:
+        """
         if radius == 0:
             raise Exception("Radius cannot be zero")
-        X = self.electric_field_array.get_x_values()
-        Y = self.electric_field_array.get_y_values()
-        XY = numpy.meshgrid(X,Y)
-        new_value = (amplitude/radius)*numpy.exp(-1.0j*self.get_wavenumber()*(XY[0]**2+XY[1]**2)/(2*radius))
+        new_value = (complex_amplitude/(-radius))*numpy.exp(-1.0j * self.get_wavenumber() *
+                                (self.get_mesh_x()**2+self.get_mesh_y()**2)/(-2*radius))
         self.electric_field_array.set_z_values(new_value)
 
     def add_phase_shift(self, phase_shift):
@@ -163,10 +167,8 @@ class Wavefront2D(object):
         self.electric_field_array.set_z_values(new_value)
 
     def apply_ideal_lens(self, focal_length_x, focal_length_y):
-        X = self.electric_field_array.get_x_values()
-        Y = self.electric_field_array.get_y_values()
-        XY = numpy.meshgrid(X,Y)
-        self.add_phase_shifts((-1.0) * self.get_wavenumber() * ( ( (XY[0]**2)/focal_length_x + (XY[1]**2)/focal_length_y) / 2))
+        self.add_phase_shifts( -1.0  * self.get_wavenumber() *
+                ( (self.get_mesh_x()**2/focal_length_x + self.get_mesh_y()**2/focal_length_y) / 2))
 
     def apply_slit(self, x_slit_min, x_slit_max, y_slit_min, y_slit_max):
         window = numpy.ones(self.electric_field_array.shape())
