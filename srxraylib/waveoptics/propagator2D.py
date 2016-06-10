@@ -1,5 +1,21 @@
 import numpy
 
+#
+# implements 2D propagators:
+#
+#   propagate_2D_fraunhofer: Far field Fraunhofer propagator. TODO: Check phases, not to be used for downstream propagation
+#   propagate_2D_integral: Simplification of the Kirchhoff-Fresnel integral. TODO: Very slow and and give some problems
+#
+#
+#   propagate_2D_fresnel               \
+#   propagate_2D_fresnel_convolution   | Near field Fresnel propagators via convolution in Fourier space. Three methods
+#   propagate_2D_fresnel_srw           /
+#
+#          three methods available: 'fft': fft -> multiply by kernel in freq -> ifft
+#                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
+#                                   'srw': use the SRW package
+#
+#
 
 from srxraylib.util.data_structures import ScaledMatrix
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
@@ -60,7 +76,7 @@ def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0):
         freq_x *= propagation_distance
         freq_y *= propagation_distance
 
-    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(F2,freq_x,freq_y,wavelength=wavelength)
+    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(freq_x,freq_y,F2,wavelength=wavelength)
     return  wf_propagated
 
 def propagate_2D_fresnel(wavefront, propagation_distance):
@@ -133,9 +149,9 @@ def propagate_2D_fresnel_convolution(wavefront, propagation_distance):
     kernel /=  1j * wavefront.get_wavelength() * propagation_distance
     tmp = fftconvolve(wavefront.get_complex_amplitude(),kernel,mode='same')
 
-    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(tmp,
-                                                                 wavefront.get_coordinate_x(),
+    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(wavefront.get_coordinate_x(),
                                                                  wavefront.get_coordinate_y(),
+                                                                 tmp,
                                                                  wavelength=wavelength)
     return wf_propagated
 
@@ -145,7 +161,7 @@ def propagate_2D_fresnel_srw(wavefront, propagation_distance,
     2D Fresnel propagator using convolution via Fourier transform
     :param wavefront:
     :param propagation_distance:
-    :param srw_autosetting:
+    :param srw_autosetting:set to 1 for automatic SRW redimensionate wavefront
     :return:
     """
 
@@ -409,7 +425,6 @@ def test_propagate_2D_fraunhofer(do_plot=0,wavelength=1.24e-10,aperture_type='sq
 #          three methods available: 'fft': fft -> multiply by kernel in freq -> ifft
 #                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
 #                                   'srw': use the SRW package
-#
 def test_propagate_2D_fresnel(do_plot=0,method='fft',
                             wavelength=1.24e-10,aperture_type='square',aperture_diameter=40e-6,
                             pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
@@ -607,7 +622,7 @@ def test_propagate_2D_integral(do_plot=0,
 
 def test_lens(do_plot=0,method='fft',
                             wavelength=1.24e-10,
-                            pixelsize_x=1e-6,npixels_x=1024,pixelsize_y=1e-6,npixels_y=1024/2,
+                            pixelsize_x=1e-6,npixels_x=2000,pixelsize_y=1e-6,npixels_y=2000,
                             propagation_distance = 30.0,show=1):
 
 
@@ -629,15 +644,21 @@ def test_lens(do_plot=0,method='fft',
                                                             wavelength=wavelength,
                                                             number_of_points=(npixels_x,npixels_y))
 
-    # wf.set_plane_wave_from_complex_amplitude(1.0+0j)
+    wf.set_plane_wave_from_complex_amplitude(1.0+0j)
 
     # set spherical wave at the lens entrance (radius=distance)
-    wf.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+    # wf.set_spherical_wave(complex_amplitude=1.0,radius=-propagation_distance)
 
     # apply lens that will focus at propagation_distance downstream the lens.
     # Note that the vertical is a bit defocused
-    focal_length = propagation_distance / 2
-    wf.apply_ideal_lens(focal_length,1+focal_length)
+    focal_length = propagation_distance # / 2
+    wf.apply_ideal_lens(focal_length,focal_length)
+
+    # if do_plot:
+    #     from srxraylib.plot.gol import plot,plot_image
+    #     plot_image(wf.get_phase(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='INCOMING phase (%s)'%method,show=0)
+    #     plot_image(wf.get_intensity(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='INCOMING intensity (%s)'%method,show=0)
+
 
     # propagation downstream the lens to image plane
     if method == 'fft':
@@ -661,16 +682,15 @@ def test_lens(do_plot=0,method='fft',
 
     if do_plot:
         from srxraylib.plot.gol import plot,plot_image
-        # plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),title='intensity (%s)'%method,show=0)
+        plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),title='intensity (%s)'%method,show=0)
         # plot_image(wf2.get_amplitude(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),title='amplitude (%s)'%method,show=0)
         plot_image(wf2.get_phase(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),title='phase (%s)'%method,show=0)
-
 
         plot(wf2.get_coordinate_x(),horizontal_profile,
              wf2.get_coordinate_y(),vertical_profile,
              legend=['Horizontal profile','Vertical profile'],title="%s"%method,show=show)
 
-
+#TODO move this somewhere else
 def line_fwhm(line):
     #
     #CALCULATE fwhm in number of abscissas bins (supposed on a regular grid)
@@ -685,13 +705,18 @@ def line_fwhm(line):
 
 if __name__ == "__main__":
     do_plot = 1
+
     # test_propagate_2D_fraunhofer(do_plot=do_plot,aperture_type='gaussian')
-    # test_propagate_2D_fresnel(do_plot=do_plot,method='fft',aperture_type='circle',show=0)
-    # test_propagate_2D_fresnel(do_plot=do_plot,method='convolution',aperture_type='circle')
-    # test_propagate_2D_fresnel(do_plot=do_plot,method='srw',aperture_type='circle')
+
+    # TODO very slow
     # test_propagate_2D_integral(do_plot=do_plot,aperture_type='circle')
 
-    test_lens(method='fft',do_plot=do_plot,show=0)
-    # test_lens(method='convolution',do_plot=do_plot,show=0)
+    # test_propagate_2D_fresnel(do_plot=do_plot,method='fft',aperture_type='circle',show=0)
+    # test_propagate_2D_fresnel(do_plot=do_plot,method='convolution',aperture_type='circle',show=0)
+    # test_propagate_2D_fresnel(do_plot=do_plot,method='srw',aperture_type='circle',show=1)
+
+
     # test_lens(method='fraunhofer',do_plot=do_plot,show=0)
-    test_lens(method='srw',do_plot=do_plot,show=1)
+    # test_lens(method='fft',do_plot=do_plot,show=0)
+    test_lens(method='convolution',do_plot=do_plot,show=1)
+    # test_lens(method='srw',do_plot=do_plot,show=1)

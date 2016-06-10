@@ -6,7 +6,7 @@ from srxraylib.waveoptics.wavefront import Wavefront1D
 
 # TODO: check resulting amplitude normalization
 
-def propagate_1D_fraunhofer(wavefront, propagation_distance):
+def propagate_1D_fraunhofer(wavefront, propagation_distance=0.0):
     """
     1D Fraunhofer propagator using convolution via Fourier transform
     :param wavefront:
@@ -31,8 +31,9 @@ def propagate_1D_fraunhofer(wavefront, propagation_distance):
     if propagation_distance == 0:
         return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(fft2, freq_x_offset, freq_x_delta))
     else:
-        x = freq_x * propagation_distance
-        return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(fft2, x[0], x[1]-x[0]))
+        # x = freq_x * propagation_distance
+        return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(
+            fft2, freq_x_offset*propagation_distance,freq_x_delta*propagation_distance))
 
 
 def propagate_1D_fresnel(wavefront, propagation_distance):
@@ -222,6 +223,69 @@ def test_propagate_1D_integral(do_plot=0,wavelength=1.24e-10,aperture_diameter=4
              title="Fresnel_Kirchhoff integral diffraction of a square slit",
              xtitle="X (um)", ytitle="Intensity",xrange=[-60,60])
 
+def test_lens(do_plot=0,method='fft',
+                            wavelength=1.24e-10,
+                            pixelsize_x=1e-6/2,npixels_x=1001,
+                            propagation_distance = 30.0,show=1):
+
+
+    method_label = "fresnel (%s)"%method
+    print("#                                                             ")
+    print("# near field fresnel (%s) diffraction and focusing  "%(method_label))
+    print("#                                                             ")
+
+    #                               \ |  /
+    #   *                           | | |                      *
+    #                               / | \
+    #   <-------    d  ---------------><---------   d   ------->
+    #   d is propagation_distance
+
+    wf = Wavefront1D.initialize_wavefront_from_steps(x_start=-pixelsize_x*npixels_x/2,x_step=pixelsize_x,
+                                                     wavelength=wavelength,number_of_points=npixels_x)
+
+
+    # wf.set_plane_wave_from_complex_amplitude(1.0+0j)
+
+    # set spherical wave at the lens entrance (radius=distance)
+    wf.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+
+    # apply lens that will focus at propagation_distance downstream the lens.
+    focal_length = propagation_distance / 2
+    wf.apply_ideal_lens(focal_length)
+
+    # propagation downstream the lens to image plane with different methods
+    wf2_fft = propagate_1D_fresnel(wf, propagation_distance)
+    wf2_convolution = propagate_1D_fresnel_convolution(wf, propagation_distance)
+    wf2_fraunhofer = propagate_1D_fraunhofer(wf, propagation_distance)
+    wf2_integral = propagate_1D_integral(wf, propagation_distance)
+
+    print("FWHM of the profile: %g um"%(1e6*line_fwhm(wf2_fft.get_intensity())*wf2_fft.delta()))
+
+
+    if do_plot:
+        from srxraylib.plot.gol import plot, plot_table
+
+
+        tmp = numpy.vstack (( wf2_fft.get_intensity()        / wf2_fft.get_intensity().max()        ,
+                                          wf2_convolution.get_intensity()/ wf2_convolution.get_intensity().max(),
+                                          wf2_integral.get_intensity()   / wf2_integral.get_intensity().max()
+                                            ))
+
+        plot_table(wf2_fft.get_abscissas(),tmp,legend=['fft','convolution','integral'],title="Focusing an spherical wave")
+
+#TODO move this somewhere else
+def line_fwhm(line):
+    #
+    #CALCULATE fwhm in number of abscissas bins (supposed on a regular grid)
+    #
+    tt = numpy.where(line>=max(line)*0.5)
+    if line[tt].size > 1:
+        # binSize = x[1]-x[0]
+        FWHM = (tt[0][-1]-tt[0][0])
+        return FWHM
+    else:
+        return -1
+
 
 
 if __name__ == "__main__":
@@ -230,3 +294,5 @@ if __name__ == "__main__":
     test_propagate_1D_fresnel(do_plot=do_plot)
     test_propagate_1D_fresnel_convolution(do_plot=do_plot)
     test_propagate_1D_integral(do_plot=do_plot)
+
+    test_lens(do_plot=do_plot,method='fft')

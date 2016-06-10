@@ -4,7 +4,6 @@ from srxraylib.util.data_structures import ScaledMatrix
 
 #------------------------------------------------
 #
-#
 # Implements Wavefront2D object
 #
 #------------------------------------------------
@@ -18,13 +17,13 @@ class Wavefront2D(object):
         self.electric_field_array = electric_field_array
 
     @classmethod
-    def initialize_wavefront(cls, wavelength=1e-10, number_of_points=(100,100)):
+    def initialize_wavefront(cls, number_of_points=(100,100) ,wavelength=1e-10):
         return Wavefront2D(wavelength, ScaledMatrix.initialize(
             np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),interpolator=False))
 
     @classmethod
     def initialize_wavefront_from_steps(cls, x_start=0.0, x_step=0.0, y_start=0.0, y_step=0.0,
-                                        wavelength=1e-10, number_of_points=(100,100),):
+                                        number_of_points=(100,100),wavelength=1e-10, ):
         sM = ScaledMatrix.initialize_from_steps(
                     numpy.full(number_of_points,(1.0 + 0.0j), dtype=complex),
                     x_start,x_step,y_start,y_step,interpolator=False)
@@ -33,11 +32,22 @@ class Wavefront2D(object):
 
     @classmethod
     def initialize_wavefront_from_range(cls, x_min=0.0, x_max=0.0, y_min=0.0, y_max=0.0,
-                                        wavelength=1e-10, number_of_points=(100,100), ):
+                                        number_of_points=(100,100), wavelength=1e-10 ):
         return Wavefront2D(wavelength, ScaledMatrix.initialize_from_range( \
                     numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
                     x_min,x_max,y_min,y_max,interpolator=False))
 
+    @classmethod
+    def initialize_wavefront_from_arrays(cls,x_array, y_array,  z_array, wavelength=1e-10):
+        sh = z_array.shape
+        if sh[0] != x_array.size:
+            raise Exception("Unmatched shapes for x")
+        if sh[1] != y_array.size:
+            raise Exception("Unmatched shapes for y")
+        sM = ScaledMatrix.initialize_from_steps(
+                    z_array,x_array[0],numpy.abs(x_array[1]-x_array[0]),
+                            y_array[0],numpy.abs(y_array[1]-y_array[0]),interpolator=False)
+        return Wavefront2D(wavelength,sM)
 
     # main parameters
 
@@ -71,8 +81,16 @@ class Wavefront2D(object):
     def get_amplitude(self):
         return numpy.absolute(self.get_complex_amplitude())
 
-    def get_phase(self):
-        return numpy.arctan2(numpy.imag(self.get_complex_amplitude()), numpy.real(self.get_complex_amplitude()))
+    def get_phase(self,from_minimum_intensity=0.0):
+        # return numpy.arctan2(numpy.imag(self.get_complex_amplitude()), numpy.real(self.get_complex_amplitude()))
+        phase = numpy.angle( self.get_complex_amplitude() )
+
+        if (from_minimum_intensity > 0.0):
+            intensity = self.get_intensity()
+            intensity /= intensity.max()
+            bad_indices = numpy.where(intensity < from_minimum_intensity )
+            phase[bad_indices] = 0.0
+        return phase
 
     def get_intensity(self):
         return self.get_amplitude()**2
@@ -117,8 +135,21 @@ class Wavefront2D(object):
     def get_interpolated_intensities(self, x_value,y_value):
         return self.get_interpolated(x_value,y_value,toreturn='intensity')
 
+    # only for 2D
+    def get_mesh_x(self):
+        XY = numpy.meshgrid(self.get_coordinate_x(),self.get_coordinate_y())
+        return XY[0].T
+
+    def get_mesh_y(self):
+        XY = numpy.meshgrid(self.get_coordinate_x(),self.get_coordinate_y())
+        return XY[1].T
 
     # modifiers
+
+    def set_complex_amplitude(self,complex_amplitude):
+        if self.electric_field_array.shape() != complex_amplitude.shape:
+            raise Exception("Incompatible shape")
+        self.electric_field_array.set_z_values(complex_amplitude)
 
     def set_plane_wave_from_complex_amplitude(self, complex_amplitude=(1.0 + 0.0j)):
         new_value = self.electric_field_array.get_z_values()
@@ -129,7 +160,7 @@ class Wavefront2D(object):
     def set_plane_wave_from_amplitude_and_phase(self, amplitude=1.0, phase=0.0):
         self.set_plane_wave_from_complex_amplitude(amplitude*numpy.cos(phase) + 1.0j*amplitude*numpy.sin(phase))
 
-    def set_spherical_wave(self, complex_amplitude=1.0, radius=1.0):
+    def set_spherical_wave(self,  radius=1.0, complex_amplitude=1.0,):
         """
 
         :param complex_amplitude:
@@ -140,6 +171,8 @@ class Wavefront2D(object):
             raise Exception("Radius cannot be zero")
         new_value = (complex_amplitude/(-radius))*numpy.exp(-1.0j * self.get_wavenumber() *
                                 (self.get_mesh_x()**2+self.get_mesh_y()**2)/(-2*radius))
+        # new_value = numpy.exp(-1.0j * self.get_wavenumber() *
+        #                         (self.get_mesh_x()**2+self.get_mesh_y()**2)/(-2*radius))
         self.electric_field_array.set_z_values(new_value)
 
     def add_phase_shift(self, phase_shift):
@@ -187,39 +220,14 @@ class Wavefront2D(object):
 
     # new
 
-    def get_mesh_x(self):
-        XY = numpy.meshgrid(self.get_coordinate_x(),self.get_coordinate_y())
-        return XY[0].T
 
-    def get_mesh_y(self):
-        XY = numpy.meshgrid(self.get_coordinate_x(),self.get_coordinate_y())
-        return XY[1].T
 
-    def set_complex_amplitude(self,complex_amplitude):
-        if self.electric_field_array.shape() != complex_amplitude.shape:
-            raise Exception("Incompatible shape")
-        self.electric_field_array.set_z_values(complex_amplitude)
 
-    @classmethod
-    def initialize_wavefront_from_arrays(cls, z_array, x_array, y_array, wavelength=1e-10,):
-        sh = z_array.shape
-        if sh[0] != x_array.size:
-            raise Exception("Unmatched shapes for x")
-        if sh[1] != y_array.size:
-            raise Exception("Unmatched shapes for y")
-        sM = ScaledMatrix.initialize_from_steps(
-                    z_array,x_array[0],numpy.abs(x_array[1]-x_array[0]),
-                            y_array[0],numpy.abs(y_array[1]-y_array[0]),interpolator=False)
-        return Wavefront2D(wavelength,sM)
 
     def apply_pinhole(self, radius, x_center=0.0, y_center=0.0):
         window = numpy.zeros(self.electric_field_array.shape())
-
-        x = self.get_coordinate_x()
-        y = self.get_coordinate_y()
-        XY = numpy.meshgrid(x,y)
-        X = XY[0].T
-        Y = XY[1].T
+        X = self.get_mesh_x()
+        Y = self.get_mesh_y()
         distance_to_center = numpy.sqrt( (X-x_center)**2 + (Y-y_center)**2 )
         indices_inside = numpy.where(distance_to_center <= radius)
         window[indices_inside] = 1.0
@@ -334,10 +342,17 @@ def test_interpolator(do_plot=0):
 
     x = numpy.linspace(-10,10,100)
     y = numpy.linspace(-20,20,50)
-    XY = numpy.meshgrid(y,x)
+    # XY = numpy.meshgrid(y,x)
+    # sigma = 3.0
+    # Z = numpy.exp(- (XY[0]**2+XY[1]**2)/2/sigma**2)
+
+    xy = numpy.meshgrid(x,y)
+    X = xy[0].T
+    Y = xy[1].T
     sigma = 3.0
-    Z = numpy.exp(- (XY[0]**2+XY[1]**2)/2/sigma**2)
-    print("???? Z",Z.shape)
+    Z = numpy.exp(- (X**2+Y**2)/2/sigma**2)
+
+    print("shape of Z",Z.shape)
 
     wf = Wavefront2D.initialize_wavefront_from_steps(x[0],x[1]-x[0],y[0],y[1]-y[0],number_of_points=(100,50))
     print("wf shape: ",wf.size())
@@ -358,7 +373,7 @@ def test_interpolator(do_plot=0):
     if do_plot:
         from srxraylib.plot.gol import plot_image
         plot_image(wf.get_intensity(),wf.get_coordinate_x(),wf.get_coordinate_y(),title="Original",show=0)
-        plot_image(wf.get_interpolated_intensity(XY[0],XY[1]),wf.get_coordinate_x(),wf.get_coordinate_y(),
+        plot_image(wf.get_interpolated_intensity(X,Y),wf.get_coordinate_x(),wf.get_coordinate_y(),
                    title="interpolated on same grid",show=1)
 
 

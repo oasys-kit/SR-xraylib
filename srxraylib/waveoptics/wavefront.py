@@ -24,15 +24,26 @@ class Wavefront1D(object):
         return Wavefront1D(wavelength, ScaledArray.initialize(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex)))
 
     @classmethod
-    def initialize_wavefront_from_steps(cls, wavelength=1e-10, number_of_points=1000, x_start=0.0, x_step=0.0):
+    def initialize_wavefront_from_steps(cls, x_start=0.0, x_step=0.0, number_of_points=1000, wavelength=1e-10):
         return Wavefront1D(wavelength, ScaledArray.initialize_from_steps(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
                                                                          initial_scale_value=x_start,
                                                                          scale_step=x_step))
     @classmethod
-    def initialize_wavefront_from_range(cls, wavelength=1e-10, number_of_points=1000, x_min=0.0, x_max=0.0):
+    def initialize_wavefront_from_range(cls, x_min=0.0, x_max=0.0, number_of_points=1000, wavelength=1e-10 ):
         return Wavefront1D(wavelength, ScaledArray.initialize_from_range(np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),
                                                                          min_scale_value=x_min,
                                                                          max_scale_value=x_max))
+
+    @classmethod
+    def initialize_wavefront_from_arrays(cls, x_array, y_array, wavelength=1e-10,):
+        if x_array.size != y_array.size:
+            raise Exception("Unmatched shapes for x and y")
+
+        return Wavefront1D(wavelength, ScaledArray.initialize_from_steps(np_array=y_array,
+                                                                         initial_scale_value=x_array[0],
+                                                                         scale_step=numpy.abs(x_array[1]-x_array[0])))
+
+
     # main parameters
 
     def size(self):
@@ -59,8 +70,17 @@ class Wavefront1D(object):
     def get_amplitude(self):
         return numpy.absolute(self.get_complex_amplitude())
 
-    def get_phase(self):
-        return numpy.arctan2(numpy.imag(self.get_complex_amplitude()), numpy.real(self.get_complex_amplitude()))
+    def get_phase(self,from_minimum_intensity=0.0):
+        phase = numpy.angle(self.get_complex_amplitude())
+        if (from_minimum_intensity > 0.0):
+            intensity = self.get_intensity()
+            intensity /= intensity.max()
+            bad_indices = numpy.where(intensity < from_minimum_intensity )
+            phase[bad_indices] = 0.0
+
+        return phase
+
+
 
     def get_intensity(self):
         return self.get_amplitude()**2
@@ -95,21 +115,29 @@ class Wavefront1D(object):
 
     # modifiers
 
+
+    def set_complex_amplitude(self,complex_amplitude):
+        if complex_amplitude.size != self.electric_field_array.size():
+            raise Exception("Complex amplitude array has different dimension")
+        self.electric_field_array.np_array = complex_amplitude
+
     def set_plane_wave_from_complex_amplitude(self, complex_amplitude=(1.0 + 0.0j)):
         self.electric_field_array.np_array = numpy.full(self.electric_field_array.size(), complex_amplitude, dtype=complex)
 
     def set_plane_wave_from_amplitude_and_phase(self, amplitude=1.0, phase=0.0):
         self.set_plane_wave_from_complex_amplitude(amplitude*numpy.cos(phase) + 1.0j*amplitude*numpy.sin(phase))
 
-    def set_spherical_wave(self, amplitude=1.0, radius=1.0):
+    def set_spherical_wave(self, radius=1.0, complex_amplitude=1.0):
         if radius == 0: raise Exception("Radius cannot be zero")
-        self.electric_field_array.np_array = (amplitude/radius)*numpy.exp(-1.0j*self.get_wavenumber()*(self.electric_field_array.scale**2)/(2*radius))
+        self.electric_field_array.np_array = (complex_amplitude/(-radius))*numpy.exp(-1.0j*self.get_wavenumber()*
+                                            (self.electric_field_array.scale**2)/(-2*radius))
 
     def add_phase_shift(self, phase_shift):
         self.electric_field_array.np_array *= numpy.exp(1.0j*phase_shift)
 
     def add_phase_shifts(self, phase_shifts):
-        if phase_shifts.size != self.electric_field_array.size(): raise Exception("Phase Shifts array has different dimension")
+        if phase_shifts.size != self.electric_field_array.size():
+            raise Exception("Phase Shifts array has different dimension")
         self.electric_field_array.np_array =  numpy.multiply(self.electric_field_array.np_array, numpy.exp(1.0j*phase_shifts))
 
     def rescale_amplitude(self, factor):

@@ -65,30 +65,33 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
         y1 = positional_parameters[1]
         x2 = positional_parameters[2]
         y2 = positional_parameters[3]
-        if legend != None:
-            legend1 = legend[0]
-            legend2 = legend[1]
-        else:
+        if legend is None:
             legend1 = None
             legend2 = None
-        if color != None:
-            color1 = color[0]
-            color2 = color[1]
         else:
+            legend1 = legend[0]
+            legend2 = legend[1]
+
+        if color is None:
             color1 = None
             color2 = None
-        if marker != None:
-            marker1 = marker[0]
-            marker2 = marker[1]
         else:
+            color1 = color[0]
+            color2 = color[1]
+
+        if marker is None:
             marker1 = None
             marker2 = None
-        if linestyle != None:
-            linestyle1 = linestyle[0]
-            linestyle2 = linestyle[1]
         else:
+            marker1 = marker[0]
+            marker2 = marker[1]
+
+        if linestyle is None:
             linestyle1 = '-'
             linestyle2 = '-'
+        else:
+            linestyle1 = linestyle[0]
+            linestyle2 = linestyle[1]
 
         plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
         plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
@@ -98,7 +101,7 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
         y = positional_parameters[1]
         plt.plot(x,y,label=legend)
 
-    if legend != None:
+    if legend is not None:
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=legend_position)
 
@@ -138,20 +141,20 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
                 color = [color]
 
         for i in range(y.shape[0]):
-            if legend != None:
-                ilegend = legend[i]
-            else:
+            if legend is None:
                 ilegend = None
-
-            if color != None:
-                icolor = color[i]
             else:
+                ilegend = legend[i]
+
+            if color is None:
                 icolor = None
-
-            if errorbars != None:
-                plt.errorbar(x,y[i],yerr=errorbars[i],label=ilegend,color=icolor)
             else:
+                icolor = color[i]
+
+            if errorbars is None:
                 plt.plot(x,y[i],label=ilegend,color=icolor)
+            else:
+                plt.errorbar(x,y[i],yerr=errorbars[i],label=ilegend,color=icolor)
     else:
         raise Exception("Incorrect number of arguments")
 
@@ -159,7 +162,7 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
     plt.xlim( xrange )
     plt.ylim( yrange )
 
-    if legend != None:
+    if legend is not None:
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(1.1, 1.05))
 
@@ -282,24 +285,24 @@ def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None
         plt.show()
 
 #
-# tests and examples
+# examples
 #
 
-def test_plot_image():
+def example_plot_image():
     x = np.linspace(-4, 4, 90)
     y = np.linspace(-4, 4, 90)
     print('Size %d pixels' % (len(x) * len(y)))
     z = np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
-    plot_image(z,x,y,title="test_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
+    plot_image(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
 
-def test_plot_surface():
+def example_plot_surface():
     x = np.linspace(-4, 4, 20)
     y = np.linspace(-4, 4, 20)
     print('Size %d pixels' % (len(x) * len(y)))
     z = np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
-    plot_surface(z,x,y,title="test_plot_surface",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
+    plot_surface(z,x,y,title="example_plot_surface",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
 
-def test_plot_scatter():
+def example_plot_scatter():
     #example motivated by http://www.ster.kuleuven.be/~pieterd/python/html/core/scipystats.html
     from scipy import stats
     # x = np.random.rand(1000)
@@ -307,9 +310,9 @@ def test_plot_scatter():
     x = stats.norm.rvs(size=2000)
     y = stats.norm.rvs(scale=0.5, size=2000)
     data = np.vstack([x+y, x-y])
-    plot_scatter(data[0],data[1],title="test_plot_scatter",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",show=1)
+    plot_scatter(data[0],data[1],title="example_plot_scatter",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",show=1)
 
-def test_plot_contour():
+def example_plot_contour():
     # inspired by http://stackoverflow.com/questions/10291221/axis-limits-for-scatter-plot-not-holding-in-matplotlib
     # random data
     x = np.random.randn(100)
@@ -320,23 +323,23 @@ def test_plot_contour():
     Z2 = plt.bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
     Z = 10 * (Z1 - Z2)
 
-    plot_contour(Z,x,y,title='test_plot_contour',xtitle='x-stuff',ytitle='y-stuff',show=1)
+    plot_contour(Z,x,y,title='example_plot_contour',xtitle='x-stuff',ytitle='y-stuff',show=1)
 
-def test_plot_one_curve():
+def example_plot_one_curve():
     x = np.linspace(-100,100,10)
     y = x**2
-    plot(x,y,xtitle=r'$x$',title="test_plot_one_curve",
+    plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
          ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,show=1)
 
-def test_plot_two_curves():
+def example_plot_two_curves():
     x1 = np.linspace(-100,100,1000)
     y1 = x1**2
     x2 = np.linspace(0,200,700)
     y2 = x2**2.1
-    plot(x1,y1,x2,y2,xtitle=r'$x$',title="test_plot_two_curves",
+    plot(x1,y1,x2,y2,xtitle=r'$x$',title="example_plot_two_curves",
          ytitle=r'$y=f(x)$',legend=[r"$x^2$",r"$x^{2.1}$"],color=['green','blue'],marker=[' ','o'],linestyle=['-',' '],show=1)
 
-def test_plot_table():
+def example_plot_table():
     x1 = np.linspace(0,100,100)
     out = np.zeros((6,x1.size))
     out[0,:] = x1**2
@@ -345,36 +348,42 @@ def test_plot_table():
     out[3,:] = x1**2.3
     out[4,:] = x1**2.4
     out[5,:] = x1**2.5
+    # another way
+    # out = np.vstack( (
+    #     x1**2,
+    #     x1**2.1,
+    #     x1**2.2,
+    #     x1**2.3,
+    #     x1**2.4,
+    #     x1**2.5 ))
     legend=np.arange(out.shape[0]).astype("str")
-    plot_table(x1,out,xtitle=r'$x$',ytitle=r'$y=f(x)$',title="plot_table",legend=legend,show=1)
+    plot_table(x1,out,xtitle=r'$x$',ytitle=r'$y=f(x)$',title="example_plot_table",legend=legend,show=1)
 
-def test_plot_table_one_curve():
+def example_plot_table_one_curve():
     x1 = np.linspace(-100,100,1000)
     out = x1**2
-    plot_table(x1,out,title="plot_table_one_curve",xtitle=r'$x$',ytitle=r'$y=f(x)$',legend="Example 1",color='pink',show=1)
+    plot_table(x1,out,title="example_plot_table_one_curve",xtitle=r'$x$',ytitle=r'$y=f(x)$',legend="Example 1",color='pink',show=1)
 
-def test_plot_table_with_errorbars():
+def example_plot_table_with_errorbars():
     x = np.linspace(0,100,30)
     out = np.zeros((2,x.size))
     out[0,:] = 1e-3 * x**2
     out[1,:] = 5 + 1e-3 * x**2
     yerr = np.sqrt(out)
     yerr[1,:] = 1.0
-    plot_table(x,out,errorbars=yerr,title="plot_table_with_errorbars",xtitle=r'$x$',ytitle=r'$y=f(x)=x^2$',xrange=[20,80],
+    plot_table(x,out,errorbars=yerr,title="example_plot_table_with_errorbars",xtitle=r'$x$',ytitle=r'$y=f(x)=x^2$',xrange=[20,80],
                legend=["Statistical error","Constant error"],color=['black','magenta'],show=1)
 
 #
 # main
 #
 if __name__ == "__main__":
-    test_plot_one_curve()
-    test_plot_two_curves()
-
-    test_plot_table()
-    test_plot_table_one_curve()
-    test_plot_table_with_errorbars()
-
-    test_plot_image()
-    test_plot_surface()
-    test_plot_contour()
-    test_plot_scatter()
+    example_plot_one_curve()
+    example_plot_two_curves()
+    example_plot_table()
+    example_plot_table_one_curve()
+    example_plot_table_with_errorbars()
+    example_plot_image()
+    example_plot_surface()
+    example_plot_contour()
+    example_plot_scatter()
