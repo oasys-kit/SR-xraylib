@@ -221,7 +221,7 @@ class ScaledArray(object):
         return self.np_array
 
     def get_abscissas(self):
-        return numpy.linspace(self.offset(),self.offset()+self.delta()*(self.size()-1),self.size())
+        return self.scale # numpy.linspace(self.offset(),self.offset()+self.delta()*(self.size()-1),self.size())
 
     def set_value(self, index, value):
         self.np_array[index] = value

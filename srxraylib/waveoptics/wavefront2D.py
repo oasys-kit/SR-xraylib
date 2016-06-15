@@ -95,6 +95,32 @@ class Wavefront2D(object):
     def get_intensity(self):
         return self.get_amplitude()**2
 
+    def get_mesh_indices_x(self):
+        return numpy.outer( numpy.arange(0,self.size()[0]), numpy.ones(self.size()[1]))
+
+    def get_mesh_indices_y(self):
+        return numpy.outer( numpy.ones(self.size()[0]), numpy.arange(0,self.size()[1]))
+
+    def get_mask_grid(self,width_in_pixels=(1,1),number_of_lines=(1,1)):
+        """
+
+        :param width_in_pixels: (pixels_for_horizontal_lines,pixels_for_vertical_lines
+        :param number_of_lines: (number_of_horizontal_lines, number_of_vertical_lines)
+        :return:
+        """
+
+        indices_x = self.get_mesh_indices_x()
+        indices_y = self.get_mesh_indices_y()
+
+        used_indices = numpy.zeros( self.size(),dtype=int)
+
+        for i in range(number_of_lines[1]):
+            used_indices[ numpy.where( numpy.abs(indices_x - (i+1)*self.size()[0]/(1+number_of_lines[1])) <= (width_in_pixels[1]-1) )] = 1
+        for i in range(number_of_lines[0]):
+            used_indices[ numpy.where( numpy.abs(indices_y - (i+1)*self.size()[1]/(1+number_of_lines[0])) <= (width_in_pixels[0]-1) )] = 1
+
+        return used_indices
+
 
     # interpolated values (a bit redundant, but kept the same interfacs as wavefront 1D)
 

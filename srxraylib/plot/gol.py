@@ -24,12 +24,29 @@ except:
 def plot_show():
     plt.show()
 
-def plot_image(mymode,theta,psi,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,show=1):
+def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,show=1):
+
+    n_arguments = len(positional_parameters)
+    if n_arguments == 1:
+        z = positional_parameters[0]
+        x = np.arange(0,z.shape[0])
+        y = np.arange(0,z.shape[0])
+    elif n_arguments == 2:
+        z = positional_parameters[0]
+        x = positional_parameters[1]
+        y = positional_parameters[1]
+    elif n_arguments == 3:
+        z = positional_parameters[0]
+        x = positional_parameters[1]
+        y = positional_parameters[2]
+    else:
+        raise Exception("Bad number of inputs")
+
 
     fig = plt.figure()
 
     # cmap = plt.cm.Greys
-    plt.imshow(mymode.T,origin='lower',extent=[theta[0],theta[-1],psi[0],psi[-1]],cmap=cmap)
+    plt.imshow(z.T,origin='lower',extent=[x[0],x[-1],y[0],y[-1]],cmap=cmap)
     plt.colorbar()
     ax = fig.gca()
     ax.set_xlabel(xtitle)
@@ -374,6 +391,11 @@ def example_plot_table_with_errorbars():
     plot_table(x,out,errorbars=yerr,title="example_plot_table_with_errorbars",xtitle=r'$x$',ytitle=r'$y=f(x)=x^2$',xrange=[20,80],
                legend=["Statistical error","Constant error"],color=['black','magenta'],show=1)
 
+def example_plot_image_lena():
+    from scipy.misc import lena
+
+    lena = np.rot90(lena(),-1)
+    plot_image(lena,np.arange(0,lena.shape[0]),np.arange(0,lena.shape[1]),cmap='gray' )
 #
 # main
 #
@@ -387,3 +409,4 @@ if __name__ == "__main__":
     example_plot_surface()
     example_plot_contour()
     example_plot_scatter()
+    example_plot_image_lena()

@@ -3,21 +3,36 @@ import numpy
 
 from srxraylib.util.data_structures import ScaledArray,ScaledMatrix
 
-do_plot = 1
+do_plot = 0
 
 class ScaledArrayTest(unittest.TestCase):
 
     def test_ScaledArray(self,do_plot=do_plot):
 
-        test_array = numpy.arange(15.0, 18.8, 0.2)
-        print("Using array: ",test_array)
+
 
         #
         # ScaledArray.initialize + set_scale_from_steps
         #
+        test_array = numpy.arange(15.0, 18.8, 0.2)
+
+
         print("\nTesting ScaledArray.initialize + set_scale_from_steps...")
+
+
         scaled_array = ScaledArray.initialize(test_array)
         scaled_array.set_scale_from_steps(test_array[0],0.2)
+
+        print("Using array: ",test_array)
+        print("Stored array: ",scaled_array.get_values())
+
+        print("Using array: ",test_array)
+        print("Stored abscissas: ",scaled_array.get_abscissas())
+
+        numpy.testing.assert_almost_equal(test_array,scaled_array.get_values(),11)
+        numpy.testing.assert_almost_equal(test_array,scaled_array.get_abscissas(),11)
+        self.assertAlmostEqual(0.2,scaled_array.delta(),11)
+        self.assertAlmostEqual(15.0,scaled_array.offset(),11)
 
         x_in =   (18.80,16.22,22.35)
         x_good = (18.80,16.22,18.8)
@@ -127,14 +142,15 @@ class ScaledMatrixTest(unittest.TestCase):
         # Matrix
         #
 
-        x = numpy.arange(100,200,2.0)
-        y = numpy.arange(200,250,1.0)
+        x = numpy.arange(10,20,2.0)
+        y = numpy.arange(20,25,1.0)
 
         xy = numpy.meshgrid(x,y)
         X = xy[0].T
         Y = xy[1].T
         Z = Y
 
+        print("x,y,X,Y,Z shapes: ",x.shape,y.shape,X.shape,Y.shape,Z.shape)
         print("x,y,X,Y,Z shapes: ",x.shape,y.shape,X.shape,Y.shape,Z.shape)
 
         #
@@ -144,20 +160,35 @@ class ScaledMatrixTest(unittest.TestCase):
         scaled_matrix = ScaledMatrix.initialize(Z)
         print("    Matrix shape", scaled_matrix.shape())
 
-        scaled_matrix.set_scale_from_steps(0,x[0],x[1]-x[0])
-        scaled_matrix.set_scale_from_steps(1,y[0],y[1]-y[0])
+        scaled_matrix.set_scale_from_steps(0,x[0],numpy.abs(x[1]-x[0]))
+        scaled_matrix.set_scale_from_steps(1,y[0],numpy.abs(y[1]-y[0]))
+
+        print("Original x: ",x)
+        print("Stored x:   ",scaled_matrix.get_x_values())
+        print("Original y: ",y)
+        print("Stored y:    ",scaled_matrix.get_y_values())
+        numpy.testing.assert_equal(x,scaled_matrix.get_x_values())
+        numpy.testing.assert_equal(y,scaled_matrix.get_y_values())
 
         print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0.0))
-        print("    Matrix Y value x_index=15 is %g (to compare with %g) "%(scaled_matrix.get_x_value(15.0),x[0]+15*(x[1]-x[0])))
-        print("    Matrix Y value y_index=15 is %g (to compare with %g) "%(scaled_matrix.get_y_value(15.0),y[0]+15*(y[1]-y[0])))
-        print("    Matrix X: ",scaled_matrix.get_x_values()," shape: ",scaled_matrix.get_x_values().shape)
-        print("    Matrix Y: ",scaled_matrix.get_y_values()," shape: ",scaled_matrix.get_y_values().shape)
-        print("    Matrix Z: ",scaled_matrix.get_z_values()," shape: ",scaled_matrix.get_z_values().shape)
+        print("    Matrix Y value x_index=3 is %g (to compare with %g) "%(scaled_matrix.get_x_value(2.0),x[0]+2*(x[1]-x[0])))
+        print("    Matrix Y value y_index=3 is %g (to compare with %g) "%(scaled_matrix.get_y_value(2.0),y[0]+2*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix.get_x_value(2.0),x[0]+2*(x[1]-x[0]),10)
+        self.assertAlmostEqual(scaled_matrix.get_y_value(2.0),y[0]+2*(y[1]-y[0]),10)
 
 
         #
         # scaledMatrix.initialize + set_scale_from_range
         #
+
+        x = numpy.linspace(-10,10,10)
+        y = numpy.linspace(-25,25,20)
+
+        xy = numpy.meshgrid(x,y)
+        X = xy[0].T
+        Y = xy[1].T
+        Z = Y
+
         print("\nTesting ScaledMatrix.initialize + set_scale_from_range...")
         scaled_matrix = ScaledMatrix.initialize(Z)  # Z[0] contains Y
         print("    Matrix shape", scaled_matrix.shape())
@@ -165,37 +196,62 @@ class ScaledMatrixTest(unittest.TestCase):
         scaled_matrix.set_scale_from_range(0,x[0],x[-1])
         scaled_matrix.set_scale_from_range(1,y[0],y[-1])
 
+        print("Original x: ",x)
+        print("Stored x:   ",scaled_matrix.get_x_values())
+        print("Original y: ",y)
+        print("Stored y:    ",scaled_matrix.get_y_values())
+
+        numpy.testing.assert_almost_equal(x,scaled_matrix.get_x_values(),11)
+        numpy.testing.assert_almost_equal(y,scaled_matrix.get_y_values(),11)
+
         print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0.0))
-        print("    Matrix Y value x_index=15 is %g (to compare with %g) "%(scaled_matrix.get_x_value(15.0),x[0]+15*(x[1]-x[0])))
-        print("    Matrix Y value y_index=15 is %g (to compare with %g) "%(scaled_matrix.get_y_value(15.0),y[0]+15*(y[1]-y[0])))
-        print("    Matrix X: ",scaled_matrix.get_x_values()," shape: ",scaled_matrix.get_x_values().shape)
-        print("    Matrix Y: ",scaled_matrix.get_y_values()," shape: ",scaled_matrix.get_y_values().shape)
-        print("    Matrix Z: ",scaled_matrix.get_z_values()," shape: ",scaled_matrix.get_z_values().shape)
+        print("    Matrix Y value x_index=5 is %g (to compare with %g) "%(scaled_matrix.get_x_value(5.0),x[0]+5*(x[1]-x[0])))
+        print("    Matrix Y value y_index=5 is %g (to compare with %g) "%(scaled_matrix.get_y_value(5.0),y[0]+5*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix.get_x_value(5.0),x[0]+5*(x[1]-x[0]),10)
+        self.assertAlmostEqual(scaled_matrix.get_y_value(5.0),y[0]+5*(y[1]-y[0]),10)
 
 
 
         #
         # scaledMatrix.initialize_from_steps
         #
+
+        x = numpy.arange(10,20,0.2)
+        y = numpy.arange(20,25,0.1)
+
+        xy = numpy.meshgrid(x,y)
+        X = xy[0].T
+        Y = xy[1].T
+        Z = Y
+
         print("\nTesting ScaledMatrix.initialize_from_steps...")
 
-        scaled_matrix2 = ScaledMatrix.initialize_from_steps(Z,x[0],x[1]-x[0],y[0],y[1]-y[0])
+        scaled_matrix2 = ScaledMatrix.initialize_from_steps(Z,x[0],numpy.abs(x[1]-x[0]),y[0],numpy.abs(y[1]-y[0]))
 
         print("    Matrix 2 shape", scaled_matrix2.shape())
         print("    Matrix 2 value x=0 : ", scaled_matrix2.get_x_value(0.0))
 
-        print("    Matrix 2 value x=15 is %g (to compare with %g) "%(scaled_matrix2.get_x_value(15.0),x[0]+15*(x[1]-x[0])))
-        self.assertAlmostEqual(scaled_matrix2.get_x_value(15.0),x[0]+15*(x[1]-x[0]))
-        print("    Matrix 2 value y=15 is %g (to compare with %g) "%(scaled_matrix2.get_y_value(15.0),y[0]+15*(y[1]-y[0])))
-        self.assertAlmostEqual(scaled_matrix2.get_y_value(15.0),y[0]+15*(y[1]-y[0]))
+        print("    Matrix 2 value x=5 is %g (to compare with %g) "%(scaled_matrix2.get_x_value(5.0),x[0]+5*(x[1]-x[0])))
+        self.assertAlmostEqual(scaled_matrix2.get_x_value(5.0),x[0]+5*(x[1]-x[0]))
+        print("    Matrix 2 value y=5 is %g (to compare with %g) "%(scaled_matrix2.get_y_value(5.0),y[0]+5*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix2.get_y_value(5.0),y[0]+5*(y[1]-y[0]))
 
 
         #
         # scaledMatrix.initialize_from_range
         #
         print("\nTesting ScaledMatrix.initialize_from_range...")
+
+        x = numpy.linspace(-10,10,20)
+        y = numpy.linspace(-25,25,30)
+
+        xy = numpy.meshgrid(x,y)
+        X = xy[0].T
+        Y = xy[1].T
+        Z = X*0+(3+2j)
+
         #
-        scaled_matrix3 = ScaledMatrix.initialize_from_range(Z*0+(3+2j),x[0],x[-1],y[0],y[-1])
+        scaled_matrix3 = ScaledMatrix.initialize_from_range(Z,x[0],x[-1],y[0],y[-1])
 
         print("Matrix 3 shape", scaled_matrix3.shape())
         print("Matrix 3 value x=0 : ", scaled_matrix3.get_x_value(0.0))

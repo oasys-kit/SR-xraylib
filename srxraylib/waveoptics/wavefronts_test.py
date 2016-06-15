@@ -5,14 +5,12 @@ from srxraylib.waveoptics.wavefront import Wavefront1D
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 
 
-do_plot = 1
+do_plot = 0
 
 #
 # 1D tests
 #
 class Wavefront1DTest(unittest.TestCase):
-
-
     def test_initializers(self,do_plot=do_plot):
 
         print("#                                                             ")
@@ -43,8 +41,11 @@ class Wavefront1DTest(unittest.TestCase):
             plot(wf2.get_abscissas(),wf2.get_intensity(),
                        title="initialize_wavefront_from_arrays",show=1)
 
-        numpy.testing.assert_almost_equal(wf0.get_intensity(),wf1.get_intensity(),5)
-        numpy.testing.assert_almost_equal(wf0.get_intensity(),wf2.get_intensity(),5)
+        numpy.testing.assert_almost_equal(wf0.get_intensity(),numpy.abs(y)**2,5)
+        numpy.testing.assert_almost_equal(wf1.get_intensity(),numpy.abs(y)**2,5)
+
+        numpy.testing.assert_almost_equal(x,wf1.get_abscissas(),11)
+        numpy.testing.assert_almost_equal(x,wf2.get_abscissas(),11)
 
     def test_plane_wave(self,do_plot=do_plot):
         #
@@ -60,13 +61,14 @@ class Wavefront1DTest(unittest.TestCase):
 
         npixels_x =  1024
 
-        pixelsize_x = wavefront_length_x / npixels_x
-
+        wavefront_x = numpy.linspace(-0.5*wavefront_length_x,0.5*wavefront_length_x,npixels_x)
 
 
         wavefront = Wavefront1D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
+                        x_start=wavefront_x[0],x_step=numpy.abs(wavefront_x[1]-wavefront_x[0]),
                         number_of_points=npixels_x,wavelength=wavelength)
+
+        numpy.testing.assert_almost_equal(wavefront_x,wavefront.get_abscissas(),9)
 
         # possible modifications
 
@@ -114,16 +116,16 @@ class Wavefront1DTest(unittest.TestCase):
 
         npixels_x =  1024
 
-        pixelsize_x = wavefront_length_x / npixels_x
+        wavefront_x = numpy.linspace(-0.5*wavefront_length_x,0.5*wavefront_length_x,npixels_x)
 
 
 
         wf1 = Wavefront1D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
+                        x_start=wavefront_x[0],x_step=numpy.abs(wavefront_x[1]-wavefront_x[0]),
                         number_of_points=npixels_x,wavelength=wavelength)
 
         wf2 = Wavefront1D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
+                        x_start=wavefront_x[0],x_step=numpy.abs(wavefront_x[1]-wavefront_x[0]),
                         number_of_points=npixels_x,wavelength=wavelength)
 
         # an spherical wavefront is obtained 1) by creation, 2) focusing a planewave
@@ -192,44 +194,51 @@ class Wavefront1DTest(unittest.TestCase):
 
 class Wavefront2DTest(unittest.TestCase):
 
-    def test_initializers(self,do_plot=do_plot):
-
-        print("#                                                             ")
-        print("# Tests for initializars (2D)                                 ")
-        print("#                                                             ")
-
-        x = numpy.linspace(-100,100,50)
-        y = numpy.linspace(-50,50,200)
-        XY = numpy.meshgrid(x,y)
-        X = XY[0].T
-        Y = XY[1].T
-        sigma = 10
-        Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
-        print("Shapes x,y,z: ",x.shape,y.shape,Z.shape)
-
-        wf0 = Wavefront2D.initialize_wavefront_from_steps(x[0],x[1]-x[0],y[0],y[1]-y[0],number_of_points=Z.shape)
-        wf0.set_complex_amplitude(Z)
-
-        wf1 = Wavefront2D.initialize_wavefront_from_range(x[0],x[-1],y[0],y[-1],number_of_points=Z.shape)
-        wf1.set_complex_amplitude(Z)
-
-        wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z)
-
-        if do_plot:
-            from srxraylib.plot.gol import plot_image
-            plot_image(wf0.get_intensity(),wf0.get_coordinate_x(),wf0.get_coordinate_y(),
-                       title="initialize_wavefront_from_steps",show=0)
-            plot_image(wf1.get_intensity(),wf1.get_coordinate_x(),wf1.get_coordinate_y(),
-                       title="initialize_wavefront_from_range",show=0)
-            plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),
-                       title="initialize_wavefront_from_arrays",show=1)
-
-        numpy.testing.assert_almost_equal(wf0.get_intensity(),wf1.get_intensity(),7)
-        numpy.testing.assert_almost_equal(wf0.get_intensity(),wf2.get_intensity(),7)
-        numpy.testing.assert_almost_equal(wf0.get_coordinate_x(),wf1.get_coordinate_x(),7)
-        numpy.testing.assert_almost_equal(wf0.get_coordinate_x(),wf2.get_coordinate_x(),7)
-        numpy.testing.assert_almost_equal(wf0.get_coordinate_y(),wf1.get_coordinate_y(),7)
-        numpy.testing.assert_almost_equal(wf0.get_coordinate_y(),wf2.get_coordinate_y(),7)
+    # def test_initializers(self,do_plot=do_plot):
+    #
+    #     print("#                                                             ")
+    #     print("# Tests for initializars (2D)                                 ")
+    #     print("#                                                             ")
+    #
+    #     x = numpy.linspace(-100,100,50)
+    #     y = numpy.linspace(-50,50,200)
+    #     XY = numpy.meshgrid(x,y)
+    #     X = XY[0].T
+    #     Y = XY[1].T
+    #     sigma = 10
+    #     Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+    #     print("Shapes x,y,z: ",x.shape,y.shape,Z.shape)
+    #
+    #     wf0 = Wavefront2D.initialize_wavefront_from_steps(x[0],numpy.abs(x[1]-x[0]),y[0],numpy.abs(y[1]-y[0]),number_of_points=Z.shape)
+    #     wf0.set_complex_amplitude(Z)
+    #
+    #     wf1 = Wavefront2D.initialize_wavefront_from_range(x[0],x[-1],y[0],y[-1],number_of_points=Z.shape)
+    #     wf1.set_complex_amplitude(Z)
+    #
+    #     wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z)
+    #
+    #     if do_plot:
+    #         from srxraylib.plot.gol import plot_image
+    #         plot_image(wf0.get_intensity(),wf0.get_coordinate_x(),wf0.get_coordinate_y(),
+    #                    title="initialize_wavefront_from_steps",show=0)
+    #         plot_image(wf1.get_intensity(),wf1.get_coordinate_x(),wf1.get_coordinate_y(),
+    #                    title="initialize_wavefront_from_range",show=0)
+    #         plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),
+    #                    title="initialize_wavefront_from_arrays",show=1)
+    #
+    #
+    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf0.get_intensity(),11)
+    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf1.get_intensity(),11)
+    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf2.get_intensity(),11)
+    #
+    #     numpy.testing.assert_almost_equal(x,wf0.get_coordinate_x(),11)
+    #     numpy.testing.assert_almost_equal(x,wf1.get_coordinate_x(),11)
+    #     numpy.testing.assert_almost_equal(x,wf2.get_coordinate_x(),11)
+    #
+    #     numpy.testing.assert_almost_equal(y,wf0.get_coordinate_y(),11)
+    #     numpy.testing.assert_almost_equal(y,wf1.get_coordinate_y(),11)
+    #     numpy.testing.assert_almost_equal(y,wf2.get_coordinate_y(),11)
+    #
 
 
     def test_plane_wave(self,do_plot=do_plot):
@@ -248,14 +257,12 @@ class Wavefront2DTest(unittest.TestCase):
         npixels_x =  1024
         npixels_y =  npixels_x
 
-        pixelsize_x = wavefront_length_x / npixels_x
-        pixelsize_y = wavefront_length_y / npixels_y
-
-
+        x = numpy.linspace(-0.5*wavefront_length_x,0.5*wavefront_length_x,npixels_x)
+        y = numpy.linspace(-0.5*wavefront_length_y,0.5*wavefront_length_y,npixels_y)
 
         wavefront = Wavefront2D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
-                        y_start=-0.5*wavefront_length_y,y_step=pixelsize_y,
+                        x_start=x[0],x_step=numpy.abs(x[1]-x[0]),
+                        y_start=y[0],y_step=numpy.abs(y[1]-y[0]),
                         number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
 
         # possible modifications
@@ -309,21 +316,27 @@ class Wavefront2DTest(unittest.TestCase):
         npixels_x =  1024
         npixels_y =  npixels_x
 
-        pixelsize_x = wavefront_length_x / npixels_x
-        pixelsize_y = wavefront_length_y / npixels_y
+        x = numpy.linspace(-0.5*wavefront_length_x,0.5*wavefront_length_x,npixels_x)
+        y = numpy.linspace(-0.5*wavefront_length_y,0.5*wavefront_length_y,npixels_y)
 
 
 
         wf1 = Wavefront2D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
-                        y_start=-0.5*wavefront_length_y,y_step=pixelsize_y,
+                        x_start=x[0],x_step=numpy.abs(x[1]-x[0]),
+                        y_start=y[0],y_step=numpy.abs(y[1]-y[0]),
                         number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
+
+        numpy.testing.assert_almost_equal(x,wf1.get_coordinate_x(),9)
+        numpy.testing.assert_almost_equal(y,wf1.get_coordinate_y(),9)
 
         wf2 = Wavefront2D.initialize_wavefront_from_steps(
-                        x_start=-0.5*wavefront_length_x,x_step=pixelsize_x,
-                        y_start=-0.5*wavefront_length_y,y_step=pixelsize_y,
+                        x_start=x[0],x_step=numpy.abs(x[1]-x[0]),
+                        y_start=y[0],y_step=numpy.abs(y[1]-y[0]),
                         number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
 
+
+        numpy.testing.assert_almost_equal(x,wf2.get_coordinate_x(),9)
+        numpy.testing.assert_almost_equal(y,wf2.get_coordinate_y(),9)
         # an spherical wavefront is obtained 1) by creation, 2) focusing a planewave
 
         wf1.set_spherical_wave(-5.0, 3+0j)

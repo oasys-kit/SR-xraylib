@@ -92,8 +92,8 @@ def SRWWavefrontFromElectricField(horizontal_start, horizontal_end, horizontal_e
 
     if horizontal_size % 2 == 1 or \
        vertical_size % 2 == 1:
-        raise Exception("Both horizontal and vertical grid must have even number of points")
-
+        # raise Exception("Both horizontal and vertical grid must have even number of points")
+        print("NumpyToSRW: WARNING: Both horizontal and vertical grid must have even number of points")
 
     horizontal_field = numpyArrayToSRWArray(horizontal_efield)
     vertical_field = numpyArrayToSRWArray(vertical_efield)
@@ -175,7 +175,7 @@ def SRWArrayToNumpy(srw_array, dim_x, dim_y, number_energies):
 
     e = e.swapaxes(0, 2)
 
-    return e
+    return e.copy()
 
 def SRWEFieldAsNumpy(srw_wavefront):
     """
