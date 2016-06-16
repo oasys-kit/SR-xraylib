@@ -113,6 +113,11 @@ class Wavefront1D(object):
     def get_interpolated_intensities(self, abscissa_values):
         return self.get_interpolated_amplitudes(abscissa_values)**2
 
+    #TODO: this is obsolete call, to be removed after updating shadowOui
+    # new name is get_interpolated_complex_amplitudes. 
+    def get_complex_amplitude_from_abscissas(self, abscissa_values):
+        return self.electric_field_array.interpolate_values(abscissa_values)
+
     # modifiers
 
 
