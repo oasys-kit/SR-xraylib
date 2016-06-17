@@ -11,7 +11,7 @@ from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer
 from srxraylib.waveoptics.propagator2D import propagate_2D_integral
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel, propagate_2D_fresnel_convolution, propagate_2D_fresnel_srw
 
-do_plot = 1
+do_plot = 0
 
 if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table

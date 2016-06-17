@@ -245,11 +245,6 @@ class Wavefront2D(object):
         self.rescale_amplitudes(window)
 
     # new
-
-
-
-
-
     def apply_pinhole(self, radius, x_center=0.0, y_center=0.0):
         window = numpy.zeros(self.electric_field_array.shape())
         X = self.get_mesh_x()
@@ -259,6 +254,37 @@ class Wavefront2D(object):
         window[indices_inside] = 1.0
 
         self.rescale_amplitudes(window)
+
+    #
+    def rebin(self,expansion_points_horizontal, expansion_points_vertical, expansion_range_horizontal, expansion_range_vertical,
+              keep_the_same_intensity=0,set_extrapolation_to_zero=0):
+
+        x0 = self.get_coordinate_x()
+        y0 = self.get_coordinate_y()
+
+        x1 = numpy.linspace(x0[0]*expansion_range_horizontal,x0[-1]*expansion_range_horizontal,int(x0.size*expansion_points_horizontal))
+        y1 = numpy.linspace(y0[0]*expansion_range_vertical  ,y0[-1]*expansion_range_vertical,  int(y0.size*expansion_points_vertical))
+
+        X1 = numpy.outer(x1,numpy.ones_like(y1))
+        Y1 = numpy.outer(numpy.ones_like(x1),y1)
+        z1 = self.get_interpolated_complex_amplitudes(X1,Y1)
+
+        if set_extrapolation_to_zero:
+            z1[numpy.where( X1 < x0[0])] = 0.0
+            z1[numpy.where( X1 > x0[-1])] = 0.0
+            z1[numpy.where( Y1 < y0[0])] = 0.0
+            z1[numpy.where( Y1 > y0[-1])] = 0.0
+
+
+        if keep_the_same_intensity:
+            z1 /= numpy.sqrt( (numpy.abs(z1)**2).sum() / self.get_intensity().sum() )
+
+        new_wf = Wavefront2D.initialize_wavefront_from_arrays(x1,y1,z1,wavelength=self.get_wavelength())
+
+        return new_wf
+
+
+
 
 #
 # TESTS AND EXAMPLES

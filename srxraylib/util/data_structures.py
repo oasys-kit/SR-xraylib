@@ -114,7 +114,7 @@ class ScaledMatrix(object):
 
     def compute_interpolator(self):
         from scipy import interpolate
-        print("<><><><><> Computing interpolator...")
+        print("Wavefront2d.compute_interpolator: Computing interpolator...")
         self.interpolator_value = (
             interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.real(self.z_values)),
             interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.imag(self.z_values)),

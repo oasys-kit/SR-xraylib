@@ -208,7 +208,7 @@ def propagate_2D_fresnel_srw(wavefront, propagation_distance,
     except:
         raise ImportError("Please install srwlib before attempting to us it")
 
-    from NumpyToSRW import numpyArrayToSRWArray, SRWWavefrontFromElectricField, SRWEFieldAsNumpy
+    from srxraylib.waveoptics.NumpyToSRW import numpyArrayToSRWArray, SRWWavefrontFromElectricField, SRWEFieldAsNumpy
 
     import scipy.constants as codata
     angstroms_to_eV = codata.h*codata.c/codata.e*1e10

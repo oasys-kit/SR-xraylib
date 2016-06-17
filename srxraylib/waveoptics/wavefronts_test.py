@@ -194,51 +194,51 @@ class Wavefront1DTest(unittest.TestCase):
 
 class Wavefront2DTest(unittest.TestCase):
 
-    # def test_initializers(self,do_plot=do_plot):
-    #
-    #     print("#                                                             ")
-    #     print("# Tests for initializars (2D)                                 ")
-    #     print("#                                                             ")
-    #
-    #     x = numpy.linspace(-100,100,50)
-    #     y = numpy.linspace(-50,50,200)
-    #     XY = numpy.meshgrid(x,y)
-    #     X = XY[0].T
-    #     Y = XY[1].T
-    #     sigma = 10
-    #     Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
-    #     print("Shapes x,y,z: ",x.shape,y.shape,Z.shape)
-    #
-    #     wf0 = Wavefront2D.initialize_wavefront_from_steps(x[0],numpy.abs(x[1]-x[0]),y[0],numpy.abs(y[1]-y[0]),number_of_points=Z.shape)
-    #     wf0.set_complex_amplitude(Z)
-    #
-    #     wf1 = Wavefront2D.initialize_wavefront_from_range(x[0],x[-1],y[0],y[-1],number_of_points=Z.shape)
-    #     wf1.set_complex_amplitude(Z)
-    #
-    #     wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z)
-    #
-    #     if do_plot:
-    #         from srxraylib.plot.gol import plot_image
-    #         plot_image(wf0.get_intensity(),wf0.get_coordinate_x(),wf0.get_coordinate_y(),
-    #                    title="initialize_wavefront_from_steps",show=0)
-    #         plot_image(wf1.get_intensity(),wf1.get_coordinate_x(),wf1.get_coordinate_y(),
-    #                    title="initialize_wavefront_from_range",show=0)
-    #         plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),
-    #                    title="initialize_wavefront_from_arrays",show=1)
-    #
-    #
-    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf0.get_intensity(),11)
-    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf1.get_intensity(),11)
-    #     numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf2.get_intensity(),11)
-    #
-    #     numpy.testing.assert_almost_equal(x,wf0.get_coordinate_x(),11)
-    #     numpy.testing.assert_almost_equal(x,wf1.get_coordinate_x(),11)
-    #     numpy.testing.assert_almost_equal(x,wf2.get_coordinate_x(),11)
-    #
-    #     numpy.testing.assert_almost_equal(y,wf0.get_coordinate_y(),11)
-    #     numpy.testing.assert_almost_equal(y,wf1.get_coordinate_y(),11)
-    #     numpy.testing.assert_almost_equal(y,wf2.get_coordinate_y(),11)
-    #
+    def test_initializers(self,do_plot=do_plot):
+
+        print("#                                                             ")
+        print("# Tests for initializars (2D)                                 ")
+        print("#                                                             ")
+
+        x = numpy.linspace(-100,100,50)
+        y = numpy.linspace(-50,50,200)
+        XY = numpy.meshgrid(x,y)
+        X = XY[0].T
+        Y = XY[1].T
+        sigma = 10
+        Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+        print("Shapes x,y,z: ",x.shape,y.shape,Z.shape)
+
+        wf0 = Wavefront2D.initialize_wavefront_from_steps(x[0],numpy.abs(x[1]-x[0]),y[0],numpy.abs(y[1]-y[0]),number_of_points=Z.shape)
+        wf0.set_complex_amplitude(Z)
+
+        wf1 = Wavefront2D.initialize_wavefront_from_range(x[0],x[-1],y[0],y[-1],number_of_points=Z.shape)
+        wf1.set_complex_amplitude(Z)
+
+        wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z)
+
+        if do_plot:
+            from srxraylib.plot.gol import plot_image
+            plot_image(wf0.get_intensity(),wf0.get_coordinate_x(),wf0.get_coordinate_y(),
+                       title="initialize_wavefront_from_steps",show=0)
+            plot_image(wf1.get_intensity(),wf1.get_coordinate_x(),wf1.get_coordinate_y(),
+                       title="initialize_wavefront_from_range",show=0)
+            plot_image(wf2.get_intensity(),wf2.get_coordinate_x(),wf2.get_coordinate_y(),
+                       title="initialize_wavefront_from_arrays",show=1)
+
+
+        numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf0.get_intensity(),11)
+        numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf1.get_intensity(),11)
+        numpy.testing.assert_almost_equal(numpy.abs(Z)**2,wf2.get_intensity(),11)
+
+        numpy.testing.assert_almost_equal(x,wf0.get_coordinate_x(),11)
+        numpy.testing.assert_almost_equal(x,wf1.get_coordinate_x(),11)
+        numpy.testing.assert_almost_equal(x,wf2.get_coordinate_x(),11)
+
+        numpy.testing.assert_almost_equal(y,wf0.get_coordinate_y(),11)
+        numpy.testing.assert_almost_equal(y,wf1.get_coordinate_y(),11)
+        numpy.testing.assert_almost_equal(y,wf2.get_coordinate_y(),11)
+
 
 
     def test_plane_wave(self,do_plot=do_plot):
@@ -378,7 +378,7 @@ class Wavefront2DTest(unittest.TestCase):
         X = xy[0].T
         Y = xy[1].T
         sigma = 3.0
-        Z = numpy.exp(- (X**2+Y**2)/2/sigma**2)
+        Z = 3*numpy.exp(- (X**2+Y**2)/2/sigma**2) +4j
 
         print("shape of Z",Z.shape)
 
@@ -388,15 +388,27 @@ class Wavefront2DTest(unittest.TestCase):
 
         x1 = 3.2
         y1 = -2.5
-        z1 = numpy.exp(- (x1**2+y1**2)/2/sigma**2)
-        print("complex ampl at (%g,%g): %g+%gi (exact=%g)"%(x1,y1,
+        z1 = 3*numpy.exp(- (x1**2+y1**2)/2/sigma**2) + 4j
+        print("complex ampl at (%g,%g): %g+%gi (exact=%g+%gi)"%(x1,y1,
                                                         wf.get_interpolated_complex_amplitude(x1,y1).real,
                                                         wf.get_interpolated_complex_amplitude(x1,y1).imag,
-                                                        z1))
-        self.assertAlmostEqual(wf.get_interpolated_complex_amplitude(x1,y1).real,z1,5)
+                                                        z1.real,z1.imag))
+        self.assertAlmostEqual(wf.get_interpolated_complex_amplitude(x1,y1).real,z1.real,4)
+        self.assertAlmostEqual(wf.get_interpolated_complex_amplitude(x1,y1).imag,z1.imag,4)
+        #
+        print("intensity  at (%g,%g):   %g (exact=%g)"%(x1,y1,wf.get_interpolated_intensity(x1,y1),numpy.abs(z1)**2))
+        self.assertAlmostEqual(wf.get_interpolated_intensity(x1,y1),numpy.abs(z1)**2,4)
 
-        print("intensity  at (%g,%g):   %g (exact=%g)"%(x1,y1,wf.get_interpolated_intensity(x1,y1),z1**2))
-        self.assertAlmostEqual(wf.get_interpolated_intensity(x1,y1),z1**2,5)
+        # interpolate on same grid
+
+        interpolated_complex_amplitude_on_same_grid = wf.get_interpolated_complex_amplitudes(X,Y)
+        print("Shape interpolated at same grid: ",interpolated_complex_amplitude_on_same_grid.shape)
+
+        numpy.testing.assert_array_almost_equal(wf.get_complex_amplitude(),interpolated_complex_amplitude_on_same_grid,4)
+
+        print("Total intensity original wavefront: %g, interpolated on the same grid: %g"%
+              (wf.get_intensity().sum(), (numpy.abs(interpolated_complex_amplitude_on_same_grid)**2).sum()))
+
 
 
         if do_plot:
@@ -404,6 +416,24 @@ class Wavefront2DTest(unittest.TestCase):
             plot_image(wf.get_intensity(),wf.get_coordinate_x(),wf.get_coordinate_y(),title="Original",show=0)
             plot_image(wf.get_interpolated_intensity(X,Y),wf.get_coordinate_x(),wf.get_coordinate_y(),
                        title="interpolated on same grid",show=1)
+
+
+        # rebin wavefront
+
+        # wf.set_plane_wave_from_complex_amplitude(3+4j)
+        wf_rebin = wf.rebin(2.0,5.0,0.5,0.8,keep_the_same_intensity=1,set_extrapolation_to_zero=1)
+        print("Shape before rebinning: ",wf.size())
+        print("Shape after rebinning: ",wf_rebin.size())
+
+        print("Total intensity original wavefront: %g, rebinned: %g"%
+              (wf.get_intensity().sum(), wf_rebin.get_intensity().sum() ))
+
+        if do_plot:
+            from srxraylib.plot.gol import plot_image
+            plot_image(wf.get_intensity(),wf.get_coordinate_x(),wf.get_coordinate_y(),title="BEFORE REBINNING",show=0)
+            plot_image(wf_rebin.get_intensity(),wf_rebin.get_coordinate_x(),wf_rebin.get_coordinate_y(),
+                       title="REBINNED",show=1)
+
 
 
 
