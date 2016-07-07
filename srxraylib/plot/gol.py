@@ -57,6 +57,8 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
     if show:
         plt.show()
 
+    return fig
+
 def plot(*positional_parameters,title="",xtitle="",ytitle="",
          xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None):
 
@@ -133,6 +135,8 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
     if show:
         plt.show()
 
+    return fig
+
 def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
                title="",xtitle="",ytitle="",show=1,legend=None,color=None):
 
@@ -191,6 +195,7 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
     if show:
         plt.show()
 
+    return fig
 
 def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,show=1):
 
@@ -223,6 +228,8 @@ def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",le
     if show:
         plt.show()
 
+    return fig
+
 def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle="",ytitle=""):
 
     from matplotlib.ticker import NullFormatter
@@ -241,7 +248,7 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle=""
     rect_histy   = [left_h, bottom, 0.2, height]
 
     # start with a rectangular Figure
-    plt.figure(figsize=(8,8))
+    fig = plt.figure(figsize=(8,8))
 
     axScatter = plt.axes(rect_scatter)
     axHistx = plt.axes(rect_histx)
@@ -280,6 +287,7 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle=""
 
     if show: plt.show()
 
+    return fig
 
 def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=1,contour_levels=20,cmap=None,show=1):
 
@@ -301,6 +309,7 @@ def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None
     if show:
         plt.show()
 
+    return fig
 #
 # examples
 #
