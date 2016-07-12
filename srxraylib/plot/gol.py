@@ -60,7 +60,8 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
     return fig
 
 def plot(*positional_parameters,title="",xtitle="",ytitle="",
-         xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None):
+         xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None,
+         xlog=False,ylog=False):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 0:
@@ -114,15 +115,67 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
 
         plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
         plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
+    elif n_arguments == 6:
+        x1 = positional_parameters[0]
+        y1 = positional_parameters[1]
+        x2 = positional_parameters[2]
+        y2 = positional_parameters[3]
+        x3 = positional_parameters[4]
+        y3 = positional_parameters[5]
+        if legend is None:
+            legend1 = None
+            legend2 = None
+            legend3 = None
+        else:
+            legend1 = legend[0]
+            legend2 = legend[1]
+            legend3 = legend[2]
+
+        if color is None:
+            color1 = None
+            color2 = None
+            color3 = None
+        else:
+            color1 = color[0]
+            color2 = color[1]
+            color3 = color[2]
+
+        if marker is None:
+            marker1 = None
+            marker2 = None
+            marker3 = None
+        else:
+            marker1 = marker[0]
+            marker2 = marker[1]
+            marker3 = marker[2]
+
+        if linestyle is None:
+            linestyle1 = '-'
+            linestyle2 = '-'
+            linestyle3 = '-'
+        else:
+            linestyle1 = linestyle[0]
+            linestyle2 = linestyle[1]
+            linestyle3 = linestyle[2]
+
+        plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
+        plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
+        plt.plot(x3,y3,label=legend3,marker=marker3,linestyle=linestyle3,color=color3)
     else:
         "Incorrect number of arguments, plotting only two first arguments"
         x = positional_parameters[0]
         y = positional_parameters[1]
         plt.plot(x,y,label=legend)
 
+    ax = plt.subplot(111)
     if legend is not None:
-        ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=legend_position)
+
+    if xlog:
+        ax.set_xscale("log")
+
+    if ylog:
+        ax.set_yscale("log")
 
     plt.xlim( xrange )
     plt.ylim( yrange )
@@ -289,9 +342,20 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle=""
 
     return fig
 
-def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=1,contour_levels=20,cmap=None,show=1):
+def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=0,contour_levels=20,
+                 cmap=None,cbar=True,fill=False,cbar_title="",show=1):
 
-    fig = plt.contourf(x, y, z, contour_levels, cmap=cmap, origin='lower')
+    fig = plt.figure()
+
+    if fill:
+        fig = plt.contourf(x, y, z.T, contour_levels, cmap=cmap, origin='lower')
+    else:
+        fig = plt.contour( x, y, z.T, contour_levels, cmap=cmap, origin='lower')
+
+    if cbar:
+        cbar = plt.colorbar(fig)
+        cbar.ax.set_ylabel(cbar_title)
+
 
     plt.title(title)
     plt.xlabel(xtitle)
@@ -300,7 +364,7 @@ def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None
     # the scatter plot:
     if plot_points:
         axScatter = plt.subplot(111)
-        axScatter.scatter(x, y)
+        axScatter.scatter( np.outer(x,np.ones_like(y)), np.outer(np.ones_like(x),y))
 
     # set axes range
     plt.xlim(xrange)
@@ -341,21 +405,27 @@ def example_plot_scatter():
 def example_plot_contour():
     # inspired by http://stackoverflow.com/questions/10291221/axis-limits-for-scatter-plot-not-holding-in-matplotlib
     # random data
-    x = np.random.randn(100)
+    x = np.random.randn(50)
     y = np.random.randn(100)
 
-    X, Y = np.meshgrid(x, y)
+    X, Y = np.meshgrid(y, x)
     Z1 = plt.bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
     Z2 = plt.bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
     Z = 10 * (Z1 - Z2)
 
-    plot_contour(Z,x,y,title='example_plot_contour',xtitle='x-stuff',ytitle='y-stuff',show=1)
+    plot_contour(Z,x,y,title='example_plot_contour',xtitle='x-stuff',ytitle='y-stuff',plot_points=1,show=1)
 
 def example_plot_one_curve():
     x = np.linspace(-100,100,10)
     y = x**2
     plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
          ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,show=1)
+
+def example_plot_one_curve_log():
+    x = np.linspace(-100,100,10)
+    y = x**2
+    plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
+         ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,xlog=1,ylog=1,show=1)
 
 def example_plot_two_curves():
     x1 = np.linspace(-100,100,1000)
@@ -409,13 +479,15 @@ def example_plot_image_lena():
 # main
 #
 if __name__ == "__main__":
-    example_plot_one_curve()
-    example_plot_two_curves()
-    example_plot_table()
-    example_plot_table_one_curve()
-    example_plot_table_with_errorbars()
-    example_plot_image()
-    example_plot_surface()
+    # example_plot_one_curve()
+    # example_plot_two_curves()
+    # example_plot_one_curve_log()
+    # example_plot_table()
+    # example_plot_table_one_curve()
+    # example_plot_table_with_errorbars()
+    # example_plot_image()
+    # example_plot_surface()
     example_plot_contour()
-    example_plot_scatter()
-    example_plot_image_lena()
+    # example_plot_scatter()
+    # example_plot_image_lena()
+
