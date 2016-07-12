@@ -134,6 +134,7 @@ PACKAGES = [
     "srxraylib.sources",
     "srxraylib.util",
     "srxraylib.waveoptics",
+    "srxraylib.plot",
 ]
 
 PACKAGE_DATA = {
