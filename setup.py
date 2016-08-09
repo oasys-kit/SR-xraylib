@@ -13,7 +13,7 @@ except ImportError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.3'
+VERSION = '1.0.4'
 ISRELEASED = False
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
