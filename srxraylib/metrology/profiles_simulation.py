@@ -309,7 +309,7 @@ def simulate_profile_2D(combination='FF',
         renormalize_to_heights_sd_l = None
         renormalize_to_slopes_sd_l = rms_l
 
-    if error_type_w == SLOPE_ERROR:
+    if error_type_w == FIGURE_ERROR:
         renormalize_to_heights_sd_w = rms_w
         renormalize_to_slopes_sd_w = None
     else:
@@ -383,6 +383,28 @@ def simulate_profile_2D(combination='FF',
 
 
     s = combine_two_transversal_profiles(WW_x, WW, SF_x, SF)
+
+    #
+    # now readjust normalization to match the longitudinal profile
+    #
+    if error_type_l == FIGURE_ERROR:
+        if rms_l != 0.0:
+            s *= rms_l / s.std()
+    else:
+        slp = slopes(s.T,WW_x,SF_x,silent=1, return_only_rms=1)
+        if rms_l != 0.0:
+            s *= rms_l / slp[1]
+        else:
+            if rms_w != 0:
+                s *= rms_w / slp[0]
+
+        # print(">>>>>>>>>>>>>>>>>>TARGETS l x w",renormalize_to_slopes_sd_l,renormalize_to_slopes_sd_w)
+        # print(">>>>>>>>>>>>>>>>>>",s.shape,WW_x.shape,SF_x.shape)
+        # print(">>>>>>>>>>>>>>>>>>SLOPES(X,Y)",slopes(s.T,WW_x,SF_x,silent=1, return_only_rms=1),
+        #     (numpy.gradient(WW, WW_x[1]-WW_x[0])).std(),
+        #     (numpy.gradient(SF, SF_x[1]-SF_x[0])).std(),)
+
+
 
     return WW_x, SF_x, s
 
@@ -542,7 +564,7 @@ def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, ste
 #
 #########################################################
 
-
+#TODO: note that the returned array las LENGTH in zeroth order and WIDTH in first order, so shadow coordinates (Y,X)
 def combine_two_transversal_profiles(WW_x, WW, SF_x, SF):
     """
     combine two profiles into a mesh
@@ -561,22 +583,6 @@ def combine_two_transversal_profiles(WW_x, WW, SF_x, SF):
 
     return s
 
-#########################################################
-#
-# TESTS
-#
-#########################################################
-
-def package_dirname(package):
-    """Return the directory path where package is located.
-
-    """
-    import os, six
-    if isinstance(package, six.string_types):
-        package = __import__(package, fromlist=[""])
-    filename = package.__file__
-    dirname = os.path.dirname(filename)
-    return dirname
 
 #copied from ShadowTools,py
 def slopes(z,x,y,silent=1, return_only_rms=0):
@@ -598,9 +604,7 @@ def slopes(z,x,y,silent=1, return_only_rms=0):
     ; OUTPUTS:
     ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
     ;            along X in out[0,:,:] and along Y in out[1,:,:]
-    ;	slopesrms: a 4-dim array with
-    ;            [slopeErrorRMS_X_arcsec,slopeErrorRMS_Y_arcsec,
-    ;             slopeErrorRMS_X_urad,slopeErrorRMS_Y_urad]
+    ;	slopesrms: a 2-dim array with (in rad): [slopeErrorRMS_X,slopeErrorRMS_Y]
     ;
     ; MODIFICATION HISTORY:
     ;       MSR 1994 written
@@ -611,10 +615,6 @@ def slopes(z,x,y,silent=1, return_only_rms=0):
     ;-
     ;
     """
-
-    # make error when surface is reloaded form file
-    #nx = z.shape[0]
-    #ny = z.shape[1]
 
     nx = x.size
     ny = y.size
@@ -658,373 +658,5 @@ def slopes(z,x,y,silent=1, return_only_rms=0):
     else:
         return (slope,slopesrms)
 
-
-def test_1d_gaussian(mirror_length=200.0,step=1.0,random_seed=898882,error_type=SLOPE_ERROR,rms=1e-7):
-
-    correlation_length = 10.0
-
-    if error_type == FIGURE_ERROR:
-        x, f = simulate_profile_1D_gaussian(step=step, \
-                                              mirror_length=mirror_length, \
-                                              rms_heights=rms, \
-                                              correlation_length=correlation_length,\
-                                              renormalize_to_heights_sd=rms)
-    else:
-        x, f = simulate_profile_1D_gaussian(step=step, \
-                                              mirror_length=mirror_length, \
-                                              rms_heights=rms, \
-                                              correlation_length=correlation_length,\
-                                              renormalize_to_slopes_sd=rms)
-
-
-    function_name = "simulate_gaussian_profile_1D"
-
-    if error_type == FIGURE_ERROR:
-        print("test_1d_gaussian: test function: %s, HEIGHTS Stdev: input=%g, obtained=%g"%(function_name,rms,f.std()))
-        assert numpy.abs( rms - f.std() ) < 0.01 * numpy.abs(rms)
-    else:
-        slopes = numpy.gradient(f, x[1]-x[0])
-        print("test_1d_gaussian: test function: %s, SLOPES Stdev: input=%g, obtained=%g"%(function_name,rms,slopes.std()))
-        assert numpy.abs( rms - slopes.std() ) < 0.01 * numpy.abs(rms)
-    return x,f,function_name
-
-
-def test_1d_fractal(mirror_length=200.0,step=1.0,random_seed=898882,error_type=FIGURE_ERROR,rms=1e-7):
-
-    if error_type == FIGURE_ERROR:
-        x, f = simulate_profile_1D_fractal(step=step,mirror_length=mirror_length,
-                                          renormalize_to_heights_sd=rms)
-    else:
-        x, f = simulate_profile_1D_fractal(step=step,mirror_length=mirror_length,
-                                          renormalize_to_slopes_sd=rms)
-
-    function_name = "simulate_fractal_profile_1D"
-
-    if error_type == FIGURE_ERROR:
-        print("test_1d_fractal: test function: %s, HEIGHTS Stdev: input=%g, obtained=%g"%(function_name,rms,f.std()))
-        assert numpy.abs( rms - f.std() ) < 0.01 * numpy.abs(rms)
-    else:
-        slopes = numpy.gradient(f, x[1]-x[0])
-        print("test_1d_fractal: test function: %s, SLOPES Stdev: input=%g, obtained=%g"%(function_name,rms,slopes.std()))
-        assert numpy.abs( rms - slopes.std() ) < 0.01 * numpy.abs(rms)
-
-    return x,f,function_name
-
-
-
-def test_1d_aps(mirror_length=200.0,step=1.0,random_seed=898882,error_type=FIGURE_ERROR,rms=1e-7):
-     # units mm
-    function_name = "create_simulated_1D_file_APS"
-    wName_x,wName = create_simulated_1D_file_APS(mirror_length=mirror_length,step=step, random_seed=random_seed,
-                                                 error_type=error_type, rms=rms)
-
-    if error_type == FIGURE_ERROR:
-        print("test_1d: test function: %s, HEIGHTS Stdev: input=%g, obtained=%g"%(function_name,rms,wName.std()))
-        assert numpy.abs( rms - wName.std() ) < 0.01 * numpy.abs(rms)
-    else:
-        slopes = numpy.gradient(wName, wName_x[1]-wName_x[0])
-        print("test_1d: test function: %s, SLOPES Stdev: input=%g, obtained=%g"%(function_name,rms,slopes.std()))
-        assert numpy.abs( rms - slopes.std() ) < 0.01 * numpy.abs(rms)
-
-
-    return wName_x,wName, function_name
-
-
-#todo rename, remove _new
-def test_2d(combination="FF"):
-    mirrorLength = 200.0 # mm
-    Step = 1.0
-    RandomSeed = 898882
-    SEorFE = FIGURE_ERROR # 0 = Figure, 1=Slope
-    RMS = 1e-7 # mm (0.1 nm)
-    correlation_length_l=30.0
-
-    mirrorWidth = 10.0
-    StepW = 1.0
-    RandomSeedW = 7243364
-    SEorFEW = FIGURE_ERROR
-    RMSW = 1e-8
-    correlation_length_w=30.0
-
-    input_file = package_dirname("srxraylib.metrology") + "/mirror_1d.txt"
-    values = numpy.loadtxt(input_file)
-    x_l = values[:, 0]
-    y_l = values[:, 1]
-    x_w = values[:, 0]
-    y_w = values[:, 1]
-    print("File loaded: %s, Length:%f, StDev: %g"%(input_file,x_l[-1]-x_l[0],y_l.std()))
-
-
-    x,y,z = simulate_profile_2D(mirror_length=mirrorLength, step_l=Step, random_seed_l=RandomSeed, error_type_l=SEorFE, rms_l=RMS,
-                                correlation_length_l=correlation_length_l,power_law_exponent_beta_l=1.5,
-                                mirror_width=mirrorWidth, step_w=StepW, random_seed_w=RandomSeedW, error_type_w=SEorFEW, rms_w=RMSW,
-                                correlation_length_w=correlation_length_w,power_law_exponent_beta_w=1.5,
-                                x_l=x_l,y_l=y_l,x_w=x_w,y_w=y_w,
-                                combination=combination)
-
-    function_name = "simulate_profile_2D = combination is %s"%combination
-
-    tmp1 = slopes(z.T,x,y,return_only_rms=1)
-
-    print("test_2d: test function: %s"%(function_name))
-    if SEorFE == FIGURE_ERROR:
-        print("  target HEIGHT error in LENGTH: %g"%(RMS))
-    else:
-        print("  target SLOPE error in LENGTH: %g"%(RMS))
-
-    if SEorFEW == FIGURE_ERROR:
-        print("  target HEIGHT error in WIDTH: %g"%(RMSW))
-    else:
-        print("  target SLOPE error in WIDTH: %g"%(RMSW))
-
-
-    print("  obtained HEIGHT error in LENGTH and WIDTH: %g"%(z.std()))
-    print("  obtained SLOPE error in LENGTH: %g"%(tmp1[0]))
-    print("  obtained SLOPE error in WIDTH: %g"%(tmp1[1]))
-
-    return x,y,z, function_name
-
-
-def test_2d_aps():
-    mirrorLength = 200.0 # mm
-    Step = 1.0
-    RandomSeed = 898882
-    SEorFE = FIGURE_ERROR # 0 = Figure, 1=Slope
-    RMS = 1e-7 # mm (0.1 nm)
-
-    mirrorWidth = 10.0
-    StepW = 1.0
-    RandomSeedW = 7243364
-    SEorFEW = FIGURE_ERROR
-    RMSW = 1e-8
-
-    #x,y,z = create_simulated_2D_profile_APS(mirrorLength, Step, RandomSeed, SEorFE, RMS, mirrorWidth, StepW, RandomSeedW, SEorFEW, RMSW)
-
-
-    x,y,z = create_simulated_2D_profile_APS(mirror_length=mirrorLength, step_l=Step, random_seed_l=RandomSeed, \
-                                            error_type_l=SEorFE, rms_l=RMS,\
-                                            mirror_width=mirrorWidth, step_w=StepW, random_seed_w=RandomSeedW,
-                                            error_type_w=SEorFEW, rms_w=RMSW,\
-                                            power_law_exponent_beta_l=1.5,power_law_exponent_beta_w=1.5)
-
-    function_name = "create_simulated_2D_profile_APS"
-
-
-
-    tmp1 = slopes(z.T,x,y,return_only_rms=1)
-
-
-    print("test_2d: test function: %s"%(function_name))
-    if SEorFE == FIGURE_ERROR:
-        print("  target HEIGHT error in LENGTH: %g"%(RMS))
-    else:
-        print("  target SLOPE error in LENGTH: %g"%(RMS))
-
-    if SEorFEW == FIGURE_ERROR:
-        print("  target HEIGHT error in WIDTH: %g"%(RMSW))
-    else:
-        print("  target SLOPE error in WIDTH: %g"%(RMSW))
-
-
-    print("  obtained HEIGHT error in LENGTH and WIDTH: %g"%(z.std()))
-    print("  obtained SLOPE error in LENGTH: %g"%(tmp1[0]))
-    print("  obtained SLOPE error in WIDTH: %g"%(tmp1[1]))
-
-    return x,y,z, function_name
-
-
-def test_2d_from_1d():
-    return test_2d(combination="EF")
-
-
-def test_2d_from_1d_aps():
-    input_file = package_dirname("srxraylib.metrology") + "/mirror_1d.txt"
-    values = numpy.loadtxt(input_file)
-    x_coords = values[:, 0]
-    y_values = values[:, 1]
-    print("File loaded: %s, Length:%f, StDev: %g"%(input_file,x_coords[-1]-x_coords[0],y_values.std()))
-
-    mirrorWidth = 10.0
-    StepW = 1.0
-    RandomSeedW = 7243364
-    SEorFEW = FIGURE_ERROR
-    RMSW = 1e-6
-
-    x,y,z = create_2D_profile_from_1D(x_coords, y_values, mirrorWidth, StepW, RandomSeedW, SEorFEW, RMSW)
-    function_name = "create_2D_profile_from_1D"
-    tmp1 = slopes(z.T,x,y,return_only_rms=1)
-
-
-    if SEorFEW == FIGURE_ERROR:
-        print("  target HEIGHT error in WIDTH: %g"%(RMSW))
-    else:
-        print("  target SLOPE error in WIDTH: %g"%(RMSW))
-
-
-    print("  obtained HEIGHT error in LENGTH and WIDTH: %g"%(z.std()))
-    print("  obtained SLOPE error in LENGTH: %g"%(tmp1[0]))
-    print("  obtained SLOPE error in WIDTH: %g"%(tmp1[1]))
-
-    return x,y,z, function_name
-
-#
-# main program
-#
-
-
-if __name__ == "__main__":
-    try:
-        from matplotlib import pylab as plt
-    except:
-        raise ImportError
-
-    test_number = 0 # 0 = all
-
-    #
-    # tests for 1D
-    #
-    if test_number == 1 or test_number == 0: #
-        wName_x,wName, function_name = test_1d_gaussian()
-
-        f1 = plt.figure(1)
-        plt.plot(wName_x,wName)
-        plt.title("test number %d, function: %s"%(1,function_name))
-        plt.xlabel("Y")
-        plt.ylabel("heights profile Z")
-        plt.show()
-
-    if test_number == 2 or test_number == 0: #
-        wName_x,wName, function_name = test_1d_fractal()
-
-        f1 = plt.figure(1)
-        plt.plot(wName_x,wName)
-        plt.title("test number %d, function: %s"%(2,function_name))
-        plt.xlabel("Y")
-        plt.ylabel("heights profile Z")
-        plt.show()
-
-    if test_number == 3 or test_number == 0:
-        wName_x,wName, function_name = test_1d_aps()
-
-        f1 = plt.figure(1)
-        plt.plot(wName_x,wName)
-        plt.title("test number %d, function: %s"%(3,function_name))
-        plt.xlabel("Y")
-        plt.ylabel("heights profile Z")
-        plt.show()
-
-    #
-    # tests for 2D
-    #
-
-    if test_number == 4 or test_number == 0:
-
-        WW_x,SF_x,s, function_name = test_2d()
-
-        #print(WW_x.size,SF_x.size,s.shape)
-
-        #print(WW_x.size,SF_x.size,s.size,WW_x.size*SF_x.size)
-        from mpl_toolkits.mplot3d import Axes3D
-        from matplotlib import cm
-        from matplotlib.ticker import LinearLocator, FormatStrFormatter
-        import matplotlib.pyplot as plt
-
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        X, Y = numpy.meshgrid(WW_x, SF_x)
-        surf = ax.plot_surface(X, Y, s, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0, antialiased=False)
-        #ax.set_zlim(-1.01, 1.01)
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
-
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.06f'))
-
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.title("test number %d, function: %s"%(4,function_name))
-
-        plt.show()
-
-    if test_number == 5 or test_number == 0:
-
-        WW_x,SF_x,s, function_name = test_2d_aps()
-
-        #print(WW_x.size,SF_x.size,s.shape)
-
-        #print(WW_x.size,SF_x.size,s.size,WW_x.size*SF_x.size)
-        from mpl_toolkits.mplot3d import Axes3D
-        from matplotlib import cm
-        from matplotlib.ticker import LinearLocator, FormatStrFormatter
-        import matplotlib.pyplot as plt
-
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        X, Y = numpy.meshgrid(WW_x, SF_x)
-        surf = ax.plot_surface(X, Y, s, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0, antialiased=False)
-        #ax.set_zlim(-1.01, 1.01)
-        ax.set_xlabel("X (cm)")
-        ax.set_ylabel("Y (cm)")
-        ax.set_zlabel("Z (µm)")
-
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.06f'))
-
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.title("test number %d, function: %s"%(5,function_name))
-
-        plt.show()
-
-
-    if test_number == 6 or test_number == 0:
-        WW_x,SF_x,s, function_name = test_2d_from_1d()
-
-        #print(WW_x.size,SF_x.size,s.size,WW_x.size*SF_x.size)
-        from mpl_toolkits.mplot3d import Axes3D
-        from matplotlib import cm
-        from matplotlib.ticker import LinearLocator, FormatStrFormatter
-        import matplotlib.pyplot as plt
-
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        X, Y = numpy.meshgrid(WW_x, SF_x)
-        surf = ax.plot_surface(X, Y, s, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0, antialiased=False)
-        #ax.set_zlim(-1.01, 1.01)
-
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.title("test number %d, function: %s"%(6,function_name))
-
-        plt.show()
-
-
-    if test_number == 7 or test_number == 0:
-        WW_x,SF_x,s, function_name = test_2d_from_1d_aps()
-
-        #print(WW_x.size,SF_x.size,s.size,WW_x.size*SF_x.size)
-        from mpl_toolkits.mplot3d import Axes3D
-        from matplotlib import cm
-        from matplotlib.ticker import LinearLocator, FormatStrFormatter
-        import matplotlib.pyplot as plt
-
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        X, Y = numpy.meshgrid(WW_x, SF_x)
-        surf = ax.plot_surface(X, Y, s, rstride=1, cstride=1, cmap=cm.coolwarm,
-                linewidth=0, antialiased=False)
-        #ax.set_zlim(-1.01, 1.01)
-
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-        fig.colorbar(surf, shrink=0.5, aspect=5)
-        plt.title("test number %d, function: %s"%(7,function_name))
-
-        plt.show()
 
 
