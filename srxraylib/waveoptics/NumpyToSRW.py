@@ -1,4 +1,5 @@
 from srwlib import *
+import numpy as np
 
 #
 # Tested but uses Wavefront class
