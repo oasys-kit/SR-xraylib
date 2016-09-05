@@ -380,31 +380,21 @@ def simulate_profile_2D(combination='FF',
     else:
         raise Exception("simulate_profile_2D: illegal combination code")
 
-
-
     s = combine_two_transversal_profiles(WW_x, WW, SF_x, SF)
 
     #
     # now readjust normalization to match the longitudinal profile
     #
     if error_type_l == FIGURE_ERROR:
-        if rms_l != 0.0:
+        if not rms_l is None and rms_l != 0.0:
             s *= rms_l / s.std()
     else:
         slp = slopes(s.T,WW_x,SF_x,silent=1, return_only_rms=1)
-        if rms_l != 0.0:
+        if not rms_l is None and rms_l != 0.0:
             s *= rms_l / slp[1]
         else:
-            if rms_w != 0:
+            if not rms_w is None and rms_w != 0:
                 s *= rms_w / slp[0]
-
-        # print(">>>>>>>>>>>>>>>>>>TARGETS l x w",renormalize_to_slopes_sd_l,renormalize_to_slopes_sd_w)
-        # print(">>>>>>>>>>>>>>>>>>",s.shape,WW_x.shape,SF_x.shape)
-        # print(">>>>>>>>>>>>>>>>>>SLOPES(X,Y)",slopes(s.T,WW_x,SF_x,silent=1, return_only_rms=1),
-        #     (numpy.gradient(WW, WW_x[1]-WW_x[0])).std(),
-        #     (numpy.gradient(SF, SF_x[1]-SF_x[0])).std(),)
-
-
 
     return WW_x, SF_x, s
 
