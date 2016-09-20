@@ -944,7 +944,7 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
         f.close()
         print("File with wiggler spectrum written to file: "+outFile)
 
-    return out[0,:],out[1,:]
+    return out[0,:].copy(),out[1,:].copy()
 
 
 def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
