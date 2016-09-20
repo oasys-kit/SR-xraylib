@@ -411,7 +411,7 @@ def sync_f(rAngle,rEnergy=None,polarization=0,gauss=0,l2=1,l1=0 ):
     #;
     #; angle distribution integrated over full energies
     #;
-    if (rEnergy == None):
+    if (rEnergy is None):
         if gauss == 1:
             #; Formula 87 in Pag 32 in Green 1975
             efe = 0.4375*numpy.exp(-0.5* numpy.power(rAngle/0.608,2) )
@@ -596,7 +596,8 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
              1 Flux at Psi=0
              2 Flux integrated in the angular interval [Psi_Min,Psi_Max]
              3 Flux at Psi=Psi_Min
-     
+             4 Flux versus angle in [Psi_Min,Psi_Max] and energy
+
             energy:  the energy array [in eV]
      
       KEYWORD PARAMETERS:
@@ -634,7 +635,7 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
      
       OUTPUTS:
             returns the array with the flux [photons/sec/0.1%bw] for FLAG=0,2
-            and the flux [photons/sec/0.1%bw/mrad] for FLAG=1,3
+            and the flux [photons/sec/0.1%bw/mrad] for FLAG=1,3,4
      
       PROCEDURE:
      
@@ -749,17 +750,13 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
         #TODO: check this 
         if len(energy_ev) == len(a5): 
             a5.shape = oldshape
-        return a5
-
-    if f_psi == 1: #at Psi = 0
+    elif f_psi == 1: #at Psi = 0
         #a8 =  1.3264d13
         a8 = codata_ec/numpy.power(codata_mee,2)/codata_h*(9e-2/2/numpy.pi) 
         a5 = a8*numpy.power(e_gev,2)*i_a*hdiv_mrad* \
              sync_hi(energy_ev/ec_ev,polarization=polarization)
         a5.shape = oldshape
-        return a5
-
-    if f_psi == 2: #between PsiMin and PsiMax
+    elif f_psi == 2: #between PsiMin and PsiMax
         # a8 = 1.3264d13
         a8 = codata_ec/numpy.power(codata_mee,2)/codata_h*(9e-2/2/numpy.pi) 
         eene = energy_ev/ec_ev
@@ -775,9 +772,7 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
         # bug reported by Gernot.Buth@iss.fzk.de
         angle_step = (float(psi_max)-psi_min)/(psi_npoints-1.0)
         a5 = fMatrix.sum(axis=0) * angle_step
-        return a5,fMatrix,angle_mrad
-
-    if f_psi == 3: #at PsiMin
+    elif f_psi == 3: #at PsiMin
         a8 = codata_ec/numpy.power(codata_mee,2)/codata_h*(9e-2/2/numpy.pi) 
         #a8 = 1.3264d13
         eene = energy_ev/ec_ev
@@ -786,9 +781,21 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
         a5=sync_f(angle_mrad*gamma/1e3,eene,polarization=polarization)
         a5 = a5*numpy.power(eene,2)*a8*i_a*hdiv_mrad*numpy.power(e_gev,2)
         a5.shape = oldshape
-        return a5
+    elif f_psi == 4: #at every point in [PsyMin,PsiMax]
+        # a8 = 1.3264d13
+        a8 = codata_ec/numpy.power(codata_mee,2)/codata_h*(9e-2/2/numpy.pi)
+        eene = energy_ev/ec_ev
+        gamma = e_gev*1e3/codata_mee
+        angle_mrad = numpy.linspace(psi_min,psi_max,psi_npoints)
+        eene2 = numpy.outer(angle_mrad*0.0e0+1,eene)
+        a5=sync_f(angle_mrad*gamma/1e3,eene,polarization=polarization)
 
+        a5 = a5*numpy.power(eene2,2)*a8*i_a*hdiv_mrad*numpy.power(e_gev,2)
 
+    else:
+        raise Exception("Invalid value f_psi=%d"%f_psi)
+
+    return a5
 
 #
 #------------------------- WIGGLER FUNCTIONS -----------------------------------
@@ -2075,15 +2082,15 @@ if __name__ == '__main__':
     except ImportError:
         print("failed to import matplotlib. No on-line plots.")
 
-    test_xraybooklet_fig2_1(pltOk=pltOk)
-    test_xraybooklet_fig2_2(pltOk=pltOk)
-    test_esrf_bm_spectrum(pltOk=pltOk)
-    test_esrf_bm_angle_power(pltOk=pltOk)
-    test_esrf_bm_angle_flux(pltOk=pltOk)
+    # test_xraybooklet_fig2_1(pltOk=pltOk)
+    # test_xraybooklet_fig2_2(pltOk=pltOk)
+    # test_esrf_bm_spectrum(pltOk=pltOk)
+    # test_esrf_bm_angle_power(pltOk=pltOk)
+    # test_esrf_bm_angle_flux(pltOk=pltOk)
     test_clarke_43(pltOk=pltOk)
-    test_esrf_bm_2d(pltOk=pltOk)
-    test_wiggler_flux_vs_r(pltOk=pltOk)
-    test_wiggler_external_b(pltOk=pltOk)
+    # test_esrf_bm_2d(pltOk=pltOk)
+    # test_wiggler_flux_vs_r(pltOk=pltOk)
+    # test_wiggler_external_b(pltOk=pltOk)
 
     if pltOk: plt.show()
 

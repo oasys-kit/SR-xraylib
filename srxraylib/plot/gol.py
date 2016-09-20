@@ -24,7 +24,7 @@ except:
 def plot_show():
     plt.show()
 
-def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,show=1):
+def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
@@ -46,7 +46,7 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
     fig = plt.figure()
 
     # cmap = plt.cm.Greys
-    plt.imshow(z.T,origin='lower',extent=[x[0],x[-1],y[0],y[-1]],cmap=cmap)
+    plt.imshow(z.T,origin='lower',extent=[x[0],x[-1],y[0],y[-1]],cmap=cmap,aspect=aspect)
     plt.colorbar()
     ax = fig.gca()
     ax.set_xlabel(xtitle)
@@ -485,9 +485,9 @@ if __name__ == "__main__":
     # example_plot_table()
     # example_plot_table_one_curve()
     # example_plot_table_with_errorbars()
-    # example_plot_image()
+    example_plot_image()
     # example_plot_surface()
-    example_plot_contour()
+    # example_plot_contour()
     # example_plot_scatter()
-    # example_plot_image_lena()
+    example_plot_image_lena()
 
