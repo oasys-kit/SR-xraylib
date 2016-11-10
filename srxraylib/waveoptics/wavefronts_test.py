@@ -5,7 +5,7 @@ from srxraylib.waveoptics.wavefront import Wavefront1D
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 
 
-do_plot = 0
+do_plot = False
 
 #
 # 1D tests

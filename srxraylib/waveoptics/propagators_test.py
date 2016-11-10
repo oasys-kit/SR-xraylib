@@ -11,11 +11,17 @@ from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer
 from srxraylib.waveoptics.propagator2D import propagate_2D_integral
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel, propagate_2D_fresnel_convolution, propagate_2D_fresnel_srw
 
-do_plot = 0
+do_plot = True
 
 if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table
 
+try:
+    import srwlib
+    SRWLIB_AVAILABLE = True
+except:
+    SRWLIB_AVAILABLE = False
+    print("SRW is not available")
 
 #
 # some common tools
@@ -85,7 +91,7 @@ class propagatorTest(unittest.TestCase):
                                 propagation_distance = 30.0,show=1):
 
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 1D (fraunhofer) diffraction from a %s aperture  "%aperture_type)
         print("#                                                            ")
 
@@ -153,7 +159,7 @@ class propagatorTest(unittest.TestCase):
         wavelength = 1.24e-10
         npoints=1024
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 1D (fraunhofer) diffraction from a %s aperture  "%aperture_type)
         print("#                                                            ")
 
@@ -175,7 +181,7 @@ class propagatorTest(unittest.TestCase):
         propagation_distance = 30.0
         npoints=1024
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 1D (fraunhofer) diffraction from a %s aperture  "%aperture_type)
         print("#                                                            ")
 
@@ -198,7 +204,7 @@ class propagatorTest(unittest.TestCase):
         propagation_distance = 30.0
         npoints=1024
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 1D (fraunhofer) diffraction from a %s aperture  "%aperture_type)
         print("#                                                            ")
 
@@ -220,7 +226,7 @@ class propagatorTest(unittest.TestCase):
         propagation_distance = 30.0
         npoints=1024
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 1D (fraunhofer) diffraction from a %s aperture  "%aperture_type)
         print("#                                                            ")
 
@@ -252,7 +258,7 @@ class propagator2DTest(unittest.TestCase):
 
 
         method_label = "fresnel (%s)"%method
-        print("#                                                             ")
+        print("\n#                                                             ")
         print("# 2D near field fresnel (%s) diffraction from a %s aperture  "%(method_label,aperture_type))
         print("#                                                             ")
 
@@ -342,7 +348,7 @@ class propagator2DTest(unittest.TestCase):
 
 
         method_label = "fresnel (%s)"%method
-        print("#                                                             ")
+        print("\n#                                                             ")
         print("# near field fresnel (%s) diffraction and focusing  "%(method_label))
         print("#                                                             ")
 
@@ -434,7 +440,7 @@ class propagator2DTest(unittest.TestCase):
         :return:
         """
 
-        print("#                                                            ")
+        print("\n#                                                            ")
         print("# far field 2D (fraunhofer) diffraction from a square aperture  ")
         print("#                                                            ")
 
@@ -519,6 +525,11 @@ class propagator2DTest(unittest.TestCase):
         numpy.testing.assert_almost_equal(ycalc/10,ytheory/10,1)
 
     def test_propagate_2D_fresnel_srw_square(self):
+
+        if not SRWLIB_AVAILABLE:
+            print("SRW not available, skipping test_propagate_2D_fresnel_srw_square")
+            return
+
         xcalc, ycalc, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=do_plot,method='srw',aperture_type='square',
                                 aperture_diameter=40e-6,
                                 #pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
@@ -544,27 +555,27 @@ class propagator2DTest(unittest.TestCase):
                                 pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
                                 propagation_distance=5.0,wavelength=1.24e-10)
 
-        xcalc_srw, ycalc_srw, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=0,method='srw',aperture_type='square',
-                                aperture_diameter=40e-6,
-                                pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
-                                propagation_distance=5.0,wavelength=1.24e-10)
+        if  SRWLIB_AVAILABLE:
 
-        xcalc_srw, ycalc_convolution, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=0,method='convolution',aperture_type='square',
-                                aperture_diameter=40e-6,
-                                pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
-                                propagation_distance=5.0,wavelength=1.24e-10)
+            xcalc_srw, ycalc_srw, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=0,method='srw',aperture_type='square',
+                                    aperture_diameter=40e-6,
+                                    pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
+                                    propagation_distance=5.0,wavelength=1.24e-10)
+
+            xcalc_srw, ycalc_convolution, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=0,method='convolution',aperture_type='square',
+                                    aperture_diameter=40e-6,
+                                    pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
+                                    propagation_distance=5.0,wavelength=1.24e-10)
 
 
+            if do_plot:
+               x = xcalc_srw
+               y = numpy.vstack((ycalc_fft,ycalc_srw,ycalc_convolution))
+               plot_table(1e6*x,y,legend=["fft","srw","convolution"],ytitle="Intensity",xtitle="x coodinate [um]",
+                              title="Comparison circular aperture - near field")
 
-
-        if do_plot:
-           x = xcalc_srw
-           y = numpy.vstack((ycalc_fft,ycalc_srw,ycalc_convolution))
-           plot_table(1e6*x,y,legend=["fft","srw","convolution"],ytitle="Intensity",xtitle="x coodinate [um]",
-                          title="Comparison circular aperture - near field")
-
-        numpy.testing.assert_almost_equal(ycalc_fft,ycalc_srw,1)
-        numpy.testing.assert_almost_equal(ycalc_convolution,ycalc_srw,1)
+            numpy.testing.assert_almost_equal(ycalc_fft,ycalc_srw,1)
+            numpy.testing.assert_almost_equal(ycalc_convolution,ycalc_srw,1)
 
     def test_lens(self):
 
@@ -589,12 +600,12 @@ class propagator2DTest(unittest.TestCase):
                                 wavelength=wavelength,
                                 pixelsize_x=pixelsize_x,npixels_x=npixels_x,pixelsize_y=pixelsize_y,npixels_y=npixels_y,
                                 propagation_distance = propagation_distance, defocus_factor=defocus_factor)
-
-        x_srw, y_srw = self.propagation_with_lens(do_plot=0,method='srw',
-                                propagation_steps=propagation_steps,
-                                wavelength=wavelength,
-                                pixelsize_x=pixelsize_x,npixels_x=npixels_x,pixelsize_y=pixelsize_y,npixels_y=npixels_y,
-                                propagation_distance = propagation_distance, defocus_factor=defocus_factor)
+        if SRWLIB_AVAILABLE:
+            x_srw, y_srw = self.propagation_with_lens(do_plot=0,method='srw',
+                                    propagation_steps=propagation_steps,
+                                    wavelength=wavelength,
+                                    pixelsize_x=pixelsize_x,npixels_x=npixels_x,pixelsize_y=pixelsize_y,npixels_y=npixels_y,
+                                    propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
 
         x_convolution, y_convolution = self.propagation_with_lens(do_plot=0,method='convolution',
@@ -604,13 +615,22 @@ class propagator2DTest(unittest.TestCase):
                                 propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
         if do_plot:
-            x = x_fft
-            y = numpy.vstack((y_fft,y_srw,y_convolution))
+            if SRWLIB_AVAILABLE:
+                x = x_fft
+                y = numpy.vstack((y_fft,y_srw,y_convolution))
 
-            plot_table(1e6*x,y,legend=["fft","srw","convolution"],ytitle="Intensity",xtitle="x coodinate [um]",
-                       title="Comparison 1:1 focusing")
+                plot_table(1e6*x,y,legend=["fft","srw","convolution"],ytitle="Intensity",xtitle="x coordinate [um]",
+                           title="Comparison 1:1 focusing")
+            else:
+                x = x_fft
+                y = numpy.vstack((y_fft,y_convolution))
+
+                plot_table(1e6*x,y,legend=["fft","convolution"],ytitle="Intensity",xtitle="x coordinate [um]",
+                           title="Comparison 1:1 focusing")
 
         numpy.testing.assert_almost_equal(y_fft,y_convolution,1)
-        numpy.testing.assert_almost_equal(y_fft,y_srw,1)
-        numpy.testing.assert_almost_equal(y_convolution,y_srw,1)
+
+        if SRWLIB_AVAILABLE:
+            numpy.testing.assert_almost_equal(y_fft,y_srw,1)
+            numpy.testing.assert_almost_equal(y_convolution,y_srw,1)
 

@@ -36,6 +36,13 @@ from srxraylib.util.data_structures import ScaledMatrix
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 
 
+try:
+    import srwlib
+    SRWLIB_AVAILABLE = True
+except:
+    SRWLIB_AVAILABLE = False
+    print("SRW is not available")
+
 # TODO: check resulting amplitude normalization (fft and srw likely agree, convolution gives too high amplitudes, so needs normalization)
 
 #TODO: add these elements (like in Timm's application)
@@ -203,10 +210,7 @@ def propagate_2D_fresnel_srw(wavefront, propagation_distance,
     #
     # convolving with the Fresnel kernel via SRW package
     #
-    try:
-        import srwlib
-    except:
-        raise ImportError("Please install srwlib before attempting to us it")
+
 
     from srxraylib.waveoptics.NumpyToSRW import numpyArrayToSRWArray, SRWWavefrontFromElectricField, SRWEFieldAsNumpy
 
