@@ -33,7 +33,7 @@ def line_fwhm(line):
 
 
 
-def propagation_to_image(wf,do_plot=do_plot,method='fft',
+def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft',
                             propagation_distance=30.0,defocus_factor=1.0,propagation_steps=1,show=1):
 
 
@@ -84,10 +84,10 @@ def propagation_to_image(wf,do_plot=do_plot,method='fft',
 
         plot(wf.get_coordinate_x(),horizontal_profile,
              wf.get_coordinate_y(),vertical_profile,
-             legend=['Horizontal profile','Vertical profile'],title="%s"%method,show=show)
+             legend=['Horizontal profile','Vertical profile'],title="%s %s"%(plot_title,method),show=show)
 
     print("Output intensity: ",wf.get_intensity().sum())
-    return wf.get_coordinate_x(),horizontal_profile
+    return wf,wf.get_coordinate_x(),horizontal_profile
 
 
 
@@ -99,8 +99,6 @@ def example_ideal_lens(mode_wavefront_before_lens):
     print("pixelsize: ",pixelsize_x)
 
 
-
-
     pixelsize_y = pixelsize_x
     npixels_y = npixels_x
 
@@ -109,39 +107,119 @@ def example_ideal_lens(mode_wavefront_before_lens):
     defocus_factor = 1.0 # 1.0 is at focus
     propagation_steps = 1
 
+    # for Gaussian source
+    sigma_x = lens_diameter / 200 # 5e-6
+    sigma_y = lens_diameter / 400 # 5e-6
 
-    wf = Wavefront2D.initialize_wavefront_from_range(x_min=-pixelsize_x*npixels_x/2,x_max=pixelsize_x*npixels_x/2,
+    #
+    # initialize wavefronts of dimension equal to the lens
+    #
+    wf_fft = Wavefront2D.initialize_wavefront_from_range(x_min=-pixelsize_x*npixels_x/2,x_max=pixelsize_x*npixels_x/2,
                                                      y_min=-pixelsize_y*npixels_y/2,y_max=pixelsize_y*npixels_y/2,
                                                      number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
 
+    wf_convolution = Wavefront2D.initialize_wavefront_from_range(x_min=-pixelsize_x*npixels_x/2,x_max=pixelsize_x*npixels_x/2,
+                                                     y_min=-pixelsize_y*npixels_y/2,y_max=pixelsize_y*npixels_y/2,
+                                                     number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
+    if SRWLIB_AVAILABLE:
+        wf_srw = Wavefront2D.initialize_wavefront_from_range(x_min=-pixelsize_x*npixels_x/2,x_max=pixelsize_x*npixels_x/2,
+                                                     y_min=-pixelsize_y*npixels_y/2,y_max=pixelsize_y*npixels_y/2,
+                                                     number_of_points=(npixels_x,npixels_y),wavelength=wavelength)
+
+    #
+    # calculate/define wavefront at zero distance downstream the lens
+    #
     if mode_wavefront_before_lens == 'convergent spherical':
-        wf.set_spherical_wave(complex_amplitude=1.0,radius=-propagation_distance)
+        # no need to propagate nor define lens
+        wf_fft.set_spherical_wave(complex_amplitude=1.0,radius=-propagation_distance)
+        wf_convolution.set_spherical_wave(complex_amplitude=1.0,radius=-propagation_distance)
+        if SRWLIB_AVAILABLE: wf_srw.set_spherical_wave(complex_amplitude=1.0,radius=-propagation_distance)
+
     elif mode_wavefront_before_lens == 'divergent spherical with lens':
-        wf.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+        # define wavefront at zero distance upstream the lens and apply lens
         focal_length = propagation_distance / 2.
-        wf.apply_ideal_lens(focal_length,focal_length)
+
+        wf_fft.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+        wf_fft.apply_ideal_lens(focal_length,focal_length)
+
+        wf_convolution.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+        wf_convolution.apply_ideal_lens(focal_length,focal_length)
+
+        if SRWLIB_AVAILABLE:
+            wf_srw.set_spherical_wave(complex_amplitude=1.0,radius=propagation_distance)
+            wf_srw.apply_ideal_lens(focal_length,focal_length)
+
     elif mode_wavefront_before_lens == 'plane with lens':
-        wf.set_plane_wave_from_complex_amplitude(1.0+0j)
+        # define wavefront at zero distance upstream the lens and apply lens
         focal_length = propagation_distance
-        wf.apply_ideal_lens(focal_length,focal_length)
+
+        wf_fft.set_plane_wave_from_complex_amplitude(1.0+0j)
+        wf_fft.apply_ideal_lens(focal_length,focal_length)
+
+        wf_convolution.set_plane_wave_from_complex_amplitude(1.0+0j)
+        wf_convolution.apply_ideal_lens(focal_length,focal_length)
+
+        if SRWLIB_AVAILABLE:
+            wf_srw.set_plane_wave_from_complex_amplitude(1.0+0j)
+            wf_srw.apply_ideal_lens(focal_length,focal_length)
+
+    elif mode_wavefront_before_lens == 'Gaussian with lens':
+        # define wavefront at source point, propagate to the lens and apply lens
+        X = wf_fft.get_mesh_x()
+        Y = wf_fft.get_mesh_y()
+
+        intensity = numpy.exp( - X**2/(2*sigma_x**2)) * numpy.exp( - Y**2/(2*sigma_y**2))
+
+
+        wf_fft.set_plane_wave_from_complex_amplitude( numpy.sqrt(intensity) )
+        wf_convolution.set_plane_wave_from_complex_amplitude( numpy.sqrt(intensity) )
+        if SRWLIB_AVAILABLE: wf_srw.set_plane_wave_from_complex_amplitude( numpy.sqrt(intensity) )
+
+        # plot
+
+        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
+                   title="G source",show=1)
+
+        wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
+                                              do_plot=0,plot_title="Before lens")
+        wf_convolution, tmp1, tmp2 = propagation_to_image(wf_convolution,method='convolution',propagation_distance=propagation_distance,
+                                              do_plot=0,plot_title="Before lens")
+        if SRWLIB_AVAILABLE:
+            wf_srw, tmp1, tmp2 = propagation_to_image(wf_srw,method='srw',propagation_distance=propagation_distance,
+                                              do_plot=0,plot_title="Before lens")
+
+
+        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
+                   title="Before lens fft",show=1)
+
+        plot_image(wf_convolution.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
+                   title="Before lens convolution",show=1)
+
+        focal_length = propagation_distance / 2
+
+        wf_fft.apply_ideal_lens(focal_length,focal_length)
+        wf_convolution.apply_ideal_lens(focal_length,focal_length)
+        if SRWLIB_AVAILABLE: wf_srw.apply_ideal_lens(focal_length,focal_length)
+
     else:
         raise Exception("Unknown mode")
 
 
 
-    x_fft, y_fft = propagation_to_image(wf,do_plot=0,method='fft',
+    wf_fft, x_fft, y_fft = propagation_to_image(wf_fft,do_plot=0,method='fft',
                             propagation_steps=propagation_steps,
                             propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
+    wf_convolution, x_convolution, y_convolution = propagation_to_image(wf_convolution,do_plot=0,method='convolution',
+                            propagation_steps=propagation_steps,
+                            propagation_distance = propagation_distance, defocus_factor=defocus_factor)
     if SRWLIB_AVAILABLE:
-        x_srw, y_srw = propagation_to_image(wf,do_plot=0,method='srw',
+        wf_srw, x_srw, y_srw = propagation_to_image(wf_srw,do_plot=0,method='srw',
                                 propagation_steps=propagation_steps,
                                 propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
 
-    x_convolution, y_convolution = propagation_to_image(wf,do_plot=0,method='convolution',
-                            propagation_steps=propagation_steps,
-                            propagation_distance = propagation_distance, defocus_factor=defocus_factor)
+
 
     if do_plot:
         if SRWLIB_AVAILABLE:
@@ -164,4 +242,5 @@ if __name__ == "__main__":
     mode_wavefront_before_lens = 'convergent spherical'
     # mode_wavefront_before_lens = 'divergent spherical with lens'
     # mode_wavefront_before_lens = 'plane with lens'
+    mode_wavefront_before_lens = 'Gaussian with lens'
     example_ideal_lens(mode_wavefront_before_lens)

@@ -4,7 +4,7 @@ import numpy
 # implements 2D propagators:
 #
 #   propagate_2D_fraunhofer: Far field Fraunhofer propagator. TODO: Check phases, not to be used for downstream propagation
-#   propagate_2D_integral: Simplification of the Kirchhoff-Fresnel integral. TODO: Very slow and and give some problems
+#   propagate_2D_integral: Simplification of the Kirchhoff-Fresnel integral. TODO: Very slow and give some problems
 #
 #
 #   propagate_2D_fresnel               \
@@ -27,7 +27,7 @@ import numpy
 #     >>> Prefer propagate_2D_fresnel <<<
 #       Prefer EVEN number of bins.
 #       Set shift_half_pixel=1 (now the default)
-#    Under these circunstances, the results agree very well with SRW
+#    Under these circumstances, the results agree very well with SRW
 #
 #
 #

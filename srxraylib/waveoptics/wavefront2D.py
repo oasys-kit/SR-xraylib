@@ -7,6 +7,8 @@ from srxraylib.util.data_structures import ScaledMatrix
 # Implements Wavefront2D object
 #
 #------------------------------------------------
+#
+#TODO: Add duplicate method
 
 class Wavefront2D(object):
     wavelength = 0.0
