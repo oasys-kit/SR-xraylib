@@ -2,7 +2,8 @@
 import numpy
 
 
-from srxraylib.util.data_structures import ScaledArray, ScaledMatrix
+from srxraylib.util.data_structures import ScaledArray
+import scipy.constants as codata
 
 #------------------------------------------------
 #
@@ -120,6 +121,15 @@ class Wavefront1D(object):
 
     # modifiers
 
+    def set_wavelength(self,wavelength):
+        self.wavelength = wavelength
+
+    def set_wavenumber(self,wavenumber):
+        self.wavelength = 2*numpy.pi / wavenumber
+
+    def set_photon_energy(self,photon_energy):
+        m2ev = codata.c * codata.h / codata.e      # lambda(m)  = m2eV / energy(eV)
+        self.wavelength = m2ev / photon_energy
 
     def set_complex_amplitude(self,complex_amplitude):
         if complex_amplitude.size != self.electric_field_array.size():

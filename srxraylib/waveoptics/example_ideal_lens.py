@@ -1,30 +1,31 @@
+"""
 
+    This example shows the focusing of an ideal lens in 1:1 configuration
+    for different sources (see main program at the bottom)
+
+    The systems are:
+        'convergent spherical'
+        'divergent spherical with lens'
+        'plane with lens'
+        'Gaussian with lens'
+        'Hermite with lens'
+        'Undulator with lens'
+
+"""
 import numpy
 
 from srxraylib.waveoptics.wavefront2D  import Wavefront2D
 from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel, propagate_2D_fresnel_convolution, propagate_2D_fresnel_srw
 from scipy.special import hermite
+import scipy.constants as codata
 
 # this is undulator block
-from pySRU.Simulation import create_simulation, Simulation
 from pySRU.ElectronBeam import ElectronBeam
 from pySRU.MagneticStructureUndulatorPlane import MagneticStructureUndulatorPlane
 from pySRU.TrajectoryFactory import TrajectoryFactory, TRAJECTORY_METHOD_ANALYTIC,TRAJECTORY_METHOD_ODE
-
-from pySRU.RadiationFactory import RadiationFactory,RADIATION_METHOD_NEAR_FIELD, \
-                                 RADIATION_METHOD_APPROX_FARFIELD
+from pySRU.RadiationFactory import RadiationFactory,RADIATION_METHOD_NEAR_FIELD, RADIATION_METHOD_APPROX_FARFIELD
 from pySRU.SourceUndulatorPlane import SourceUndulatorPlane
-
-import scipy.constants as codata
-codata_mee = numpy.array(codata.physical_constants["electron mass energy equivalent in MeV"][0])
-m2ev = codata.c * codata.h / codata.e      # lambda(m)  = m2eV / energy(eV)
-# end undulator block
-
-do_plot = True
-
-if do_plot:
-    from srxraylib.plot.gol import plot,plot_image,plot_table
 
 try:
     import srwlib
@@ -33,6 +34,19 @@ except:
     SRWLIB_AVAILABLE = False
     print("SRW is not available")
 
+
+# global variables
+codata_mee = numpy.array(codata.physical_constants["electron mass energy equivalent in MeV"][0])
+m2ev = codata.c * codata.h / codata.e      # lambda(m)  = m2eV / energy(eV)
+
+do_plot = True
+
+if do_plot:
+    from srxraylib.plot.gol import plot,plot_image,plot_table
+
+#
+# auxiliar functions
+#
 
 def line_fwhm(line):
     #
@@ -45,8 +59,6 @@ def line_fwhm(line):
         return FWHM
     else:
         return -1
-
-
 
 
 def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft',
@@ -106,11 +118,19 @@ def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft
     return wf,wf.get_coordinate_x(),horizontal_profile
 
 
+#
+# main function
+#
 
-def example_ideal_lens(mode_wavefront_before_lens):
+def main(mode_wavefront_before_lens):
 
-    lens_diameter = 0.008 # 0.002
-    npixels_x = 512 # 2048
+    lens_diameter = 0.002 # 0.002
+
+    if mode_wavefront_before_lens == 'Undulator with lens':
+        npixels_x = 512
+    else:
+        npixels_x = 2048
+
     pixelsize_x = lens_diameter / npixels_x
     print("pixelsize: ",pixelsize_x)
 
@@ -124,8 +144,11 @@ def example_ideal_lens(mode_wavefront_before_lens):
     propagation_steps = 1
 
     # for Gaussian source
-    sigma_x = lens_diameter / 200 # 5e-6
-    sigma_y = lens_diameter / 400 # 5e-6
+    sigma_x = lens_diameter / 400 # 5e-6
+    sigma_y = sigma_x # 5e-6
+    # for Hermite-Gauss, the H and V mode index (start from 0)
+    hm = 1
+    hn = 2
 
     #
     # initialize wavefronts of dimension equal to the lens
@@ -194,7 +217,7 @@ def example_ideal_lens(mode_wavefront_before_lens):
         # plot
 
         plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="G source",show=1)
+                   title="Gaussian source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -222,10 +245,8 @@ def example_ideal_lens(mode_wavefront_before_lens):
         X = wf_fft.get_mesh_x()
         Y = wf_fft.get_mesh_y()
 
-        m = 1
-        n = 2
-        efield =     (hermite(m)(numpy.sqrt(2)*X/sigma_x)*numpy.exp(-X**2/sigma_x**2))**2 \
-                   * (hermite(n)(numpy.sqrt(2)*Y/sigma_y)*numpy.exp(-Y**2/sigma_y**2))**2
+        efield =     (hermite(hm)(numpy.sqrt(2)*X/sigma_x)*numpy.exp(-X**2/sigma_x**2))**2 \
+                   * (hermite(hn)(numpy.sqrt(2)*Y/sigma_y)*numpy.exp(-Y**2/sigma_y**2))**2
 
         wf_fft.set_complex_amplitude( efield )
         wf_convolution.set_complex_amplitude( efield )
@@ -234,7 +255,7 @@ def example_ideal_lens(mode_wavefront_before_lens):
         # plot
 
         plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="G source",show=1)
+                   title="Hermite-Gauss source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -281,93 +302,59 @@ def example_ideal_lens(mode_wavefront_before_lens):
         resonance_wavelength = (1 + beamline['Kv']**2 / 2.0) / 2 / gamma**2 * beamline["PeriodID"]
         resonance_energy = m2ev / resonance_wavelength
 
+
         print ("Resonance wavelength [A]: %g \n"%(1e10*resonance_wavelength))
         print ("Resonance energy [eV]: %g \n"%(resonance_energy))
+
 
         myBeam = ElectronBeam(Electron_energy=beamline['ElectronEnergy'], I_current=beamline['ElectronCurrent'])
         myUndulator = MagneticStructureUndulatorPlane(K=beamline['Kv'], period_length=beamline['PeriodID'],
                             length=beamline['PeriodID']*beamline['NPeriods'])
 
 
+        XX = wf_fft.get_mesh_x()
+        YY = wf_fft.get_mesh_y()
+        X = wf_fft.get_coordinate_x()
+        Y = wf_fft.get_coordinate_y()
+
+        source = SourceUndulatorPlane(undulator=myUndulator,
+                            electron_beam=myBeam, magnetic_field=None)
+        omega = resonance_energy * codata.e / codata.hbar
+        Nb_pts_trajectory = int(source.choose_nb_pts_trajectory(0.01,photon_frequency=omega))
+        print("Number of trajectory points: ",Nb_pts_trajectory)
 
 
+        traj_fact = TrajectoryFactory(Nb_pts=Nb_pts_trajectory,method=TRAJECTORY_METHOD_ODE,
+                                      initial_condition=None)
 
-        #exhaustive part
-        exhaustive = 1
-        if exhaustive:
-            print("==================== EXHAUSTIVE ======================")
-            XX = wf_fft.get_mesh_x()
-            YY = wf_fft.get_mesh_y()
-            X = wf_fft.get_coordinate_x()
-            Y = wf_fft.get_coordinate_y()
+        print("Number of trajectory points: ",traj_fact.Nb_pts)
 
-            source = SourceUndulatorPlane(undulator=myUndulator,
-                                electron_beam=myBeam, magnetic_field=None)
-            omega = resonance_energy * codata.e / codata.hbar
-            Nb_pts_trajectory = int(source.choose_nb_pts_trajectory(0.01,photon_frequency=omega))
-            print("Number of trajectory points: ",Nb_pts_trajectory)
+        if (traj_fact.initial_condition == None):
+            traj_fact.initial_condition = source.choose_initial_contidion_automatic()
+
+        print("Number of trajectory points: ",traj_fact.Nb_pts,traj_fact.initial_condition)
+        #print('step 2')
+
+        rad_fact = RadiationFactory(method=RADIATION_METHOD_NEAR_FIELD, photon_frequency=omega)
 
 
-            traj_fact = TrajectoryFactory(Nb_pts=Nb_pts_trajectory,method=TRAJECTORY_METHOD_ODE,
-                                          initial_condition=None)
-
-            print("Number of trajectory points: ",traj_fact.Nb_pts)
-
-            if (traj_fact.initial_condition == None):
-                traj_fact.initial_condition = source.choose_initial_contidion_automatic()
-
-            print("Number of trajectory points: ",traj_fact.Nb_pts,traj_fact.initial_condition)
-            #print('step 2')
-
-            rad_fact = RadiationFactory(method=RADIATION_METHOD_NEAR_FIELD, photon_frequency=omega)
+        #print('step 3')
+        trajectory = traj_fact.create_from_source(source=source)
 
 
-            #print('step 3')
-            trajectory = traj_fact.create_from_source(source=source)
+        #print('step 4')
+        radiation = rad_fact.create_for_one_relativistic_electron(trajectory=trajectory, source=source,
+                            XY_are_list=False,distance=beamline['distance'], X=X, Y=Y)
+
+        efield = rad_fact.calculate_electrical_field(trajectory=trajectory,source=source,
+                            distance=beamline['distance'],X_array=XX,Y_array=YY)
+
+        tmp = efield.electrical_field()[:,:,0]
 
 
-            #print('step 4')
-            radiation = rad_fact.create_for_one_relativistic_electron(trajectory=trajectory, source=source,
-                                XY_are_list=False,distance=beamline['distance'], X=X, Y=Y)
-
-            efield = rad_fact.calculate_electrical_field(trajectory=trajectory,source=source,
-                                distance=beamline['distance'],X_array=XX,Y_array=YY)
-
-            print(">>>>>>>>>",efield.electrical_field().shape)
-
-            tmp = efield.electrical_field()[:,:,0]
-            # tmp = numpy.abs(tmpX)**2
-            #tmp = efield.intensity()
-
-            # tmp = rad_fact.calculate_radiation_intensity(trajectory=trajectory,source=source,
-            #                     distance=beamline['distance'],X_array=XX,Y_array=YY)
-        else:
-            X = wf_fft.get_coordinate_x()
-            Y = wf_fft.get_coordinate_y()
-
-            print(">>>>>>>>>>>>",X.shape,X.size,X)
-            print(">> pySRU running energy %f eV ..."%(resonance_energy))
-            simulation_test = create_simulation(magnetic_structure=myUndulator,electron_beam=myBeam,
-                                magnetic_field=None, photon_energy=resonance_energy,
-                                traj_method=TRAJECTORY_METHOD_ODE,Nb_pts_trajectory=None,
-                                rad_method=RADIATION_METHOD_NEAR_FIELD, Nb_pts_radiation=None,
-                                initial_condition=None, distance=beamline['distance'],XY_are_list=False,
-                                X=X,Y=Y)
-
-            print("Number of trajectory points: ",simulation_test.trajectory_fact.Nb_pts,
-                  simulation_test.trajectory_fact.initial_condition)
-            # simulation_test.radiation.plot("title=photon energy = %f"%eArray[ie])
-            tmp = numpy.sqrt(simulation_test.radiation.intensity.copy())
-
-
-
-
-
-
-        # plot_image(tmp,wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-        #            title="Before lens fft",show=1)
-
-        # copy efield into wavefront
+        wf_fft.set_photon_energy(resonance_energy)
+        wf_convolution.set_photon_energy(resonance_energy)
+        if SRWLIB_AVAILABLE: wf_srw.set_photon_energy(resonance_energy)
 
         wf_fft.set_complex_amplitude( tmp )
         wf_convolution.set_complex_amplitude( numpy.sqrt(tmp) )
@@ -405,7 +392,6 @@ def example_ideal_lens(mode_wavefront_before_lens):
 
 
 
-
     if do_plot:
         if SRWLIB_AVAILABLE:
             x = x_fft
@@ -427,7 +413,8 @@ if __name__ == "__main__":
     # mode_wavefront_before_lens = 'convergent spherical'
     # mode_wavefront_before_lens = 'divergent spherical with lens'
     # mode_wavefront_before_lens = 'plane with lens'
-    mode_wavefront_before_lens = 'Gaussian with lens'
+    # mode_wavefront_before_lens = 'Gaussian with lens'
     mode_wavefront_before_lens = 'Hermite with lens'
-    mode_wavefront_before_lens = 'Undulator with lens'
-    example_ideal_lens(mode_wavefront_before_lens)
+    # mode_wavefront_before_lens = 'Undulator with lens'
+
+    main(mode_wavefront_before_lens)
