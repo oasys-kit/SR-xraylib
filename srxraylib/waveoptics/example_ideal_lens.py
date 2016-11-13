@@ -106,9 +106,11 @@ def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft
 
     if do_plot:
         from srxraylib.plot.gol import plot,plot_image
-        plot_image(wf.get_intensity(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='intensity (%s)'%method,show=0)
+        plot_image(wf.get_intensity(),1e6*wf.get_coordinate_x(),1e6*wf.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title='intensity (%s)'%method,show=0)
         # plot_image(wf.get_amplitude(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='amplitude (%s)'%method,show=0)
-        plot_image(wf.get_phase(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='phase (%s)'%method,show=0)
+        plot_image(wf.get_phase(),1e6*wf.get_coordinate_x(),1e6*wf.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title='phase (%s)'%method,show=0)
 
         plot(wf.get_coordinate_x(),horizontal_profile,
              wf.get_coordinate_y(),vertical_profile,
@@ -124,12 +126,12 @@ def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft
 
 def main(mode_wavefront_before_lens):
 
-    lens_diameter = 0.002 # 0.002
+    lens_diameter = 0.002 # 0.001 # 0.002
 
     if mode_wavefront_before_lens == 'Undulator with lens':
         npixels_x = 512
     else:
-        npixels_x = 2048
+        npixels_x = 2048*1.5
 
     pixelsize_x = lens_diameter / npixels_x
     print("pixelsize: ",pixelsize_x)
@@ -147,8 +149,8 @@ def main(mode_wavefront_before_lens):
     sigma_x = lens_diameter / 400 # 5e-6
     sigma_y = sigma_x # 5e-6
     # for Hermite-Gauss, the H and V mode index (start from 0)
-    hm = 1
-    hn = 2
+    hm = 3
+    hn = 1
 
     #
     # initialize wavefronts of dimension equal to the lens
@@ -216,8 +218,8 @@ def main(mode_wavefront_before_lens):
 
         # plot
 
-        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Gaussian source",show=1)
+        plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Gaussian source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -228,11 +230,11 @@ def main(mode_wavefront_before_lens):
                                               do_plot=0,plot_title="Before lens")
 
 
-        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Before lens fft",show=1)
+        plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Before lens fft",show=1)
 
-        plot_image(wf_convolution.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Before lens convolution",show=1)
+        plot_image(wf_convolution.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Before lens convolution",show=1)
 
         focal_length = propagation_distance / 2
 
@@ -254,8 +256,8 @@ def main(mode_wavefront_before_lens):
 
         # plot
 
-        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Hermite-Gauss source",show=1)
+        plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Hermite-Gauss source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -266,11 +268,11 @@ def main(mode_wavefront_before_lens):
                                               do_plot=0,plot_title="Before lens")
 
 
-        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Before lens fft",show=1)
+        plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Before lens fft",show=1)
 
-        plot_image(wf_convolution.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="Before lens convolution",show=1)
+        plot_image(wf_convolution.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="Before lens convolution",show=1)
 
         focal_length = propagation_distance / 2
 
@@ -288,11 +290,11 @@ def main(mode_wavefront_before_lens):
         # beamline['ElectronBeamSizeV'] = 3.4e-6          # these values are not used (zero emittance)
         # beamline['ElectronEnergySpread'] = 0.001        # these values are not used (zero emittance)
         beamline['ElectronCurrent'] = 0.2
-        beamline['ElectronEnergy'] = 6.0
-        beamline['Kv'] = 1.87
-        beamline['NPeriods'] = 14
-        beamline['PeriodID'] = 0.035
-        beamline['distance'] =   propagation_distance
+        beamline['ElectronEnergy']  = 6.0
+        beamline['Kv']              = 1.68  # 1.87
+        beamline['NPeriods']        = 111   # 14
+        beamline['PeriodID']        = 0.018 # 0.035
+        beamline['distance']        =   propagation_distance
         # beamline['gapH']      = pixelsize_x*npixels_x
         # beamline['gapV']      = pixelsize_x*npixels_x
 
@@ -303,8 +305,12 @@ def main(mode_wavefront_before_lens):
         resonance_energy = m2ev / resonance_wavelength
 
 
+
         print ("Resonance wavelength [A]: %g \n"%(1e10*resonance_wavelength))
         print ("Resonance energy [eV]: %g \n"%(resonance_energy))
+
+        # red shift 100 eV
+        resonance_energy = resonance_energy - 100
 
 
         myBeam = ElectronBeam(Electron_energy=beamline['ElectronEnergy'], I_current=beamline['ElectronCurrent'])
@@ -362,8 +368,8 @@ def main(mode_wavefront_before_lens):
 
         # plot
 
-        plot_image(wf_fft.get_intensity(),wf_fft.get_coordinate_x(),wf_fft.get_coordinate_y(),
-                   title="UND source at lens plane",show=1)
+        plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+                   xtitle="X um",ytitle="Y um",title="UND source at lens plane",show=1)
 
         # apply lens
 
@@ -377,6 +383,8 @@ def main(mode_wavefront_before_lens):
         raise Exception("Unknown mode")
 
 
+    plot_image(wf_fft.get_phase(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+               title="Phase just after the lens",xtitle="X um",ytitle="Y um",show=1)
 
     wf_fft, x_fft, y_fft = propagation_to_image(wf_fft,do_plot=0,method='fft',
                             propagation_steps=propagation_steps,
@@ -390,7 +398,8 @@ def main(mode_wavefront_before_lens):
                                 propagation_steps=propagation_steps,
                                 propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
-
+    plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
+               title="Intensity at image plane",xtitle="X um",ytitle="Y um",show=1)
 
     if do_plot:
         if SRWLIB_AVAILABLE:
@@ -406,12 +415,10 @@ def main(mode_wavefront_before_lens):
             plot_table(1e6*x,y,legend=["fft","convolution"],ytitle="Intensity",xtitle="x coordinate [um]",
                        title="Comparison 1:1 focusing "+mode_wavefront_before_lens)
 
-
-
 if __name__ == "__main__":
 
-    # mode_wavefront_before_lens = 'convergent spherical'
-    # mode_wavefront_before_lens = 'divergent spherical with lens'
+    mode_wavefront_before_lens = 'convergent spherical'
+    mode_wavefront_before_lens = 'divergent spherical with lens'
     # mode_wavefront_before_lens = 'plane with lens'
     # mode_wavefront_before_lens = 'Gaussian with lens'
     mode_wavefront_before_lens = 'Hermite with lens'
