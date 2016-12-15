@@ -263,13 +263,16 @@ class Wavefront2D(object):
         self.rescale_amplitudes(window)
 
     # new
-    def apply_pinhole(self, radius, x_center=0.0, y_center=0.0):
+    def apply_pinhole(self, radius, x_center=0.0, y_center=0.0, negative=False):
         window = numpy.zeros(self.electric_field_array.shape())
         X = self.get_mesh_x()
         Y = self.get_mesh_y()
         distance_to_center = numpy.sqrt( (X-x_center)**2 + (Y-y_center)**2 )
-        indices_inside = numpy.where(distance_to_center <= radius)
-        window[indices_inside] = 1.0
+        if negative:
+            indices_good = numpy.where(distance_to_center >= radius)
+        else:
+            indices_good = numpy.where(distance_to_center <= radius)
+        window[indices_good] = 1.0
 
         self.rescale_amplitudes(window)
 
