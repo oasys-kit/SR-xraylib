@@ -251,7 +251,7 @@ def simulate_profile_1D_fractal(step=1.0, npoints=None, mirror_length=200.0,
 
     freq = numpy.linspace(f_from,f_to,f_npoints)
     #todo: make exponent of power law a parameter
-    ampl = freq**(-power_law_exponent_beta)
+    ampl = freq**(-power_law_exponent_beta/2)
     phases = numpy.random.rand(freq.size)*2*numpy.pi
     ymirr = numpy.zeros(n_surface_points)
     for i in range(f_npoints):
