@@ -161,11 +161,67 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
         plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
         plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
         plt.plot(x3,y3,label=legend3,marker=marker3,linestyle=linestyle3,color=color3)
+    elif n_arguments == 8:
+        x1 = positional_parameters[0]
+        y1 = positional_parameters[1]
+        x2 = positional_parameters[2]
+        y2 = positional_parameters[3]
+        x3 = positional_parameters[4]
+        y3 = positional_parameters[5]
+        x4 = positional_parameters[6]
+        y4 = positional_parameters[7]
+        if legend is None:
+            legend1 = None
+            legend2 = None
+            legend3 = None
+            legend4 = None
+        else:
+            legend1 = legend[0]
+            legend2 = legend[1]
+            legend3 = legend[2]
+            legend4 = legend[3]
+        if color is None:
+            color1 = None
+            color2 = None
+            color3 = None
+            color4 = None
+        else:
+            color1 = color[0]
+            color2 = color[1]
+            color3 = color[2]
+            color4 = color[3]
+
+        if marker is None:
+            marker1 = None
+            marker2 = None
+            marker3 = None
+            marker4 = None
+        else:
+            marker1 = marker[0]
+            marker2 = marker[1]
+            marker3 = marker[2]
+            marker4 = marker[3]
+
+        if linestyle is None:
+            linestyle1 = '-'
+            linestyle2 = '-'
+            linestyle3 = '-'
+            linestyle4 = '-'
+        else:
+            linestyle1 = linestyle[0]
+            linestyle2 = linestyle[1]
+            linestyle3 = linestyle[2]
+            linestyle4 = linestyle[3]
+
+        plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
+        plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
+        plt.plot(x3,y3,label=legend3,marker=marker3,linestyle=linestyle3,color=color3)
+        plt.plot(x4,y4,label=legend4,marker=marker4,linestyle=linestyle4,color=color4)
     else:
-        "Incorrect number of arguments, plotting only two first arguments"
-        x = positional_parameters[0]
-        y = positional_parameters[1]
-        plt.plot(x,y,label=legend)
+        raise Exception("Incorrect number of arguments, maximum 4 data sets")
+        # x = positional_parameters[0]
+        # y = positional_parameters[1]
+        # plt.plot(x,y,label=legend)
 
     ax = plt.subplot(111)
     if legend is not None:
