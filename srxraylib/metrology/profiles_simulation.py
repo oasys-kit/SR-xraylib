@@ -388,13 +388,15 @@ def simulate_profile_2D(combination='FF',
     if error_type_l == FIGURE_ERROR:
         if not rms_l is None and rms_l != 0.0:
             s *= rms_l / s.std()
+
     else:
         slp = slopes(s.T,WW_x,SF_x,silent=1, return_only_rms=1)
+
         if not rms_l is None and rms_l != 0.0:
             s *= rms_l / slp[1]
-        else:
-            if not rms_w is None and rms_w != 0:
-                s *= rms_w / slp[0]
+        #elif not rms_w is None and rms_w != 0:
+        #    print("QUI3")
+        #    s *= rms_w / slp[0]
 
     return WW_x, SF_x, s
 
