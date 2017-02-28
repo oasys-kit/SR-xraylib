@@ -305,6 +305,79 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
         plt.show()
 
     return fig
+def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,yrange=None,show=True):
+    """
+    Creates four plots in a window
+
+    :param x1: abscissas for plot 1
+    :param y1: ordinates for plot 1
+    :param x2: abscissas for plot 2
+    :param y2: ordinates for plot 2
+    :param x3: abscissas for plot 3
+    :param y3: ordinates for plot 3
+    :param x4: abscissas for plot 4
+    :param y4: ordinates for plot 4
+    :param title: a string or list of 4 strings with title
+    :param xtitle: a string or list of 4 strings with title for X
+    :param ytitle: a string or list of 4 strings with title for Y
+    :param xrange: the X range for all plots
+    :param yrange: the Y range for all plots
+    :param show:
+    :return:
+    """
+
+    if isinstance(title,list):
+        Title = title
+    else:
+        Title = [title,title,title,title]
+
+    if isinstance(xtitle,list):
+        Xtitle = xtitle
+    else:
+        Xtitle = [xtitle,xtitle,xtitle,xtitle]
+
+    if isinstance(ytitle,list):
+        Ytitle = ytitle
+    else:
+        Ytitle = [ytitle,ytitle,ytitle,ytitle]
+
+    # Create subplots.
+    f, ((ax00, ax01), (ax10, ax11)) = plt.subplots(2, 2, sharex="all", sharey="all")
+
+    ax00.plot(x1,y1, "-")
+    ax00.set_title(  Title[0])
+    ax00.set_xlabel(Xtitle[0])
+    ax00.set_ylabel(Ytitle[0])
+    ax00.set_xlim(xrange)
+    ax00.set_ylim(yrange)
+
+
+    ax01.plot(x2,y2, "-")
+    ax01.set_title(  Title[1])
+    ax01.set_xlabel(Xtitle[1])
+    ax01.set_ylabel(Ytitle[1])
+    ax01.set_xlim(xrange)
+    ax01.set_ylim(yrange)
+
+
+    ax10.plot(x3,y3, "-")
+    ax10.set_title(  Title[2])
+    ax10.set_xlabel(Xtitle[2])
+    ax10.set_ylabel(Ytitle[2])
+    ax10.set_xlim(xrange)
+    ax10.set_ylim(yrange)
+
+
+    ax11.plot(x4,y4, "-")
+    ax11.set_title(  Title[3])
+    ax11.set_xlabel(Xtitle[3])
+    ax11.set_ylabel(Ytitle[3])
+    ax11.set_xlim(xrange)
+    ax11.set_ylim(yrange)
+
+    if show: plt.show()
+
+    return f
 
 def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,show=1):
 
