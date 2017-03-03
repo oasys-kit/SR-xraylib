@@ -247,7 +247,9 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
     return fig
 
 def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
-               title="",xtitle="",ytitle="",show=1,legend=None,color=None):
+               title="",xtitle="",ytitle="",show=1,
+               legend=None,legend_position=None,color=None,
+               xlog=False,ylog=False):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 0:
@@ -288,13 +290,21 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
     else:
         raise Exception("Incorrect number of arguments")
 
+    ax = plt.subplot(111)
+
+    if xlog:
+        ax.set_xscale("log")
+
+    if ylog:
+        ax.set_yscale("log")
+
+    if legend is not None:
+        if legend_position is None:
+            legend_position = (1.1, 1.05)
+        ax.legend(bbox_to_anchor=legend_position)
 
     plt.xlim( xrange )
     plt.ylim( yrange )
-
-    if legend is not None:
-        ax = plt.subplot(111)
-        ax.legend(bbox_to_anchor=(1.1, 1.05))
 
     plt.title(title)
     plt.xlabel(xtitle)
