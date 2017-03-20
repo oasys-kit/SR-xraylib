@@ -58,28 +58,18 @@ import sys
 
 #Physical constants (global, by now)
 try:
-    import scipy.constants.codata
-    codata = scipy.constants.codata.physical_constants
-    
-    codata_c, tmp1, tmp2 = codata["speed of light in vacuum"]
-    codata_c = numpy.array(codata_c)
-    
-    codata_mee, tmp1, tmp2 = codata["electron mass energy equivalent in MeV"]
-    codata_mee = numpy.array(codata_mee)
-    
-    codata_me, tmp1, tmp2 = codata["electron mass"]
-    codata_me = numpy.array(codata_me)
-    
-    codata_h, tmp1, tmp2 = codata["Planck constant"]
-    codata_h = numpy.array(codata_h)
-    
-    codata_ec, tmp1, tmp2 = codata["elementary charge"]
-    codata_ec = numpy.array(codata_ec)
+    import scipy.constants as codata
+    codata_c = codata.c
+    codata_mee = 1e-6 * codata.m_e * codata.c**2 / codata.e
+    codata_me = codata.m_e
+    codata_h = codata.h
+    codata_ec = codata.e
+
 except ImportError:
     print("Failed to import scipy. Finding alternative ways.")
     codata_c = numpy.array(299792458.0)
-    codata_mee = numpy.array(9.10938291e-31)
-    codata_me = numpy.array(0.510999)
+    codata_me = numpy.array(9.10938291e-31)
+    codata_mee = numpy.array(0.510999)
     codata_h = numpy.array(6.62606957e-34)
     codata_ec = numpy.array(1.602176565e-19)
 
@@ -185,7 +175,7 @@ def fintk53(xd):
         b=z*a-b - 0.0028763680
         a=z*b-a + 0.0623959136
         p=0.5*z*a-b + 1.0655239080
-        p=p* numpy.power(1.5707963268/x,0.5)/numpy.exp(x)
+        p=p* numpy.power(numpy.pi/2/x,0.5)/numpy.exp(x)
         fintk53[xi]=p
     
     xi = numpy.where(xd < 5.0)
@@ -444,10 +434,11 @@ def sync_f(rAngle,rEnergy=None,polarization=0,gauss=0,l2=1,l1=0 ):
     ji = numpy.outer(ji,rEnergy/2.0)
     rAngle2 = numpy.outer(rAngle,(rEnergy*0.0+1.0))
     efe = l2*scipy.special.kv(2.0/3.0,ji)+ \
-          l3* rAngle2*scipy.special.kv(1.0/3.0,ji)/ \
-    numpy.sqrt(1.0+numpy.power(rAngle2,2))
+            l3* rAngle2*scipy.special.kv(1.0/3.0,ji)/ \
+            numpy.sqrt(1.0+numpy.power(rAngle2,2))
     efe = efe* (1.0+numpy.power(rAngle2,2))
     efe = efe*efe
+
     return efe
 
 
@@ -739,12 +730,10 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
     energy_ev = numpy.array(energy_ev)
     oldshape = energy_ev.shape
     energy_ev.shape = -1
-   
-    
 
     if f_psi == 0: # fully integrated in Psi
     # numerical cte for integrated flux
-        a8 = numpy.sqrt(3e0)*9e6*codata_ec/codata_h/codata_c/codata_mee 
+        a8 = numpy.sqrt(3e0)*9e6*codata_ec/codata_h/codata_c/codata_mee
         a5 = a8*e_gev*i_a*hdiv_mrad* \
              sync_g1(energy_ev/ec_ev,polarization=polarization)
         #TODO: check this 
@@ -763,7 +752,8 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
         gamma = e_gev*1e3/codata_mee
         angle_mrad = numpy.linspace(psi_min,psi_max,psi_npoints)
         eene2 = numpy.outer(angle_mrad*0.0e0+1,eene)
-        a5=sync_f(angle_mrad*gamma/1e3,eene,polarization=polarization) 
+        a5=sync_f(angle_mrad*gamma/1e3,eene,polarization=polarization)
+
         
         a5 = a5*numpy.power(eene2,2)*a8*i_a*hdiv_mrad*numpy.power(e_gev,2)
         fMatrix = a5
@@ -1595,7 +1585,7 @@ def test_xraybooklet_fig2_2(pltOk=False):
 
     toptitle = "Synchrotron Angular Emission"
     xtitle = "$\gamma \Psi$"
-    ytitle = "$N(%)$"
+    ytitle = "$N(\%)$"
 
     f3.shape = -1
     f3pi.shape = -1
@@ -1747,8 +1737,8 @@ def test_esrf_bm_angle_flux(pltOk=False):
 
 def test_clarke_43(pltOk=False):
     #
-    # Example 6 Slide 43 of 
-    # http://www.cockcroft.ac.uk/education/PG_courses_2009-10/Spring_2010/Clarke%20Lecture%201.pdf
+    # Example 6 Slide 35 of
+    # http:https://www.cockcroft.ac.uk/wp-content/uploads/2014/12/Lecture-1.pdf
     #
 
 
@@ -1778,12 +1768,15 @@ def test_clarke_43(pltOk=False):
     print("Critical wavelength [A]: %f \n"%(1e10*ec_m))
     print("Critical photon energy [eV]: %f \n"%(ec_ev))
 
-    e = [0.1*ec_ev,ec_ev,10*ec_ev]
-    tmp1,fm,a = sync_ene(2,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
+    e = numpy.array([0.1*ec_ev,ec_ev,10*ec_ev])
+    a = numpy.linspace(-0.6,0.6,150)
+
+    fm = sync_ene(4,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
         hdiv_mrad=1,psi_min=-0.6,psi_max=0.6,psi_npoints=150)
-    tmp1,fmPar,a = sync_ene(2,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
+
+    fmPar = sync_ene(4,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
         hdiv_mrad=1,psi_min=-0.6,psi_max=0.6,psi_npoints=150,polarization=1)
-    tmp1,fmPer,a = sync_ene(2,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
+    fmPer = sync_ene(4,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
         hdiv_mrad=1,psi_min=-0.6,psi_max=0.6,psi_npoints=150,polarization=2)
     toptitle='Flux vs vertical angle '
     xtitle  ='angle [mrad]'
@@ -1843,9 +1836,11 @@ def test_esrf_bm_2d(pltOk=False):
     ec_m = 4.0*numpy.pi*r_m/3.0/numpy.power(gamma,3) # wavelength in m
     ec_ev = m2ev/ec_m
 
+    a = numpy.linspace(-0.2,0.2,50)
     e = numpy.linspace(20000,80000,80)
-    tmp1,fm,a = sync_ene(2,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
-        hdiv_mrad=1,psi_min=-0.2,psi_max=0.2,psi_npoints=50)
+
+    fm = sync_ene(4,e,ec_ev=ec_ev,e_gev=e_gev,i_a=i_a,\
+        hdiv_mrad=1,psi_min=a.min(),psi_max=a.max(),psi_npoints=a.size)
     toptitle='Flux vs vertical angle and photon energy'
     xtitle  ='angle [mrad]'
     ytitle  ='energy [eV]'
@@ -2041,11 +2036,11 @@ def test_wiggler_external_b(pltOk=False):
         #
         # now spectra
         #
-        e, f0 = wiggler_spectrum(t0,enerMin=100.0,enerMax=100000.0,nPoints=100, \
+        e, f0, tmp = wiggler_spectrum(t0,enerMin=100.0,enerMax=100000.0,nPoints=100, \
                      electronCurrent=0.2, outFile="tmp.dat", elliptical=False)
-        e, f1 = wiggler_spectrum(t1,enerMin=100.0,enerMax=100000.0,nPoints=100, \
+        e, f1, tmp = wiggler_spectrum(t1,enerMin=100.0,enerMax=100000.0,nPoints=100, \
                      electronCurrent=0.2, outFile="tmp.dat", elliptical=False)
-        e, f2 = wiggler_spectrum(t2,enerMin=100.0,enerMax=100000.0,nPoints=100, \
+        e, f2, tmp = wiggler_spectrum(t2,enerMin=100.0,enerMax=100000.0,nPoints=100, \
                      electronCurrent=0.2, outFile="tmp.dat", elliptical=False)
 
         toptitle = "3-pole ESRF wiggler spectrum"
@@ -2082,15 +2077,15 @@ if __name__ == '__main__':
     except ImportError:
         print("failed to import matplotlib. No on-line plots.")
 
-    # test_xraybooklet_fig2_1(pltOk=pltOk)
-    # test_xraybooklet_fig2_2(pltOk=pltOk)
-    # test_esrf_bm_spectrum(pltOk=pltOk)
-    # test_esrf_bm_angle_power(pltOk=pltOk)
-    # test_esrf_bm_angle_flux(pltOk=pltOk)
+    test_xraybooklet_fig2_1(pltOk=pltOk)
+    test_xraybooklet_fig2_2(pltOk=pltOk)
+    test_esrf_bm_spectrum(pltOk=pltOk)
+    test_esrf_bm_angle_power(pltOk=pltOk)
+    test_esrf_bm_angle_flux(pltOk=pltOk)
     test_clarke_43(pltOk=pltOk)
-    # test_esrf_bm_2d(pltOk=pltOk)
-    # test_wiggler_flux_vs_r(pltOk=pltOk)
-    # test_wiggler_external_b(pltOk=pltOk)
+    test_esrf_bm_2d(pltOk=pltOk)
+    test_wiggler_flux_vs_r(pltOk=pltOk)
+    test_wiggler_external_b(pltOk=pltOk)
 
     if pltOk: plt.show()
 
