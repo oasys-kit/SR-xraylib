@@ -63,6 +63,10 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
          xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None,
          xlog=False,ylog=False):
 
+    if isinstance(positional_parameters,tuple):
+        if len(positional_parameters) == 1: # in the cvase that input is a tuple with all curves
+            positional_parameters = positional_parameters[0]
+
     n_arguments = len(positional_parameters)
     if n_arguments == 0:
         return
