@@ -5,15 +5,13 @@ import os
 import subprocess
 
 try:
-    from setuptools import setup
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-    from setuptools import setup
+    from setuptools import find_packages, setup
+except AttributeError:
+    from setuptools import find_packages, setup
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.11'
+VERSION = '1.0.14'
 ISRELEASED = False
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
@@ -36,7 +34,7 @@ KEYWORDS = (
 )
 
 CLASSIFIERS = (
-    'Development Status :: 1 - Planning',
+    'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Environment :: Plugins',
     'Programming Language :: Python :: 3',
