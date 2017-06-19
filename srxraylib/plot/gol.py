@@ -20,6 +20,10 @@ try:
 except:
     raise ImportError("Please install matplotlib to allow graphics")
 
+try:
+    plt.switch_backend("Qt5Agg")
+except:
+    raise Exception("Failed to set matplotlib backend to Qt5Agg")
 
 def plot_show():
     plt.show()
@@ -622,15 +626,14 @@ def example_plot_image_lena():
 # main
 #
 if __name__ == "__main__":
-    # example_plot_one_curve()
+    example_plot_one_curve()
     # example_plot_two_curves()
     # example_plot_one_curve_log()
     # example_plot_table()
     # example_plot_table_one_curve()
     # example_plot_table_with_errorbars()
-    example_plot_image()
+    # example_plot_image()
     # example_plot_surface()
     # example_plot_contour()
     # example_plot_scatter()
-    example_plot_image_lena()
-
+    # example_plot_image_lena()
