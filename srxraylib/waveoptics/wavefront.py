@@ -1,6 +1,6 @@
 
 import numpy
-
+import warnings
 
 from srxraylib.util.data_structures import ScaledArray
 import scipy.constants as codata
@@ -113,6 +113,12 @@ class Wavefront1D(object):
 
     def get_interpolated_intensities(self, abscissa_values):
         return self.get_interpolated_amplitudes(abscissa_values)**2
+
+    # DEPRECATED METHOD, KEPT FOR RETRO-COMPATIBILITY
+    def get_complex_amplitude_from_abscissas(self, abscissa_values):
+        warnings.warn("Deprecated function: use get_interpolated_complex_amplitudes", DeprecationWarning)
+
+        return self.electric_field_array.interpolate_values(abscissa_values)
 
     # modifiers
 
