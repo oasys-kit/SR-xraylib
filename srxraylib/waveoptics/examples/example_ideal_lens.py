@@ -71,7 +71,7 @@ def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft
     print("#                                                             ")
 
     #                               \ |  /
-    #   *                           | | |                      *
+    #   *           /users/pirro/Documents/workspace/syned                | | |                      *
     #                               / | \
     #   <-------    d  ---------------><---------   d   ------->
     #   d is propagation_distance
@@ -408,7 +408,7 @@ if __name__ == "__main__":
 
     mode_wavefront_before_lens = 'convergent spherical'
     # mode_wavefront_before_lens = 'divergent spherical with lens'
-    # mode_wavefront_before_lens = 'plane with lens'
+    mode_wavefront_before_lens = 'plane with lens'
     # mode_wavefront_before_lens = 'Gaussian with lens'
     # mode_wavefront_before_lens = 'Hermite with lens'
     # mode_wavefront_before_lens = 'Undulator with lens'
