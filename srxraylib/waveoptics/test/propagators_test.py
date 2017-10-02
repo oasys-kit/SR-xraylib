@@ -11,7 +11,7 @@ from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer
 from srxraylib.waveoptics.propagator2D import propagate_2D_integral
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel, propagate_2D_fresnel_convolution, propagate_2D_fresnel_srw
 
-do_plot = True
+do_plot = False
 
 if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table
@@ -23,6 +23,7 @@ except:
     SRWLIB_AVAILABLE = False
     print("SRW is not available")
 
+SRWLIB_AVAILABLE = False
 #
 # some common tools
 #
@@ -58,9 +59,9 @@ def get_theoretical_diffraction_pattern(angle_x,
 
 def line_image(image,horizontal_or_vertical='H'):
     if horizontal_or_vertical == "H":
-        tmp = image[:,image.shape[1]/2]
+        tmp = image[:,int(image.shape[1]/2)]
     else:
-        tmp = image[image.shape[0]/2,:]
+        tmp = image[int(image.shape[0]/2),:]
     return tmp
 
 def line_fwhm(line):
@@ -322,7 +323,7 @@ class propagator2DTest(unittest.TestCase):
         intensity_theory = get_theoretical_diffraction_pattern(angle_x,aperture_type=aperture_type,aperture_diameter=aperture_diameter,
                                             wavelength=wavelength,normalization=True)
 
-        intensity_calculated =  wf1.get_intensity()[:,wf1.size()[1]/2]
+        intensity_calculated =  wf1.get_intensity()[:,int(wf1.size()[1]/2)]
         intensity_calculated /= intensity_calculated.max()
 
         if do_plot:
@@ -401,10 +402,10 @@ class propagator2DTest(unittest.TestCase):
 
 
 
-        horizontal_profile = wf.get_intensity()[:,wf.size()[1]/2]
+        horizontal_profile = wf.get_intensity()[:,int(wf.size()[1]/2)]
         horizontal_profile /= horizontal_profile.max()
         print("FWHM of the horizontal profile: %g um"%(1e6*line_fwhm(horizontal_profile)*wf.delta()[0]))
-        vertical_profile = wf.get_intensity()[wf.size()[0]/2,:]
+        vertical_profile = wf.get_intensity()[int(wf.size()[0]/2),:]
         vertical_profile /= vertical_profile.max()
         print("FWHM of the vertical profile: %g um"%(1e6*line_fwhm(vertical_profile)*wf.delta()[1]))
 
@@ -494,7 +495,7 @@ class propagator2DTest(unittest.TestCase):
                                             wavelength=wavelength,normalization=True)
 
 
-        intensity_calculated =  wf1.get_intensity()[:,wf1.size()[1]/2]
+        intensity_calculated =  wf1.get_intensity()[:,int(wf1.size()[1]/2)]
         intensity_calculated /= intensity_calculated.max()
 
         if do_plot:
@@ -541,7 +542,7 @@ class propagator2DTest(unittest.TestCase):
     def test_propagate_2D_fresnel_integral_square(self):
         xcalc, ycalc, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=do_plot,method='integral',aperture_type='square',
                                 aperture_diameter=40e-6,
-                                pixelsize_x=1e-6*2,pixelsize_y=1e-6*4,npixels_x=1024/2,npixels_y=1024/4,
+                                pixelsize_x=1e-6*2,pixelsize_y=1e-6*4,npixels_x=int(1024/2),npixels_y=int(1024/4),
                                 propagation_distance=30.0,wavelength=1.24e-10)
 
         numpy.testing.assert_almost_equal(ycalc/10,ytheory/10,1)

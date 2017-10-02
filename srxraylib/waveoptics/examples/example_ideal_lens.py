@@ -34,7 +34,7 @@ except:
     SRWLIB_AVAILABLE = False
     print("SRW is not available")
 
-
+SRWLIB_AVAILABLE = False
 # global variables
 codata_mee = numpy.array(codata.physical_constants["electron mass energy equivalent in MeV"][0])
 m2ev = codata.c * codata.h / codata.e      # lambda(m)  = m2eV / energy(eV)
@@ -96,21 +96,19 @@ def propagation_to_image(wf,do_plot=do_plot,plot_title="Before lens",method='fft
 
 
 
-
-    horizontal_profile = wf.get_intensity()[:,wf.size()[1]/2]
+    horizontal_profile = wf.get_intensity()[:,int(wf.size()[1]/2)]
     horizontal_profile /= horizontal_profile.max()
     print("FWHM of the horizontal profile: %g um"%(1e6*line_fwhm(horizontal_profile)*wf.delta()[0]))
-    vertical_profile = wf.get_intensity()[wf.size()[0]/2,:]
+    vertical_profile = wf.get_intensity()[int(wf.size()[0]/2),:]
     vertical_profile /= vertical_profile.max()
     print("FWHM of the vertical profile: %g um"%(1e6*line_fwhm(vertical_profile)*wf.delta()[1]))
 
     if do_plot:
         from srxraylib.plot.gol import plot,plot_image
         plot_image(wf.get_intensity(),1e6*wf.get_coordinate_x(),1e6*wf.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title='intensity (%s)'%method,show=0)
-        # plot_image(wf.get_amplitude(),wf.get_coordinate_x(),wf.get_coordinate_y(),title='amplitude (%s)'%method,show=0)
+                   xtitle="X um (%d pixels)"%(wf.size()[0]),ytitle="Y um (%d pixels)",title='intensity (%s)'%method,show=False)
         plot_image(wf.get_phase(),1e6*wf.get_coordinate_x(),1e6*wf.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title='phase (%s)'%method,show=0)
+                   xtitle="X um (%d pixels)"%(wf.size()[0]),ytitle="Y um (%d pixels)"%(wf.size[1]),title='phase (%s)'%method,show=False)
 
         plot(wf.get_coordinate_x(),horizontal_profile,
              wf.get_coordinate_y(),vertical_profile,
@@ -131,7 +129,7 @@ def main(mode_wavefront_before_lens):
     if mode_wavefront_before_lens == 'Undulator with lens':
         npixels_x = 512
     else:
-        npixels_x = 2048*1.5
+        npixels_x = int(2048*1.5)
 
     pixelsize_x = lens_diameter / npixels_x
     print("pixelsize: ",pixelsize_x)
@@ -219,7 +217,7 @@ def main(mode_wavefront_before_lens):
         # plot
 
         plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Gaussian source",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[1]),title="Gaussian source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -231,10 +229,10 @@ def main(mode_wavefront_before_lens):
 
 
         plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Before lens fft",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um",title="Before lens fft",show=1)
 
         plot_image(wf_convolution.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Before lens convolution",show=1)
+                   xtitle="X um (%d pixels)"%(wf_convolution.size()[0]),ytitle="Y um",title="Before lens convolution",show=1)
 
         focal_length = propagation_distance / 2
 
@@ -257,7 +255,7 @@ def main(mode_wavefront_before_lens):
         # plot
 
         plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Hermite-Gauss source",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),title="Hermite-Gauss source",show=1)
 
         wf_fft, tmp1, tmp2 = propagation_to_image(wf_fft,method='fft',propagation_distance=propagation_distance,
                                               do_plot=0,plot_title="Before lens")
@@ -269,10 +267,10 @@ def main(mode_wavefront_before_lens):
 
 
         plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Before lens fft",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),title="Before lens fft",show=1)
 
         plot_image(wf_convolution.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="Before lens convolution",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),title="Before lens convolution",show=1)
 
         focal_length = propagation_distance / 2
 
@@ -283,27 +281,18 @@ def main(mode_wavefront_before_lens):
     elif mode_wavefront_before_lens == 'Undulator with lens':
 
         beamline = {}
-        # beamline['name'] = "ESRF_NEW_OB"
-        # beamline['ElectronBeamDivergenceH'] = 5.2e-6    # these values are not used (zero emittance)
-        # beamline['ElectronBeamDivergenceV'] = 1.4e-6    # these values are not used (zero emittance)
-        # beamline['ElectronBeamSizeH'] = 27.2e-6         # these values are not used (zero emittance)
-        # beamline['ElectronBeamSizeV'] = 3.4e-6          # these values are not used (zero emittance)
-        # beamline['ElectronEnergySpread'] = 0.001        # these values are not used (zero emittance)
         beamline['ElectronCurrent'] = 0.2
         beamline['ElectronEnergy']  = 6.0
         beamline['Kv']              = 1.68  # 1.87
         beamline['NPeriods']        = 111   # 14
         beamline['PeriodID']        = 0.018 # 0.035
         beamline['distance']        =   propagation_distance
-        # beamline['gapH']      = pixelsize_x*npixels_x
-        # beamline['gapV']      = pixelsize_x*npixels_x
 
         gamma = beamline['ElectronEnergy'] / (codata_mee * 1e-3)
         print ("Gamma: %f \n"%(gamma))
 
         resonance_wavelength = (1 + beamline['Kv']**2 / 2.0) / 2 / gamma**2 * beamline["PeriodID"]
         resonance_energy = m2ev / resonance_wavelength
-
 
 
         print ("Resonance wavelength [A]: %g \n"%(1e10*resonance_wavelength))
@@ -369,7 +358,7 @@ def main(mode_wavefront_before_lens):
         # plot
 
         plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-                   xtitle="X um",ytitle="Y um",title="UND source at lens plane",show=1)
+                   xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),title="UND source at lens plane",show=1)
 
         # apply lens
 
@@ -384,7 +373,7 @@ def main(mode_wavefront_before_lens):
 
 
     plot_image(wf_fft.get_phase(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-               title="Phase just after the lens",xtitle="X um",ytitle="Y um",show=1)
+               title="Phase just after the lens",xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),show=1)
 
     wf_fft, x_fft, y_fft = propagation_to_image(wf_fft,do_plot=0,method='fft',
                             propagation_steps=propagation_steps,
@@ -399,7 +388,7 @@ def main(mode_wavefront_before_lens):
                                 propagation_distance = propagation_distance, defocus_factor=defocus_factor)
 
     plot_image(wf_fft.get_intensity(),1e6*wf_fft.get_coordinate_x(),1e6*wf_fft.get_coordinate_y(),
-               title="Intensity at image plane",xtitle="X um",ytitle="Y um",show=1)
+               title="Intensity at image plane",xtitle="X um (%d pixels)"%(wf_fft.size()[0]),ytitle="Y um (%d pixels)"%(wf_fft.size()[0]),show=1)
 
     if do_plot:
         if SRWLIB_AVAILABLE:
@@ -418,10 +407,10 @@ def main(mode_wavefront_before_lens):
 if __name__ == "__main__":
 
     mode_wavefront_before_lens = 'convergent spherical'
-    mode_wavefront_before_lens = 'divergent spherical with lens'
+    # mode_wavefront_before_lens = 'divergent spherical with lens'
     # mode_wavefront_before_lens = 'plane with lens'
     # mode_wavefront_before_lens = 'Gaussian with lens'
-    mode_wavefront_before_lens = 'Hermite with lens'
+    # mode_wavefront_before_lens = 'Hermite with lens'
     # mode_wavefront_before_lens = 'Undulator with lens'
 
     main(mode_wavefront_before_lens)

@@ -47,7 +47,7 @@ if __name__ == "__main__":
                show=0)
 
 
-    intensity_calculated =  wf1.get_intensity()[:,wf1.size()[1]/2]
+    intensity_calculated =  wf1.get_intensity()[:,int(wf1.size()[1]/2)]
 
     intensity_calculated /= intensity_calculated.max()
 
