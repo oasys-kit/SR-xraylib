@@ -213,8 +213,8 @@ class Wavefront2D(object):
         """
         if radius == 0:
             raise Exception("Radius cannot be zero")
-        new_value = (complex_amplitude/(-radius))*numpy.exp(-1.0j * self.get_wavenumber() *
-                                (self.get_mesh_x()**2+self.get_mesh_y()**2)/(-2*radius))
+        new_value = (complex_amplitude)*numpy.exp(1.0j * self.get_wavenumber() *
+                                (self.get_mesh_x()**2+self.get_mesh_y()**2)/(2*radius))
         # new_value = numpy.exp(-1.0j * self.get_wavenumber() *
         #                         (self.get_mesh_x()**2+self.get_mesh_y()**2)/(-2*radius))
         self.electric_field_array.set_z_values(new_value)

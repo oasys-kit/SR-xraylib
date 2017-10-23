@@ -353,9 +353,9 @@ class propagator2DTest(unittest.TestCase):
         print("# near field fresnel (%s) diffraction and focusing  "%(method_label))
         print("#                                                             ")
 
-        #                               \ |  /
+        #                              \  |  /
         #   *                           | | |                      *
-        #                               / | \
+        #                              /  |  \
         #   <-------    d  ---------------><---------   d   ------->
         #   d is propagation_distance
 
