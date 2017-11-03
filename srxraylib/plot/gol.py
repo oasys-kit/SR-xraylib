@@ -34,7 +34,7 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
     if n_arguments == 1:
         z = positional_parameters[0]
         x = np.arange(0,z.shape[0])
-        y = np.arange(0,z.shape[0])
+        y = np.arange(0,z.shape[1])
     elif n_arguments == 2:
         z = positional_parameters[0]
         x = positional_parameters[1]
