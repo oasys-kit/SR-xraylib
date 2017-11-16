@@ -98,3 +98,34 @@ def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[N
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(fieldComplexAmplitude, \
                             detector_abscissas[0], detector_abscissas[1]-detector_abscissas[0] ))
 
+
+def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
+
+    shape = wavefront.size()
+    delta = wavefront.delta()
+    wavenumber = wavefront.get_wavenumber()
+    wavelength = wavefront.get_wavelength()
+
+    fft_scale = numpy.fft.fftfreq(shape)/delta
+
+    x = wavefront.get_abscissas()
+
+    x_rescaling = wavefront.get_abscissas() * m
+
+    r1sq = x ** 2 * (1 - m)
+    r2sq = x_rescaling ** 2 * (m - 1 / m)
+    fsq = (fft_scale ** 2 / m)
+    
+    Q1 = wavenumber / 2 / propagation_distance * r1sq
+    Q2 = numpy.exp(-1.0j * numpy.pi * wavelength * propagation_distance * fsq)
+    Q3 = numpy.exp(1.0j * wavenumber / 2 / propagation_distance * r2sq)
+    
+    wavefront.add_phase_shift(Q1)
+    
+    fft = numpy.fft.fft(wavefront.get_complex_amplitude())
+    ifft = numpy.fft.ifft(fft * Q2) * Q3 / numpy.sqrt(m)
+
+    
+    return Wavefront1D(wavefront.get_wavelength(),
+                       ScaledArray.initialize_from_steps(ifft, m*wavefront.offset(), m*wavefront.delta()))
+    

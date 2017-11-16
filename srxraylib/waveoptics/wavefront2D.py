@@ -55,6 +55,12 @@ class Wavefront2D(object):
 
     # main parameters
 
+    def duplicate(self):
+        return self.initialize_wavefront_from_arrays(
+            self.get_coordinate_x(),self.get_coordinate_y(),
+            self.get_complex_amplitude(),self.get_wavelength()
+        )
+
     def size(self):
         return self.electric_field_array.shape()
 

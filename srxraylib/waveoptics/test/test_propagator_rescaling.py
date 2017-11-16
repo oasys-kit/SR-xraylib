@@ -1,16 +1,19 @@
 import unittest
 import numpy
+from scipy.special import fresnel
 
+from srxraylib.waveoptics.wavefront import Wavefront1D
+from srxraylib.waveoptics.propagator import propagator1d_fourier_rescaling
 
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 from srxraylib.waveoptics.propagator2D import propagator2d_fourier_rescaling
 from srxraylib.waveoptics.propagator2D import propagator2d_fourier_rescaling_xy
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel
 
-do_plot = True
+from srxraylib.plot.gol import plot, plot_image, plot_table
 
-if do_plot:
-    from srxraylib.plot.gol import plot,plot_image,plot_table
+do_plot = False
+
 
 #
 # some common tools
@@ -45,12 +48,39 @@ def get_theoretical_diffraction_pattern(angle_x,
 
     return intensity_theory
 
+
+def fresnel_prop_square_aperture_analitical(x2, y2, aperture_diameter, wavelength, propagation_distance):
+
+    f_n = (aperture_diameter/2)**2 / (wavelength * propagation_distance) # Fresnel number
+
+    # substitutions
+
+    big_x = x2 / numpy.sqrt(wavelength * propagation_distance)
+    big_y = y2 / numpy.sqrt(wavelength * propagation_distance)
+    alpha1 = -numpy.sqrt(2) * (numpy.sqrt(f_n) + big_x)
+    alpha2 = numpy.sqrt(2) * (numpy.sqrt(f_n) - big_x)
+    beta1 = -numpy.sqrt(2) * (numpy.sqrt(f_n) + big_y)
+    beta2 = numpy.sqrt(2) * (numpy.sqrt(f_n) - big_y)
+
+    # Fresnel sine and cosine integrals
+    cos_sin_a1 = fresnel(alpha1)
+    cos_sin_a2 = fresnel(alpha2)
+    cos_sin_b1 = fresnel(beta1)
+    cos_sin_b2 = fresnel(beta2)
+
+    # observation-plane field
+    U = 1 / (2 * 1.0j) * ((cos_sin_a2[0] - cos_sin_a1[0]) + 1.0j * (cos_sin_a2[1] - cos_sin_a1[1])) * ((cos_sin_b2[0] - cos_sin_b1[0]) + 1.0j * (cos_sin_b2[1] - cos_sin_b1[1]))
+
+    return U
+
+
 def line_image(image,horizontal_or_vertical='H'):
     if horizontal_or_vertical == "H":
         tmp = image[:,int(image.shape[1]/2)]
     else:
         tmp = image[int(image.shape[0]/2),:]
     return tmp
+
 
 def line_fwhm(line):
     #
@@ -64,7 +94,8 @@ def line_fwhm(line):
     else:
         return -1
 
-def plot_undulator(wavefront, method, show=1):
+
+def plot_undulator(wavefront, method, show=0):
 
     plot_image(wavefront.get_intensity(), wavefront.get_coordinate_x(), wavefront.get_coordinate_y(),
                title='Intensity (%s)' % method,
@@ -85,6 +116,7 @@ def plot_undulator(wavefront, method, show=1):
 
     print("Output intensity: ", wavefront.get_intensity().sum())
 
+
 class propagator2DTest(unittest.TestCase):
     #
     # TOOLS
@@ -96,10 +128,10 @@ class propagator2DTest(unittest.TestCase):
     #          three methods available: 'fft': fft -> multiply by kernel in freq -> ifft
     #                                   'convolution': scipy.signal.fftconvolve(wave,kernel in space)
     #                                   'srw': use the SRW package
-    def propagate_2D_fresnel(self,do_plot=do_plot,method='fft',
+    def propagate_2D_fresnel(self,do_plot,method='fft',
                                 wavelength=1.24e-10,aperture_type='square',aperture_diameter=40e-6,
                                 pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=1024,npixels_y=1024,
-                                propagation_distance = 30.0,m=1, m_x=1, m_y=1, show=1):
+                                propagation_distance = 30.0,m=1, m_x=1, m_y=1, show=0):
 
 
         method_label = "fresnel (%s)"%method
@@ -271,7 +303,6 @@ class propagator2DTest(unittest.TestCase):
     #     print("Output intensity: ",wf.get_intensity().sum())
     #     return wf.get_coordinate_x(),horizontal_profile
 
-
     def undulator(self, method, npixels_x, npixels_y,
                   pixelsize_x, pixelsize_y,
                   wavelength, sigma,
@@ -322,13 +353,36 @@ class propagator2DTest(unittest.TestCase):
         if image_source == True:
             return wavefront.get_coordinate_x(), horizontal_profile_wf, horizontal_phase_profile_wf
 
+    def schmidt(self, pixelsize, npixels, wavelength,m,propagation_distance):
+        wavefront = Wavefront1D.initialize_wavefront_from_range(x_min=-pixelsize * npixels / 2,
+                                                                x_max=pixelsize * npixels / 2,
+                                                                number_of_points=npixels,
+                                                                wavelength=wavelength)
+
+        # wavefront.set_spherical_wave(radius=radius)
+        wavefront.set_plane_wave_from_amplitude_and_phase()
+
+        wavefront.apply_slit(-1e-3, 1e-3)
+
+        print("Intensity after slit: ", wavefront.get_intensity().sum())
+
+        wavefront_propagated = propagator1d_fourier_rescaling(wavefront, propagation_distance=propagation_distance, m=m)
+
+        print('Intensity after propagation: ', wavefront_propagated.get_intensity().sum())
+
+        intensity_theory = fresnel_prop_square_aperture_analitical(x2=wavefront_propagated.get_abscissas(), y2=0,
+                                                                   aperture_diameter=2e-3, wavelength=wavelength,
+                                                                   propagation_distance=propagation_distance)
+
+        return wavefront_propagated, intensity_theory
+
 
     #
     # TESTS
     #
 
     def test_propagate_2D_fresnel_square(self):
-        xcalc, ycalc, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=True,method='rescaling_xy',aperture_type='square',
+        xcalc, ycalc, xtheory, ytheory = self.propagate_2D_fresnel(do_plot=False,method='rescaling_xy',aperture_type='square',
                                 aperture_diameter=40e-6,
                                 pixelsize_x=1e-6,pixelsize_y=1e-6,npixels_x=2048,npixels_y=2048,
                                 propagation_distance=30.0,wavelength=1.24e-10,m=1,m_x=0.5,m_y=1)
@@ -357,8 +411,8 @@ class propagator2DTest(unittest.TestCase):
 
         focal_length = 8.27775
 
-        show_graph = True
         # show_graph = True
+        show_graph = False
 
         radius = 28.3
 
@@ -396,8 +450,8 @@ class propagator2DTest(unittest.TestCase):
 
         propagation_distance = 30
 
-        # show_graph = False
-        show_graph = True
+        show_graph = False
+        # show_graph = True
 
         radius = 30
 
@@ -421,3 +475,30 @@ class propagator2DTest(unittest.TestCase):
 
         numpy.testing.assert_almost_equal(intensity_x_forward, intensity_x_backward, 1)
         numpy.testing.assert_almost_equal(phase_x_forward, phase_x_backward, 1)
+
+
+    def test_schmidt(self):
+
+        npixels = 2 ** 9
+        pixelsize = 9.48e-6
+        wavelength = 1e-6
+        m=2.996
+        # radius = 1
+        propagation_distance = 0.1
+
+        wavefront_propagated, intensity_theory = self.schmidt(pixelsize, npixels,wavelength, m, propagation_distance)
+
+        show_plot = True
+        # show_plot = False
+
+        if show_plot:
+            plot(wavefront_propagated.get_abscissas() * 1e6, wavefront_propagated.get_intensity()/wavefront_propagated.get_intensity().max(),
+                 wavefront_propagated.get_abscissas() * 1e6, abs(intensity_theory)**2 / abs(intensity_theory.max())**2,
+                 legend=["V profile", "Theoretical"],
+                 legend_position=(0.60, 0.95),
+                 title="diffraction of a square slit of %3.1f um at wavelength of %3.1f A" %
+                       (2e-3 * 1e6, wavelength * 1e-6),
+                 xtitle="Y (um)", ytitle="Intensity", xrange=[-20000, 20000],
+                 show=1)
+
+        numpy.testing.assert_almost_equal(wavefront_propagated.get_intensity(), abs(intensity_theory)**2, 1)
