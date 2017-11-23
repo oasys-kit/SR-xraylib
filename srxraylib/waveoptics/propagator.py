@@ -72,20 +72,31 @@ def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(tmp, wavefront.offset(), wavefront.delta()))
 
 
-def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[None], method=0):
+def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[None],
+                          method=0,magnification=1.0,npoints_exit=None):
     """
     1D Fresnel-Kirchhoff propagator via simplified integral
     :param wavefront:
     :param propagation_distance: propagation distance
-    :param detector_abscissas: a numpy array with the anscissas at the image position. If undefined ([None])
+    :param detector_abscissas: a numpy array with the abscissas at the image position. If undefined ([None])
                             it uses the same abscissas present in input wavefront.
     :param method: 0 (default_ makes a loop over detector coordinates, 1: makes matrices (outer products) so
                             it is more memory hungry.
+    :param magnification: if detector_abscissas is [None], the detector abscissas range is the input
+                            wavefront range times this magnification factor. Default =1
+    :param npoints_exit: if detector_abscissas is [None], the number of points of detector abscissas.
+                            Default=None meaning that the same number of points than wavefront are used.
     :return: a new 1D wavefront object with propagated wavefront
     """
 
+
     if detector_abscissas[0] == None:
-        detector_abscissas = wavefront.get_abscissas()
+
+        x = wavefront.get_abscissas()
+        if npoints_exit is None:
+            npoints_exit = x.size
+        detector_abscissas = numpy.linspace(magnification*x[0],magnification*x[-1],npoints_exit)
+
 
     wavenumber = numpy.pi*2/wavefront.get_wavelength()
     if method == 0:
