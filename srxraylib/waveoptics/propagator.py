@@ -75,7 +75,7 @@ def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
 def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[None],
                           method=0,magnification=1.0,npoints_exit=None):
     """
-    1D Fresnel-Kirchhoff propagator via simplified integral
+    1D Fresnel-Kirchhoff propagator via integral implemented as sum
     :param wavefront:
     :param propagation_distance: propagation distance
     :param detector_abscissas: a numpy array with the abscissas at the image position. If undefined ([None])
