@@ -116,7 +116,7 @@ class ScaledMatrix(object):
         if self.is_complex_matrix():
             return self.interpolator_value[0].ev(x_coord, y_coord) + 1j * self.interpolator_value[1].ev(x_coord, y_coord)
         else:
-            self.interpolator_value.ev(x_coord, y_coord)
+            return self.interpolator_value.ev(x_coord, y_coord)
 
     def compute_interpolator(self):
         from scipy import interpolate
