@@ -20,6 +20,7 @@ class ScaledMatrix(object):
         self.x_coord = numpy.round(x_coord, 12)
         self.y_coord = numpy.round(y_coord, 12)
         self.z_values = numpy.round(z_values, 12)
+        self._set_is_complex_matrix()
 
         self.stored_shape = self._shape()
 
@@ -67,13 +68,11 @@ class ScaledMatrix(object):
             array.compute_interpolator()
         return array
 
-
     def get_x_value(self, index):
         return self.x_coord[index]
 
     def get_y_value(self, index):
         return self.y_coord[index]
-
 
     def get_x_values(self): # plural!!
         return self.x_coord
@@ -98,6 +97,7 @@ class ScaledMatrix(object):
 
     def set_z_value(self, x_index, y_index, z_value):
         self.z_values[x_index][y_index] = z_value
+        if isinstance(z_value, complex): self._is_complex_matrix = True
         self.interpolator = False
 
     def set_z_values(self, new_value):
@@ -105,10 +105,14 @@ class ScaledMatrix(object):
             raise Exception("New data set must have same shape as old one")
         else:
             self.z_values = new_value
+            self._set_is_complex_matrix()
             self.interpolator = False
 
+    def _set_is_complex_matrix(self):
+        self._is_complex_matrix = True in numpy.iscomplex(self.z_values)
+
     def is_complex_matrix(self):
-        return True in numpy.iscomplex(self.z_values)
+        return self._is_complex_matrix
 
     def interpolate_value(self, x_coord, y_coord):
         if self.interpolator == False:
