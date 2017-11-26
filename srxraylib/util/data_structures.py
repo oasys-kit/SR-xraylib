@@ -24,6 +24,14 @@ class ScaledMatrix(object):
 
         self.stored_shape = self._shape()
 
+        self.stored_delta_x = self._delta_x()
+        self.stored_offset_x = self._offset_x()
+        self.stored_size_x = self._size_x()
+
+        self.stored_delta_y = self._delta_y()
+        self.stored_offset_y = self._offset_y()
+        self.stored_size_y = self._size_y()
+
         #
         # write now interpolator=True means that the interpolator is up to date and stored in the
         # interpolated value. interpolator must be changed to False when something of the wavefront
@@ -67,6 +75,54 @@ class ScaledMatrix(object):
         if interpolator:
             array.compute_interpolator()
         return array
+
+    def _size_x(self):
+        return len(self.x_coord)
+
+    def _offset_x(self):
+        if len(self.x_coord) > 1:
+            return self.x_coord[0]
+        else:
+            return numpy.nan
+
+    def _delta_x(self):
+        if len(self.x_coord) > 1:
+            return abs(self.x_coord[1]-self.x_coord[0])
+        else:
+            return 0.0
+
+    def size_x(self):
+        return self.stored_size_x
+
+    def offset_x(self):
+        return self.stored_offset_x
+
+    def delta_x(self):
+        return self.stored_delta_x
+
+    def _size_y(self):
+        return len(self.y_coord)
+
+    def _offset_y(self):
+        if len(self.y_coord) > 1:
+            return self.y_coord[0]
+        else:
+            return numpy.nan
+
+    def _delta_y(self):
+        if len(self.y_coord) > 1:
+            return abs(self.y_coord[1]-self.y_coord[0])
+        else:
+            return 0.0
+
+    def size_y(self):
+        return self.stored_size_y
+
+    def offset_y(self):
+        return self.stored_offset_y
+
+    def delta_y(self):
+        return self.stored_delta_y
 
     def get_x_value(self, index):
         return self.x_coord[index]
@@ -148,8 +204,14 @@ class ScaledMatrix(object):
             # reduce precision to avoid crazy research results
 
             scale = numpy.round(initial_scale_value, 12) + numpy.arange(0, (self.stored_shape[axis])) * numpy.round(scale_step, 12)
-            if axis == 0: self.x_coord = scale
-            elif axis == 1: self.y_coord = scale
+            if axis == 0:
+                self.x_coord = scale
+                self.stored_delta_x = self._delta_x()
+                self.stored_offset_x = self._offset_x()
+            elif axis == 1:
+                self.y_coord = scale
+                self.stored_delta_y = self._delta_y()
+                self.stored_offset_y = self._offset_y()
 
             self.stored_shape = self._shape()
             self.interpolator = False
