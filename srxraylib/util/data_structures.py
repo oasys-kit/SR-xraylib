@@ -107,18 +107,29 @@ class ScaledMatrix(object):
             self.z_values = new_value
             self.interpolator = False
 
+    def is_complex_matrix(self):
+        return True in numpy.iscomplex(self.z_values)
+
     def interpolate_value(self, x_coord, y_coord):
         if self.interpolator == False:
             self.compute_interpolator()
-        return self.interpolator_value[0].ev(x_coord, y_coord) + 1j * self.interpolator_value[1].ev(x_coord, y_coord)
+        if self.is_complex_matrix():
+            return self.interpolator_value[0].ev(x_coord, y_coord) + 1j * self.interpolator_value[1].ev(x_coord, y_coord)
+        else:
+            self.interpolator_value.ev(x_coord, y_coord)
 
     def compute_interpolator(self):
         from scipy import interpolate
-        print("Wavefront2d.compute_interpolator: Computing interpolator...")
-        self.interpolator_value = (
-            interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.real(self.z_values)),
-            interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.imag(self.z_values)),
-            )
+        print("ScaledMatrix.compute_interpolator: Computing interpolator...")
+
+        if self.is_complex_matrix():
+            self.interpolator_value = (
+                interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.real(self.z_values)),
+                interpolate.RectBivariateSpline(self.x_coord, self.y_coord, numpy.imag(self.z_values)),
+                )
+        else:
+            self.interpolator_value = interpolate.RectBivariateSpline(self.x_coord, self.y_coord, self.z_values)
+
         self.interpolator = True
 
     '''
