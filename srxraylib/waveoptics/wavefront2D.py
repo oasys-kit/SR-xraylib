@@ -3,6 +3,10 @@ import numpy
 from srxraylib.util.data_structures import ScaledMatrix
 import scipy.constants as codata
 
+class Polarization:
+    SIGMA = 0
+    PI = 1
+    TOTAL = 3
 
 #------------------------------------------------
 #
@@ -21,7 +25,7 @@ class Wavefront2D(object):
         self.electric_field_array = electric_field_array
 
     @classmethod
-    def initialize_wavefront(cls, number_of_points=(100,100) ,wavelength=1e-10):
+    def initialize_wavefront(cls, number_of_points=(100,100), wavelength=1e-10):
         return Wavefront2D(wavelength, ScaledMatrix.initialize(
             np_array=numpy.full(number_of_points, (1.0 + 0.0j), dtype=complex),interpolator=False))
 
@@ -88,16 +92,14 @@ class Wavefront2D(object):
     def get_coordinate_y(self):
         return self.electric_field_array.get_y_values()
 
-
-    def get_complex_amplitude(self):
+    def get_complex_amplitude(self, polarization=Polarization.SIGMA):
         return self.electric_field_array.get_z_values()
 
-    def get_amplitude(self):
-        return numpy.absolute(self.get_complex_amplitude())
+    def get_amplitude(self, polarization=Polarization.SIGMA):
+        return numpy.absolute(self.get_complex_amplitude(polarization=polarization))
 
-    def get_phase(self,from_minimum_intensity=0.0):
-        # return numpy.arctan2(numpy.imag(self.get_complex_amplitude()), numpy.real(self.get_complex_amplitude()))
-        phase = numpy.angle( self.get_complex_amplitude() )
+    def get_phase(self,from_minimum_intensity=0.0, polarization=Polarization.SIGMA):
+        phase = numpy.angle( self.get_complex_amplitude(polarization=polarization) )
 
         if (from_minimum_intensity > 0.0):
             intensity = self.get_intensity()
@@ -106,8 +108,8 @@ class Wavefront2D(object):
             phase[bad_indices] = 0.0
         return phase
 
-    def get_intensity(self):
-        return self.get_amplitude()**2
+    def get_intensity(self, polarization=Polarization.SIGMA):
+        return self.get_amplitude(polarization=polarization)**2
 
     def get_mesh_indices_x(self):
         return numpy.outer( numpy.arange(0,self.size()[0]), numpy.ones(self.size()[1]))
@@ -138,8 +140,16 @@ class Wavefront2D(object):
 
     # interpolated values (a bit redundant, but kept the same interfacs as wavefront 1D)
 
-    def get_interpolated(self,x_value,y_value,toreturn='complex_amplitude'):
-        interpolated_values = self.electric_field_array.interpolate_value(x_value,y_value)
+    def get_interpolated(self,x_value,y_value,toreturn='complex_amplitude', polarization=Polarization.SIGMA):
+        if polarization == Polarization.TOTAL and toreturn != 'intensity': raise ValueError("Total polarization available with intensity only")
+
+        if polarization == Polarization.SIGMA:
+            interpolated_values = self.electric_field_array.interpolate_value(x_value,y_value)
+        if polarization == Polarization.PI:
+            pass
+        elif polarization == Polarization.TOTAL:
+            pass
+
         if toreturn == 'complex_amplitude':
             return interpolated_values
         elif toreturn == 'amplitude':
@@ -151,29 +161,29 @@ class Wavefront2D(object):
         else:
             raise Exception('Unknown return string')
 
-    def get_interpolated_complex_amplitude(self, x_value,y_value):
-        return self.get_interpolated(x_value,y_value,toreturn='complex_amplitude')
+    def get_interpolated_complex_amplitude(self, x_value,y_value, polarization=Polarization.SIGMA):
+        return self.get_interpolated(x_value,y_value,toreturn='complex_amplitude', polarization=polarization)
 
-    def get_interpolated_complex_amplitudes(self, x_value,y_value):
-        return self.get_interpolated(x_value,y_value,toreturn='complex_amplitude')
+    def get_interpolated_complex_amplitudes(self, x_value,y_value, polarization=Polarization.SIGMA):
+        return self.get_interpolated(x_value,y_value,toreturn='complex_amplitude', polarization=polarization)
 
-    def get_interpolated_amplitude(self, x_value,y_value): # singular!
-        return self.get_interpolated(x_value,y_value,toreturn='amplitude')
+    def get_interpolated_amplitude(self, x_value,y_value, polarization=Polarization.SIGMA): # singular!
+        return self.get_interpolated(x_value,y_value,toreturn='amplitude', polarization=polarization)
 
-    def get_interpolated_amplitudes(self, x_value,y_value): # plural!
-        return self.get_interpolated(x_value,y_value,toreturn='amplitude')
+    def get_interpolated_amplitudes(self, x_value,y_value, polarization=Polarization.SIGMA): # plural!
+        return self.get_interpolated(x_value,y_value,toreturn='amplitude', polarization=polarization)
     #
-    def get_interpolated_phase(self, x_value,y_value): # singular!
-        return self.get_interpolated(x_value,y_value,toreturn='phase')
+    def get_interpolated_phase(self, x_value,y_value, polarization=Polarization.SIGMA): # singular!
+        return self.get_interpolated(x_value,y_value,toreturn='phase', polarization=polarization)
 
-    def get_interpolated_phases(self, x_value,y_value): # plural!
-        return self.get_interpolated(x_value,y_value,toreturn='phase')
+    def get_interpolated_phases(self, x_value,y_value, polarization=Polarization.SIGMA): # plural!
+        return self.get_interpolated(x_value,y_value,toreturn='phase', polarization=polarization)
 
-    def get_interpolated_intensity(self, x_value,y_value):
-        return self.get_interpolated(x_value,y_value,toreturn='intensity')
+    def get_interpolated_intensity(self, x_value,y_value, polarization=Polarization.SIGMA):
+        return self.get_interpolated(x_value,y_value,toreturn='intensity', polarization=polarization)
 
-    def get_interpolated_intensities(self, x_value,y_value):
-        return self.get_interpolated(x_value,y_value,toreturn='intensity')
+    def get_interpolated_intensities(self, x_value,y_value, polarization=Polarization.SIGMA):
+        return self.get_interpolated(x_value,y_value,toreturn='intensity', polarization=polarization)
 
     # only for 2D
     def get_mesh_x(self):
@@ -195,6 +205,8 @@ class Wavefront2D(object):
     def set_photon_energy(self,photon_energy):
         m2ev = codata.c * codata.h / codata.e      # lambda(m)  = m2eV / energy(eV)
         self.wavelength = m2ev / photon_energy
+
+    #TODO: add polarization!!!!!!!!!!!!!!!!!
 
     def set_complex_amplitude(self,complex_amplitude):
         if self.electric_field_array.shape() != complex_amplitude.shape:
