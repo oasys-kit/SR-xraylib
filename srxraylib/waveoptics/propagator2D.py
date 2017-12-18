@@ -255,8 +255,8 @@ def propagator2d_fourier_rescaling(wavefront,propagation_distance,shift_half_pix
     x_rescaling = wavefront.get_mesh_x() * m
     y_rescaling = wavefront.get_mesh_y() * m
 
-    r1sq = x ** 2 + y ** 2
-    r2sq = x_rescaling ** 2 + y_rescaling ** 2
+    r1sq = x ** 2 + y**2
+    r2sq = x_rescaling ** 2 + y_rescaling**2
 
     Q1 = wavenumber / 2 * (1 - m) / propagation_distance * r1sq
     Q2 = numpy.exp(-1.0j * numpy.pi * wavelength * propagation_distance / m * fsq)

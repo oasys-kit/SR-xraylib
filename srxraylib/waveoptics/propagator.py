@@ -53,6 +53,25 @@ def propagate_1D_fresnel(wavefront, propagation_distance):
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
 
 
+def propagate_1D_fresnel_radius(wavefront, propagation_distance, eta):
+    """
+    1D Fresnel propagator using convolution via Fourier transform
+    :param wavefront:
+    :param propagation_distance: propagation distance
+    :return: a new 1D wavefront object with propagated wavefront
+    """
+    fft_scale = numpy.fft.fftfreq(wavefront.size())/wavefront.delta()
+
+    fft = numpy.fft.fft(wavefront.get_complex_amplitude())
+    fft *= numpy.exp(1.0j * numpy.pi * wavefront.get_wavelength() * propagation_distance * (-fft_scale**2 + eta * fft_scale**2))
+    H = numpy.fft.ifft(fft)
+    H *= -1.0j * eta * propagation_distance / wavefront.get_wavelength() * numpy.exp(1.0j * numpy.pi / eta / propagation_distance / wavefront.get_wavelength() * wavefront.get_abscissas()**2)
+    ifft = numpy.fft.fft(H)
+    ifft *= numpy.exp(1.0j * numpy.pi / eta / propagation_distance / wavefront.get_wavelength() * wavefront.get_abscissas()**2)
+
+    return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
+
+
 def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
     """
     1D Fresnel propagator using direct convolution
@@ -132,9 +151,9 @@ def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
 
     x_rescaling = wavefront.get_abscissas() * m
 
-    r1sq = x ** 2 * (1 - m)
-    r2sq = x_rescaling ** 2 * (m - 1 / m)
-    fsq = (fft_scale ** 2 / m)
+    r1sq = x**2 * (1 - m)
+    r2sq = x_rescaling**2 * ((m - 1) / m)
+    fsq = (fft_scale**2 / m)
     
     Q1 = wavenumber / 2 / propagation_distance * r1sq
     Q2 = numpy.exp(-1.0j * numpy.pi * wavelength * propagation_distance * fsq)
