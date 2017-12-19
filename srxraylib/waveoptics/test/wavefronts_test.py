@@ -1,9 +1,10 @@
 import unittest
 import numpy
+from numpy.testing import assert_array_almost_equal
 
 from srxraylib.waveoptics.wavefront import Wavefront1D
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
-
+from srxraylib.waveoptics.polarization import Polarization
 
 do_plot = False
 
@@ -434,7 +435,106 @@ class Wavefront2DTest(unittest.TestCase):
             plot_image(wf_rebin.get_intensity(),wf_rebin.get_coordinate_x(),wf_rebin.get_coordinate_y(),
                        title="REBINNED",show=1)
 
+    def test_polarization(self,do_plot=0):
 
+        print("#                                                             ")
+        print("# Tests polarization                                      ")
+        print("#                                                             ")
+
+        #
+        # from steps
+        #
+
+        x = numpy.linspace(-10,10,100)
+        y = numpy.linspace(-20,20,50)
+        # XY = numpy.meshgrid(y,x)
+        # sigma = 3.0
+        # Z = numpy.exp(- (XY[0]**2+XY[1]**2)/2/sigma**2)
+
+        xy = numpy.meshgrid(x,y)
+        X = xy[0].T
+        Y = xy[1].T
+        sigma = 3.0
+        Z = numpy.exp(- (X**2+Y**2)/2/sigma**2)
+        Zp = 0.5 * numpy.exp(- (X**2+Y**2)/2/sigma**2)
+
+        print("shape of Z",Z.shape)
+
+        wf = Wavefront2D.initialize_wavefront_from_steps(x[0],x[1]-x[0],y[0],y[1]-y[0],number_of_points=(100,50))
+        print("wf shape: ",wf.size())
+        wf.set_complex_amplitude(Z,polarization=Polarization.SIGMA)
+        wf.set_complex_amplitude(Zp,polarization=Polarization.PI)
+        print("Total intensity: ",wf.get_intensity(polarization=Polarization.TOTAL).sum())
+        print("Sigma intensity: ",wf.get_intensity(polarization=Polarization.SIGMA).sum())
+        print("Pi intensity: ",wf.get_intensity(polarization=Polarization.PI).sum())
+
+        self.assertAlmostEqual(wf.get_intensity(polarization=Polarization.TOTAL).sum(),
+                            wf.get_intensity(polarization=Polarization.SIGMA).sum() +\
+                            wf.get_intensity(polarization=Polarization.PI).sum())
+
+        #
+        # from range
+        #
+
+        x = numpy.linspace(-100,100,50)
+        y = numpy.linspace(-50,50,200)
+        X = numpy.outer( x, numpy.ones_like(y))
+        Y = numpy.outer( numpy.ones_like(x), y)
+        sigma = 10
+        Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+        Zp = 0.3333 * numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+        print("Shapes x,y,z: ",x.shape,y.shape,Z.shape)
+
+
+        wf1 = Wavefront2D.initialize_wavefront_from_range(x[0],x[-1],y[0],y[-1],number_of_points=Z.shape,
+                                                          polarization=Polarization.SIGMA)
+        wf1.set_complex_amplitude(Z,polarization=Polarization.SIGMA)
+        wf1.set_complex_amplitude(Zp,polarization=Polarization.PI)
+
+
+        print("Total intensity: ",wf1.get_intensity(polarization=Polarization.TOTAL).sum())
+        print("Sigma intensity: ",wf1.get_intensity(polarization=Polarization.SIGMA).sum())
+        print("Pi intensity: ",   wf1.get_intensity(polarization=Polarization.PI).sum())
+
+        self.assertAlmostEqual(wf1.get_intensity(polarization=Polarization.TOTAL).sum(),
+                            wf1.get_intensity(polarization=Polarization.SIGMA).sum() +\
+                            wf1.get_intensity(polarization=Polarization.PI).sum())
+
+
+        #
+        # from arrays
+        #
+        wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z,Zp)
+
+        self.assertAlmostEqual(wf2.get_intensity(polarization=Polarization.TOTAL).sum(),
+                            wf2.get_intensity(polarization=Polarization.SIGMA).sum() +\
+                            wf2.get_intensity(polarization=Polarization.PI).sum())
+
+
+    def test_polarization_interpolation(self):
+
+        print("#                                                             ")
+        print("# Tests polarization with interpolation                       ")
+        print("#                                                             ")
+        #
+        # from arrays
+        #
+        x = numpy.linspace(-100,100,50)
+        y = numpy.linspace(-50,50,200)
+        X = numpy.outer( x, numpy.ones_like(y))
+        Y = numpy.outer( numpy.ones_like(x), y)
+        sigma = 10
+        Z = numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+        Zp = 0.3333 * numpy.exp(- (X**2 + Y**2)/2/sigma**2) * 1j
+        wf2 = Wavefront2D.initialize_wavefront_from_arrays(x,y,Z,Zp)
+
+        ca1 = wf2.get_complex_amplitude(polarization=Polarization.SIGMA)
+        ca2 = wf2.get_interpolated_complex_amplitude(X+1e-3,Y+1e-4,polarization=Polarization.SIGMA)
+        assert_array_almost_equal(ca1,ca2,4)
+
+        ca1pi = wf2.get_complex_amplitude(polarization=Polarization.PI)
+        ca2pi = wf2.get_interpolated_complex_amplitude(X+1e-3,Y+1e-4,polarization=Polarization.PI)
+        assert_array_almost_equal(ca1pi,ca2pi,4)
 
 
 
