@@ -11,7 +11,7 @@ from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer
 from srxraylib.waveoptics.propagator2D import propagate_2D_integral
 from srxraylib.waveoptics.propagator2D import propagate_2D_fresnel, propagate_2D_fresnel_convolution, propagate_2D_fresnel_srw
 
-do_plot = False
+do_plot = True
 
 if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table
@@ -353,9 +353,9 @@ class propagator2DTest(unittest.TestCase):
         print("# near field fresnel (%s) diffraction and focusing  "%(method_label))
         print("#                                                             ")
 
-        #                               \ |  /
+        #                              \  |  /
         #   *                           | | |                      *
-        #                               / | \
+        #                              /  |  \
         #   <-------    d  ---------------><---------   d   ------->
         #   d is propagation_distance
 

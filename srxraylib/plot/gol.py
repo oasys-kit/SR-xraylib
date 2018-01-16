@@ -20,15 +20,15 @@ try:
 except:
     raise ImportError("Please install matplotlib to allow graphics")
 
-try:
-    plt.switch_backend("Qt5Agg")
-except:
-    raise Exception("Failed to set matplotlib backend to Qt5Agg")
+# try:
+#     plt.switch_backend("Qt5Agg")
+# except:
+#     raise Exception("Failed to set matplotlib backend to Qt5Agg")
 
 def plot_show():
     plt.show()
 
-def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1):
+def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1,add_colorbar=True):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
@@ -51,7 +51,8 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
 
     # cmap = plt.cm.Greys
     plt.imshow(z.T,origin='lower',extent=[x[0],x[-1],y[0],y[-1]],cmap=cmap,aspect=aspect)
-    plt.colorbar()
+    if add_colorbar:
+        plt.colorbar()
     ax = fig.gca()
     ax.set_xlabel(xtitle)
     ax.set_ylabel(ytitle)
@@ -430,7 +431,7 @@ def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",le
 
     return fig
 
-def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle="",ytitle=""):
+def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=True,title="",xtitle="",ytitle=""):
 
     from matplotlib.ticker import NullFormatter
 
@@ -439,24 +440,32 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle=""
     nullfmt   = NullFormatter()         # no labels
 
     # definitions for the axes
-    left, width    = 0.1, 0.65
-    bottom, height = 0.1, 0.65
-    bottom_h = left_h = left+width+0.02
 
-    rect_scatter = [left, bottom, width, height]
-    rect_histx   = [left, bottom_h, width, 0.2]
-    rect_histy   = [left_h, bottom, 0.2, height]
+
+
+    if plot_histograms:
+        left, width    = 0.1, 0.65
+        bottom, height = 0.1, 0.65
+        bottom_h = left_h = left+width+0.02
+        rect_scatter = [left, bottom, width, height]
+        rect_histx   = [left, bottom_h, width, 0.2]
+        rect_histy   = [left_h, bottom, 0.2, height]
+    else:
+        left, width    = 0.1, 0.8
+        bottom, height = 0.1, 0.8
+        rect_scatter = [left, bottom, width, height]
 
     # start with a rectangular Figure
     fig = plt.figure(figsize=(8,8))
 
     axScatter = plt.axes(rect_scatter)
-    axHistx = plt.axes(rect_histx)
-    axHisty = plt.axes(rect_histy)
+    if plot_histograms:
+        axHistx = plt.axes(rect_histx)
+        axHisty = plt.axes(rect_histy)
 
-    # no labels
-    axHistx.xaxis.set_major_formatter(nullfmt)
-    axHisty.yaxis.set_major_formatter(nullfmt)
+        # no labels
+        axHistx.xaxis.set_major_formatter(nullfmt)
+        axHisty.yaxis.set_major_formatter(nullfmt)
 
     # now determine nice limits by hand:
     binwidth = np.array([x.max() - x.min(), y.max() - y.min()]).max() / nbins
@@ -471,23 +480,29 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,title="",xtitle=""
 
     axScatter.set_xlabel(xtitle)
     axScatter.set_ylabel(ytitle)
+    if not plot_histograms:
+        axScatter.set_title(title)
 
     axScatter.set_xlim( xrange )
     axScatter.set_ylim( yrange )
 
-    bins_x = np.arange(xrange[0], xrange[1] + binwidth, binwidth)
-    axHistx.hist(x, bins=nbins)
-    axHisty.hist(y, bins=nbins, orientation='horizontal')
+    if plot_histograms:
+        bins_x = np.arange(xrange[0], xrange[1] + binwidth, binwidth)
+        axHistx.hist(x, bins=nbins)
+        axHisty.hist(y, bins=nbins, orientation='horizontal')
 
-    axHistx.set_xlim( axScatter.get_xlim() )
+        axHistx.set_xlim( axScatter.get_xlim() )
 
-    axHistx.set_title(title)
-    axHisty.set_ylim( axScatter.get_ylim() )
+        axHistx.set_title(title)
+        axHisty.set_ylim( axScatter.get_ylim() )
 
 
     if show: plt.show()
 
-    return fig
+    if plot_histograms:
+        return fig,axScatter,axHistx,axHisty
+    else:
+        return fig,axScatter
 
 def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=0,contour_levels=20,
                  cmap=None,cbar=True,fill=False,cbar_title="",show=1):
@@ -547,7 +562,10 @@ def example_plot_scatter():
     x = stats.norm.rvs(size=2000)
     y = stats.norm.rvs(scale=0.5, size=2000)
     data = np.vstack([x+y, x-y])
-    plot_scatter(data[0],data[1],title="example_plot_scatter",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",show=1)
+    f = plot_scatter(data[0],data[1],xrange=[-10,10],title="example_plot_scatter",
+                     xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",plot_histograms=True,show=0)
+    f[1].plot(data[0],data[0]) # use directly matplotlib to overplot
+    plot_show()
 
 def example_plot_contour():
     # inspired by http://stackoverflow.com/questions/10291221/axis-limits-for-scatter-plot-not-holding-in-matplotlib
@@ -626,7 +644,8 @@ def example_plot_image_lena():
 # main
 #
 if __name__ == "__main__":
-    example_plot_one_curve()
+    # pass
+    # example_plot_one_curve()
     # example_plot_two_curves()
     # example_plot_one_curve_log()
     # example_plot_table()
@@ -635,5 +654,5 @@ if __name__ == "__main__":
     # example_plot_image()
     # example_plot_surface()
     # example_plot_contour()
-    # example_plot_scatter()
+    example_plot_scatter()
     # example_plot_image_lena()

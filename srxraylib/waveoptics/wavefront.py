@@ -5,6 +5,9 @@ import warnings
 from srxraylib.util.data_structures import ScaledArray
 import scipy.constants as codata
 
+
+# TODO: add polarization (like for 2D)
+
 #------------------------------------------------
 #
 #
