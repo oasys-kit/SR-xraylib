@@ -178,6 +178,6 @@ def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
     ifft = numpy.fft.ifft(fft * Q2) * Q3 / numpy.sqrt(m)
 
     return Wavefront1D(wf.get_wavelength(),
-                       ScaledArray.initialize_from_steps(ifft, m*wf.offset(), m*wf.delta())),
+                       ScaledArray.initialize_from_steps(ifft, m*wf.offset(), m*wf.delta()))
     
 
