@@ -1,40 +1,51 @@
 import numpy
 
-
+import matplotlib.pylab as plt
 from srxraylib.util.data_structures import ScaledArray
 from srxraylib.waveoptics.wavefront import Wavefront1D
 
 # TODO: check resulting amplitude normalization
 
-def propagate_1D_fraunhofer(wavefront, propagation_distance=0.0, shift_half_pixel=1):
+def propagate_1D_fraunhofer(wavefront, propagation_distance=0.0, shift_half_pixel=0):  # todo: modificato da giovanni
     """
     1D Fraunhofer propagator using convolution via Fourier transform
+    :param shift_half_pixel:
+    :param shift_half_pixel:
     :param wavefront:
     :param propagation_distance: propagation distance. If set to zero, the abscissas
                                  of the returned wavefront are in angle (rad)
     :return: a new 1D wavefront object with propagated wavefront
     """
 
+    shape = wavefront.size()
+    delta = wavefront.delta()
+    wavenumber = wavefront.get_wavenumber()
+    wavelength = wavefront.get_wavelength()
+    fft_scale = numpy.fft.fftfreq(shape, d=delta)
+    fft_scale = numpy.fft.fftshift(fft_scale)
+    x2 = fft_scale * propagation_distance * wavelength
+
+    # freq_nyquist = 0.5 / delta
+    # freq_n = numpy.linspace(-1.0, 1.0, shape)
+    # freq_x = freq_n * freq_nyquist
+    # freq_x *= wavelength * propagation_distance
+    # x2 = freq_x
+
+    P1 = numpy.exp(1.0j * wavenumber * propagation_distance )
+    P2 = numpy.exp(1.0j * wavenumber / (2 * propagation_distance) * x2**2)
+    P3 = 1.0j * wavelength * propagation_distance
+
     fft = numpy.fft.fft(wavefront.get_complex_amplitude())
+    fft *= P1
+    fft *= P2
+    fft /= P3
+    # fft *= P4
     fft2 = numpy.fft.fftshift(fft)
 
-    # frequency for axis 1
-
-    freq_nyquist = 0.5/wavefront.delta()
-    freq_n = numpy.linspace(-1.0,1.0,wavefront.size())
-    freq_x = freq_n * freq_nyquist
-    freq_x *= wavefront.get_wavelength()
-
-
     if shift_half_pixel:
-        freq_x = freq_x - 0.5 * numpy.abs(freq_x[1] - freq_x[0])
+        x2 = x2 - 0.5 * numpy.abs(x2[1] - x2[0])
 
-    if propagation_distance == 0:
-        wf = Wavefront1D.initialize_wavefront_from_arrays(freq_x,fft2,wavelength=wavefront.get_wavelength())
-        return wf
-    else:
-        wf = Wavefront1D.initialize_wavefront_from_arrays(freq_x*propagation_distance,fft2,wavelength=wavefront.get_wavelength())
-        return wf
+    return Wavefront1D.initialize_wavefront_from_arrays(x2, fft2, wavelength=wavefront.get_wavelength())
 
 
 def propagate_1D_fresnel(wavefront, propagation_distance):
@@ -140,16 +151,17 @@ def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[N
 
 def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
 
-    shape = wavefront.size()
-    delta = wavefront.delta()
-    wavenumber = wavefront.get_wavenumber()
-    wavelength = wavefront.get_wavelength()
+    wf = wavefront.duplicate() # todo: cambiato da giovanni, controllare
+    shape = wf.size()
+    delta = wf.delta()
+    wavenumber = wf.get_wavenumber()
+    wavelength = wf.get_wavelength()
 
-    fft_scale = numpy.fft.fftfreq(shape)/delta
+    fft_scale = numpy.fft.fftfreq(shape, d=delta)
 
-    x = wavefront.get_abscissas()
+    x = wf.get_abscissas()
 
-    x_rescaling = wavefront.get_abscissas() * m
+    x_rescaling = wf.get_abscissas() * m
 
     r1sq = x**2 * (1 - m)
     r2sq = x_rescaling**2 * ((m - 1) / m)
@@ -159,12 +171,13 @@ def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
     Q2 = numpy.exp(-1.0j * numpy.pi * wavelength * propagation_distance * fsq)
     Q3 = numpy.exp(1.0j * wavenumber / 2 / propagation_distance * r2sq)
     
-    wavefront.add_phase_shift(Q1)
+    wf.add_phase_shift(Q1)
     
-    fft = numpy.fft.fft(wavefront.get_complex_amplitude())
+    fft = numpy.fft.fft(wf.get_complex_amplitude())
+
     ifft = numpy.fft.ifft(fft * Q2) * Q3 / numpy.sqrt(m)
 
+    return Wavefront1D(wf.get_wavelength(),
+                       ScaledArray.initialize_from_steps(ifft, m*wf.offset(), m*wf.delta())),
     
-    return Wavefront1D(wavefront.get_wavelength(),
-                       ScaledArray.initialize_from_steps(ifft, m*wavefront.offset(), m*wavefront.delta()))
-    
+

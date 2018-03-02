@@ -372,7 +372,8 @@ class Wavefront2D(object):
         window = numpy.zeros(self.electric_field_array.shape())
         X = self.get_mesh_x()
         Y = self.get_mesh_y()
-        distance_to_center = numpy.sqrt( (X-x_center)**2 + (Y-y_center)**2 )
+        distance_to_center = numpy.sqrt((X-x_center)**2 + (Y-y_center)**2)
+
         if negative:
             indices_good = numpy.where(distance_to_center >= radius)
         else:

@@ -55,7 +55,8 @@ except:
 #   -zone plate
 #   -siements star
 
-def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0,shift_half_pixel=1):
+
+def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0,shift_half_pixel=0): #todo: modificato da giovanni
     """
     2D Fraunhofer propagator using convolution via Fourier transform
     :param wavefront:
@@ -79,41 +80,48 @@ def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0,shift_half_pixel
     #
     #compute Fourier transform
     #
-    F1 = numpy.fft.fft2(wavefront.get_complex_amplitude())  # Take the fourier transform of the image.
-    # Now shift the quadrants around so that low spatial frequencies are in
-    # the center of the 2D fourier transformed image.
-    F2 = numpy.fft.fftshift( F1 )
+
 
     # frequency for axis 1
     shape = wavefront.size()
     delta = wavefront.delta()
+    wavenumber = wavefront.get_wavenumber()
 
     pixelsize = delta[0] # p_x[1] - p_x[0]
     npixels = shape[0]
-    freq_nyquist = 0.5/pixelsize
-    freq_n = numpy.linspace(-1.0,1.0,npixels)
-    freq_x = freq_n * freq_nyquist
-    freq_x *= wavelength
+    fft_scale = numpy.fft.fftfreq(npixels, d=pixelsize)
+    fft_scale = numpy.fft.fftshift(fft_scale)
+    x2 = fft_scale * propagation_distance * wavelength
 
     # frequency for axis 2
     pixelsize = delta[1]
     npixels = shape[1]
-    freq_nyquist = 0.5/pixelsize
-    freq_n = numpy.linspace(-1.0,1.0,npixels)
-    freq_y = freq_n * freq_nyquist
-    freq_y *= wavelength
+    fft_scale = numpy.fft.fftfreq(npixels, d=pixelsize)
+    fft_scale = numpy.fft.fftshift(fft_scale)
+    y2 = fft_scale * propagation_distance * wavelength
 
+    f_x, f_y = numpy.meshgrid(x2, y2, indexing='ij')
+    fsq = numpy.fft.fftshift(f_x ** 2 + f_y ** 2)
+
+    P1 = numpy.exp(1.0j * wavenumber * propagation_distance)
+    P2 = numpy.exp(1.0j * wavenumber / 2 / propagation_distance * fsq)
+    P3 = 1.0j * wavelength * propagation_distance
+
+    F1 = numpy.fft.fft2(wavefront.get_complex_amplitude())  # Take the fourier transform of the image.
+    #  Now shift the quadrants around so that low spatial frequencies are in
+    # the center of the 2D fourier transformed image.
+    F1 *= P1
+    F1 *= P2
+    F1 /= P3
+    F2 = numpy.fft.fftshift(F1)
 
     if shift_half_pixel:
-        freq_x = freq_x - 0.5 * numpy.abs(freq_x[1] - freq_x[0])
-        freq_y = freq_y - 0.5 * numpy.abs(freq_y[1] - freq_y[0])
+        x2 = x2 - 0.5 * numpy.abs(x2[1] - x2[0])
+        y2 = y2 - 0.5 * numpy.abs(y2[1] - y2[0])
 
-    if propagation_distance != 1.0:
-        freq_x *= propagation_distance
-        freq_y *= propagation_distance
-
-    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(freq_x,freq_y,F2,wavelength=wavelength)
+    wf_propagated = Wavefront2D.initialize_wavefront_from_arrays(x2, y2, F2, wavelength=wavelength)
     return  wf_propagated
+
 
 def propagate_2D_fresnel(wavefront, propagation_distance,shift_half_pixel=1):
     """
@@ -162,6 +170,7 @@ def propagate_2D_fresnel(wavefront, propagation_distance,shift_half_pixel=1):
                                                                  ifft,
                                                                  wavelength=wavelength)
     return wf_propagated
+
 
 def propagate_2D_fresnel_convolution(wavefront, propagation_distance,shift_half_pixel=1):
     """
@@ -219,7 +228,10 @@ def propagate_2D_fresnel_convolution(wavefront, propagation_distance,shift_half_
 
     return wf_propagated
 
-def propagator2d_fourier_rescaling(wavefront,propagation_distance,shift_half_pixel=1,m=1):
+
+def propagator2d_fourier_rescaling(wf,propagation_distance,shift_half_pixel=1,m=1):
+
+    wavefront=wf.duplicate()
 
     wavenumber = wavefront.get_wavenumber()
     wavelength = wavefront.get_wavelength()
@@ -275,7 +287,10 @@ def propagator2d_fourier_rescaling(wavefront,propagation_distance,shift_half_pix
 
     return wf_propagated
 
-def propagator2d_fourier_rescaling_xy(wavefront,propagation_distance,shift_half_pixel=1, m_x=1, m_y=1):
+
+def propagator2d_fourier_rescaling_xy(wf,propagation_distance,shift_half_pixel=1, m_x=1, m_y=1):
+
+    wavefront=wf.duplicate()
 
     wavenumber = wavefront.get_wavenumber()
     wavelength = wavefront.get_wavelength()

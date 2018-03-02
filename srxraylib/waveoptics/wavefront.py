@@ -50,6 +50,11 @@ class Wavefront1D(object):
 
     # main parameters
 
+    def duplicate(self):
+        return self.initialize_wavefront_from_arrays(
+            x_array=self.get_abscissas(), y_array=self.get_complex_amplitude(),
+            wavelength=self.get_wavelength()) # todo: aggiunto da giovanni, controllare
+
     def size(self):
         return self.electric_field_array.size()
 
@@ -84,10 +89,11 @@ class Wavefront1D(object):
 
         return phase
 
-
-
     def get_intensity(self):
         return self.get_amplitude()**2
+
+    def get_normalized_intensity(self): # todo: aggiunto da giovanni
+        return self.get_intensity() / self.get_intensity().max()
 
     # interpolated values
 
@@ -148,8 +154,8 @@ class Wavefront1D(object):
 
     def set_spherical_wave(self, radius=1.0, complex_amplitude=1.0):
         if radius == 0: raise Exception("Radius cannot be zero")
-        self.electric_field_array.np_array = (complex_amplitude/(-radius))*numpy.exp(-1.0j*self.get_wavenumber()*
-                                            (self.electric_field_array.scale**2)/(-2*radius))
+        self.electric_field_array.np_array = complex_amplitude*numpy.exp(1.0j*self.get_wavenumber()*
+                                            (self.electric_field_array.scale**2)/(2*radius))
 
     def add_phase_shift(self, phase_shift):
         self.electric_field_array.np_array *= numpy.exp(1.0j*phase_shift)
