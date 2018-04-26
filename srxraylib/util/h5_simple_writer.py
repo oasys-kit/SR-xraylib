@@ -76,18 +76,26 @@ class H5SimpleWriter(object):
         except:
             return False
 
-    def create_entry(self,entry_name,nx_default=None):
+    def create_entry(self,entry_name,root_entry=None,nx_default=None):
         """
         Creates a HDF5 group (or NX "entry") which is in fact the "folder" in the file that will contain
          the datasets
 
         :param entry_name: string with the name of the entry
+        :param root_entry: the root entry name (default: None)
         :param nx_default: the name of the dataset to inside this entry (to be added later) with the default plot (i.e.,
         when clicking the entry name).
         :return: None
         """
         f = h5py.File(self.filename, 'a')
-        f1 = f.create_group(entry_name)
+
+        if root_entry is None:
+            f1 = f.create_group(entry_name)
+        else:
+            f0 = f[root_entry]
+            f1 = f0.create_group(entry_name)
+
+
 
         if nx_default is not None:
             f1.attrs['NX_class'] = 'NXentry'
