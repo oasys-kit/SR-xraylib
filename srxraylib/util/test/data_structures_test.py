@@ -1,11 +1,71 @@
 import unittest
 import numpy
+from numpy.testing import assert_almost_equal
 
 from srxraylib.util.data_structures import ScaledArray,ScaledMatrix
 
 do_plot = 0
 
 class ScaledArrayTest(unittest.TestCase):
+
+    def run_initializers(self,npoint,x0,x1):
+
+        #
+        # init
+        #
+        x = ScaledArray(np_array=numpy.arange(npoint),scale=numpy.linspace(x0,x1,npoint))
+        #
+        print("size, delta, offset: ",x._size(),x._delta(),x._offset())
+        # print(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+        assert_almost_equal(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+
+        #
+        # initialize
+        #
+        x = ScaledArray.initialize(np_array=numpy.arange(npoint))
+        x.set_scale_from_range(x0,x1)
+
+        print("size, delta, offset: ",x._size(),x._delta(),x._offset())
+        # print(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+        assert_almost_equal(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+
+        #
+        # range
+        #
+        x = ScaledArray.initialize_from_range(numpy.arange(npoint),x0,x1)
+
+        print("size, delta, offset: ",x._size(),x._delta(),x._offset())
+        # print(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+        assert_almost_equal(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+
+        #
+        # steps
+        #
+        X = numpy.linspace(x0,x1,npoint)
+        x = ScaledArray.initialize_from_steps(numpy.arange(npoint),x0,X[1]-X[0])
+
+        print("size, delta, offset: ",x._size(),x._delta(),x._offset())
+        # print(x.get_abscissas(),numpy.linspace(x0,x1,npoint))
+        assert_almost_equal(x.get_abscissas(),X)
+
+
+    def test_initializers(self):
+
+
+        npoint = 10
+        x0 = -10
+        x1 = 10 # end point (included)
+        print("\nTesting ScaledArray initializers (npoint=%d)..."%npoint)
+        self.run_initializers(npoint,x0,x1)
+
+
+        npoint = 101
+        x0 = -10
+        x1 = 10
+        print("\nTesting ScaledArray initializers (npoint=%d)..."%npoint)
+        self.run_initializers(npoint,x0,x1)
+
+
 
     def test_ScaledArray(self,do_plot=do_plot):
 
@@ -136,6 +196,75 @@ class ScaledArrayTest(unittest.TestCase):
 
 class ScaledMatrixTest(unittest.TestCase):
 
+    def run_initializers(self,npointx,npointy,x0,x1,y0,y1):
+
+        #
+        # init
+        #
+
+        x = numpy.linspace(x0,x1,npointx)
+        y = numpy.linspace(y0,y1,npointy)
+        X = numpy.outer(x,numpy.zeros_like(y))
+        Y = numpy.outer(numpy.zeros_like(x),y)
+        Z = X * Y**2
+
+        w = ScaledMatrix(x_coord=x, y_coord=y, z_values=Z)
+        #
+        print("size, delta, offset: ",w._size_x(),w._size_y(),w._delta_x(),w._delta_y(),w._offset_x(),w._offset_y())
+
+        print(w.get_x_values().shape,w.get_y_values().shape,w.get_z_values().shape)
+        assert_almost_equal(w.get_x_values(),x)
+        assert_almost_equal(w.get_y_values(),y)
+        assert_almost_equal(w.get_z_values(),Z)
+
+
+        #
+        # initialize
+        #
+        w = ScaledMatrix.initialize(Z)
+        w.set_scale_from_range(0,x0,x1)
+        w.set_scale_from_range(1,y0,y1)
+
+        print(w.get_x_values().shape,w.get_y_values().shape,w.get_z_values().shape)
+        assert_almost_equal(w.get_x_values(),x)
+        assert_almost_equal(w.get_y_values(),y)
+        assert_almost_equal(w.get_z_values(),Z)
+
+
+
+        #
+        # range
+        #
+        w = ScaledMatrix.initialize_from_range(Z,x0,x1,y0,y1)
+
+        print(w.get_x_values().shape,w.get_y_values().shape,w.get_z_values().shape)
+        assert_almost_equal(w.get_x_values(),x)
+        assert_almost_equal(w.get_y_values(),y)
+        assert_almost_equal(w.get_z_values(),Z)
+
+
+
+        #
+        # steps
+        #
+        w = ScaledMatrix.initialize_from_steps(Z,x0,x[1]-x[0],y0,y[1]-y[0])
+
+        assert_almost_equal(w.get_x_values(),x)
+        assert_almost_equal(w.get_y_values(),y)
+        assert_almost_equal(w.get_z_values(),Z)
+
+
+    def test_initializers(self):
+
+
+        print("\nTesting ScaledArray initializers...")
+        self.run_initializers(10,12,-1.0,1.0,-2.0,2.0)
+
+        print("\nTesting ScaledArray initializers...")
+        self.run_initializers(105,12,2.0,3.0,-2.0,-1.0)
+
+
+
 
     def test_ScaledMatrix(self,do_plot=do_plot):
         #
@@ -170,11 +299,11 @@ class ScaledMatrixTest(unittest.TestCase):
         numpy.testing.assert_equal(x,scaled_matrix.get_x_values())
         numpy.testing.assert_equal(y,scaled_matrix.get_y_values())
 
-        print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0.0))
-        print("    Matrix Y value x_index=3 is %g (to compare with %g) "%(scaled_matrix.get_x_value(2.0),x[0]+2*(x[1]-x[0])))
-        print("    Matrix Y value y_index=3 is %g (to compare with %g) "%(scaled_matrix.get_y_value(2.0),y[0]+2*(y[1]-y[0])))
-        self.assertAlmostEqual(scaled_matrix.get_x_value(2.0),x[0]+2*(x[1]-x[0]),10)
-        self.assertAlmostEqual(scaled_matrix.get_y_value(2.0),y[0]+2*(y[1]-y[0]),10)
+        print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0))
+        print("    Matrix Y value x_index=3 is %g (to compare with %g) "%(scaled_matrix.get_x_value(2),x[0]+2*(x[1]-x[0])))
+        print("    Matrix Y value y_index=3 is %g (to compare with %g) "%(scaled_matrix.get_y_value(2),y[0]+2*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix.get_x_value(2),x[0]+2*(x[1]-x[0]),10)
+        self.assertAlmostEqual(scaled_matrix.get_y_value(2),y[0]+2*(y[1]-y[0]),10)
 
 
         #
@@ -204,11 +333,11 @@ class ScaledMatrixTest(unittest.TestCase):
         numpy.testing.assert_almost_equal(x,scaled_matrix.get_x_values(),11)
         numpy.testing.assert_almost_equal(y,scaled_matrix.get_y_values(),11)
 
-        print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0.0))
-        print("    Matrix Y value x_index=5 is %g (to compare with %g) "%(scaled_matrix.get_x_value(5.0),x[0]+5*(x[1]-x[0])))
-        print("    Matrix Y value y_index=5 is %g (to compare with %g) "%(scaled_matrix.get_y_value(5.0),y[0]+5*(y[1]-y[0])))
-        self.assertAlmostEqual(scaled_matrix.get_x_value(5.0),x[0]+5*(x[1]-x[0]),10)
-        self.assertAlmostEqual(scaled_matrix.get_y_value(5.0),y[0]+5*(y[1]-y[0]),10)
+        print("    Matrix X value x=0 : ", scaled_matrix.get_x_value(0))
+        print("    Matrix Y value x_index=5 is %g (to compare with %g) "%(scaled_matrix.get_x_value(5),x[0]+5*(x[1]-x[0])))
+        print("    Matrix Y value y_index=5 is %g (to compare with %g) "%(scaled_matrix.get_y_value(5),y[0]+5*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix.get_x_value(5),x[0]+5*(x[1]-x[0]),10)
+        self.assertAlmostEqual(scaled_matrix.get_y_value(5),y[0]+5*(y[1]-y[0]),10)
 
 
 
@@ -229,12 +358,12 @@ class ScaledMatrixTest(unittest.TestCase):
         scaled_matrix2 = ScaledMatrix.initialize_from_steps(Z,x[0],numpy.abs(x[1]-x[0]),y[0],numpy.abs(y[1]-y[0]))
 
         print("    Matrix 2 shape", scaled_matrix2.shape())
-        print("    Matrix 2 value x=0 : ", scaled_matrix2.get_x_value(0.0))
+        print("    Matrix 2 value x=0 : ", scaled_matrix2.get_x_value(0))
 
-        print("    Matrix 2 value x=5 is %g (to compare with %g) "%(scaled_matrix2.get_x_value(5.0),x[0]+5*(x[1]-x[0])))
-        self.assertAlmostEqual(scaled_matrix2.get_x_value(5.0),x[0]+5*(x[1]-x[0]))
-        print("    Matrix 2 value y=5 is %g (to compare with %g) "%(scaled_matrix2.get_y_value(5.0),y[0]+5*(y[1]-y[0])))
-        self.assertAlmostEqual(scaled_matrix2.get_y_value(5.0),y[0]+5*(y[1]-y[0]))
+        print("    Matrix 2 value x=5 is %g (to compare with %g) "%(scaled_matrix2.get_x_value(5),x[0]+5*(x[1]-x[0])))
+        self.assertAlmostEqual(scaled_matrix2.get_x_value(5),x[0]+5*(x[1]-x[0]))
+        print("    Matrix 2 value y=5 is %g (to compare with %g) "%(scaled_matrix2.get_y_value(5),y[0]+5*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix2.get_y_value(5),y[0]+5*(y[1]-y[0]))
 
 
         #
@@ -254,12 +383,12 @@ class ScaledMatrixTest(unittest.TestCase):
         scaled_matrix3 = ScaledMatrix.initialize_from_range(Z,x[0],x[-1],y[0],y[-1])
 
         print("Matrix 3 shape", scaled_matrix3.shape())
-        print("Matrix 3 value x=0 : ", scaled_matrix3.get_x_value(0.0))
+        print("Matrix 3 value x=0 : ", scaled_matrix3.get_x_value(0))
 
-        print("Matrix 3 value x=15 is %g (to compare with %g) "%(scaled_matrix3.get_x_value(15.0),x[0]+15*(x[1]-x[0])))
-        self.assertAlmostEqual(scaled_matrix3.get_x_value(15.0),x[0]+15*(x[1]-x[0]))
-        print("Matrix 3 value y=15 is %g (to compare with %g) "%(scaled_matrix3.get_y_value(15.0),y[0]+15*(y[1]-y[0])))
-        self.assertAlmostEqual(scaled_matrix3.get_y_value(15.0),y[0]+15*(y[1]-y[0]))
+        print("Matrix 3 value x=15 is %g (to compare with %g) "%(scaled_matrix3.get_x_value(15),x[0]+15*(x[1]-x[0])))
+        self.assertAlmostEqual(scaled_matrix3.get_x_value(15),x[0]+15*(x[1]-x[0]))
+        print("Matrix 3 value y=15 is %g (to compare with %g) "%(scaled_matrix3.get_y_value(15),y[0]+15*(y[1]-y[0])))
+        self.assertAlmostEqual(scaled_matrix3.get_y_value(15),y[0]+15*(y[1]-y[0]))
 
         # print("Matrix 3 X : ", scaled_matrix3.get_x_values())
         # print("Matrix 3 Y : ", scaled_matrix3.get_y_values())
