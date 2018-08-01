@@ -172,7 +172,7 @@ def simulate_profile_1D_gaussian(step=1.0, npoints=None, mirror_length=200.0, rm
     # Z = h.*randn(1,N); % uncorrelated Gaussian random rough surface distribution
     #                      % with mean 0 and standard deviation h
     #
-    uncorrelated_gaussian_random_rough_surface = rms_heights * numpy.random.randn(1.0, n_surface_points)
+    uncorrelated_gaussian_random_rough_surface = rms_heights * numpy.random.randn(1, int(n_surface_points))
     uncorrelated_gaussian_random_rough_surface.shape = -1
 
     # % Gaussian filter
