@@ -28,7 +28,8 @@ except:
 def plot_show():
     plt.show()
 
-def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1,add_colorbar=True):
+def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1,
+               add_colorbar=True,figsize=None):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
@@ -47,7 +48,7 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
         raise Exception("Bad number of inputs")
 
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
 
     # cmap = plt.cm.Greys
     plt.imshow(z.T,origin='lower',extent=[x[0],x[-1],y[0],y[-1]],cmap=cmap,aspect=aspect)
@@ -66,7 +67,7 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
 
 def plot(*positional_parameters,title="",xtitle="",ytitle="",
          xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None,
-         xlog=False,ylog=False):
+         xlog=False,ylog=False,figsize=None):
 
     if isinstance(positional_parameters,tuple):
         if len(positional_parameters) == 1: # in the cvase that input is a tuple with all curves
@@ -76,7 +77,7 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
     if n_arguments == 0:
         return
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     if n_arguments == 1:
         y = positional_parameters[0]
         x = np.arange(y.size)
@@ -258,13 +259,13 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
 def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
                title="",xtitle="",ytitle="",show=1,
                legend=None,legend_position=None,color=None,
-               xlog=False,ylog=False):
+               xlog=False,ylog=False,figsize=None):
 
     n_arguments = len(positional_parameters)
     if n_arguments == 0:
         return
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
 
     if n_arguments == 1:
         y = positional_parameters[0]
@@ -398,14 +399,15 @@ def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,
 
     return f
 
-def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,show=1):
+def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,
+                 figsize=None,show=1):
 
     from matplotlib import cm
     from matplotlib.ticker import LinearLocator, FormatStrFormatter
     from mpl_toolkits.mplot3d import Axes3D
 
     ftheta, fpsi = np.meshgrid(theta, psi)
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
     ax = fig.gca(projection='3d')
 
     II0 = mymode.T
@@ -432,6 +434,26 @@ def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",le
     return fig
 
 def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=True,title="",xtitle="",ytitle=""):
+    """
+
+    makes a scatter plot with histograms
+
+    :param x: x data array
+    :param y: y data arrayif False the plot is not shown (use  not show
+    :param show: if False the plot is not shown (use  plot_show() later on)
+    :param nbins: number of bins for plots
+    :param xrange: [xmin,xmax] range for abscissas
+    :param yrange: [ymin,ymax] range for ordinates
+    :param plot_histograms: Flag to plot:
+            False or 0: plot no histograms
+            True or 1: plot both histograms
+            2: plot histograms vs abscissas only
+            3: plot histogram vs ordinates only
+    :param title: string with a title
+    :param xtitle: string with abscissas label
+    :param ytitle: string with ordinates label
+    :return: the matplotlib objects with the elements created
+    """
 
     from matplotlib.ticker import NullFormatter
 
@@ -460,12 +482,18 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=Tr
 
     axScatter = plt.axes(rect_scatter)
     if plot_histograms:
-        axHistx = plt.axes(rect_histx)
-        axHisty = plt.axes(rect_histy)
-
-        # no labels
-        axHistx.xaxis.set_major_formatter(nullfmt)
-        axHisty.yaxis.set_major_formatter(nullfmt)
+        if plot_histograms == 2:
+            axHistx = plt.axes(rect_histx)
+            axHistx.xaxis.set_major_formatter(nullfmt)
+        elif plot_histograms == 3:
+            axHisty = plt.axes(rect_histy)
+            axHisty.yaxis.set_major_formatter(nullfmt)
+        else:
+            axHistx = plt.axes(rect_histx)
+            axHisty = plt.axes(rect_histy)
+            # no labels
+            axHistx.xaxis.set_major_formatter(nullfmt)
+            axHisty.yaxis.set_major_formatter(nullfmt)
 
     # now determine nice limits by hand:
     binwidth = np.array([x.max() - x.min(), y.max() - y.min()]).max() / nbins
@@ -488,26 +516,39 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=Tr
 
     if plot_histograms:
         bins_x = np.arange(xrange[0], xrange[1] + binwidth, binwidth)
-        axHistx.hist(x, bins=nbins)
-        axHisty.hist(y, bins=nbins, orientation='horizontal')
+        if plot_histograms == 2:
+            axHistx.hist(x, bins=nbins)
+            axHistx.set_xlim( axScatter.get_xlim() )
+            axHistx.set_title(title)
+        elif plot_histograms == 3:
+            axHisty.hist(y, bins=nbins, orientation='horizontal')
+            axHisty.set_ylim( axScatter.get_ylim() )
+        else:
+            axHistx.hist(x, bins=nbins)
+            axHisty.hist(y, bins=nbins, orientation='horizontal')
 
-        axHistx.set_xlim( axScatter.get_xlim() )
+            axHistx.set_xlim( axScatter.get_xlim() )
 
-        axHistx.set_title(title)
-        axHisty.set_ylim( axScatter.get_ylim() )
+            axHistx.set_title(title)
+            axHisty.set_ylim( axScatter.get_ylim() )
 
 
     if show: plt.show()
 
     if plot_histograms:
-        return fig,axScatter,axHistx,axHisty
+        if plot_histograms == 2:
+            return fig,axScatter,axHistx
+        elif plot_histograms == 3:
+            return fig,axScatter,axHisty
+        else:
+            return fig,axScatter,axHistx,axHisty
     else:
         return fig,axScatter
 
 def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=0,contour_levels=20,
-                 cmap=None,cbar=True,fill=False,cbar_title="",show=1):
+                 cmap=None,cbar=True,fill=False,cbar_title="",figsize=None,show=1):
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=figsize)
 
     if fill:
         fig = plt.contourf(x, y, z.T, contour_levels, cmap=cmap, origin='lower')
@@ -563,7 +604,7 @@ def example_plot_scatter():
     y = stats.norm.rvs(scale=0.5, size=2000)
     data = np.vstack([x+y, x-y])
     f = plot_scatter(data[0],data[1],xrange=[-10,10],title="example_plot_scatter",
-                     xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",plot_histograms=True,show=0)
+                     xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",plot_histograms=2,show=0)
     f[1].plot(data[0],data[0]) # use directly matplotlib to overplot
     plot_show()
 
@@ -584,7 +625,8 @@ def example_plot_one_curve():
     x = np.linspace(-100,100,10)
     y = x**2
     plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
-         ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,show=1)
+         ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,
+         figsize=(4,8),show=1)
 
 def example_plot_one_curve_log():
     x = np.linspace(-100,100,10)
@@ -635,16 +677,16 @@ def example_plot_table_with_errorbars():
     plot_table(x,out,errorbars=yerr,title="example_plot_table_with_errorbars",xtitle=r'$x$',ytitle=r'$y=f(x)=x^2$',xrange=[20,80],
                legend=["Statistical error","Constant error"],color=['black','magenta'],show=1)
 
-def example_plot_image_lena():
-    from scipy.misc import lena
+def example_plot_image_ascent():
+    from scipy.misc import ascent
 
-    lena = np.rot90(lena(),-1)
-    plot_image(lena,np.arange(0,lena.shape[0]),np.arange(0,lena.shape[1]),cmap='gray' )
+    ascent = np.rot90(ascent(),-1)
+    plot_image(ascent,np.arange(0,ascent.shape[0]),np.arange(0,ascent.shape[1]),cmap='gray' )
 #
 # main
 #
 if __name__ == "__main__":
-    # pass
+    pass
     # example_plot_one_curve()
     # example_plot_two_curves()
     # example_plot_one_curve_log()
@@ -654,5 +696,5 @@ if __name__ == "__main__":
     # example_plot_image()
     # example_plot_surface()
     # example_plot_contour()
-    example_plot_scatter()
-    # example_plot_image_lena()
+    # example_plot_scatter()
+    example_plot_image_ascent()
