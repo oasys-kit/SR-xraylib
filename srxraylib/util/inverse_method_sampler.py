@@ -1,8 +1,8 @@
-
-#
-# Classes for creating random points following a given numeric distribution 
-# using the inverse method. Covers 1D, 2D and 3D sampling.
-#
+"""
+ Classes for creating random points following a given numeric distribution
+ using the inverse method. Covers 1D, 2D and 3D sampling.
+ See tests for usage!
+"""
 
 __authors__ = ["M Sanchez del Rio - ESRF ISDD Advanced Analysis and Modelling"]
 __license__ = "MIT"
@@ -79,45 +79,6 @@ class Sampler1D(object):
             pendent = self._cdf[ix+1] - self._cdf[ix]
             delta = (edge - self._cdf[ix]) / pendent
         return ix,delta,pendent
-
-def test_1d():
-
-    from srxraylib.plot.gol import plot
-
-    x0=0.0
-    sigma=2.0
-    x = numpy.linspace(-10,10,51)
-    y = numpy.exp(- (x-x0)**2 / 2 / sigma**2)
-
-    y[0:21] = 100.0
-    y[21:31] = 4.0
-    y[31:41] = 5.0
-    y[41:51] = 10.0
-
-
-    s1 = Sampler1D(y,x)
-
-    plot(s1.abscissas(),s1.pdf(),title="pdf")
-    plot(s1.abscissas(),s1.cdf(),title="cdf")
-
-
-    # defingn random points
-    cdf_rand_array = numpy.random.random(100000)
-    sampled_points,h,hx = s1.get_sampled_and_histogram(cdf_rand_array)
-
-    plot(numpy.arange(cdf_rand_array.size),sampled_points,title="sampled points")
-    plot(hx,h/h.max(),s1.abscissas(),s1.pdf()/s1.pdf().max(),title="histogram",legend=["histo","data"])
-
-
-    # defining N
-    sampled_points,h,hx = s1.get_n_sampled_points_and_histogram(120000)
-    plot(numpy.arange(120000),sampled_points,title="120000 sapled points")
-    plot(hx,h/h.max(),s1.abscissas(),s1.pdf()/s1.pdf().max(),title="histogram",legend=["histo","data"])
-
-#
-#
-#
-#
 
 
 class Sampler2D(object):
@@ -213,73 +174,6 @@ class Sampler2D(object):
         return ix,delta,pendent
 
 
-def test_2d():
-    from scipy.ndimage import imread
-    from srxraylib.plot.gol import plot, plot_image, plot_scatter
-
-    image_data = imread("/scisoft/xop2.4/extensions/shadowvui/shadow3-scripts/SAMPLING/test1.jpg",flatten=True)
-    image_data = numpy.flip(image_data.T,1)
-    print(image_data.min(),image_data.max())
-    image_data = image_data.max() - image_data
-    # plot_image(image_data,cmap='binary')
-
-    x0 = numpy.arange(image_data.shape[0])
-    x1 = numpy.arange(image_data.shape[1])
-
-    print(image_data.shape)
-
-    s2d = Sampler2D(image_data,x0,x1)
-
-    # plot_image(s2d.pdf(),cmap='binary',title="pdf")
-
-    cdf2,cdf1 = s2d.cdf()
-    # plot_image(cdf2,cmap='binary',title="cdf")
-    # plot(s2d.abscissas()[0],s2d.cdf()[0][:,-1])
-    # plot(s2d.abscissas()[0],cdf1)
-
-    x0s,x1s = s2d.get_n_sampled_points(100000)
-    plot_scatter(x0s,x1s)
-
-
-def test_2d_bis():
-    from scipy.ndimage import imread
-    from srxraylib.plot.gol import plot, plot_image, plot_scatter
-
-    from PIL import Image
-    import requests
-    from io import BytesIO
-    from srxraylib.plot.gol import plot_image, plot, plot_scatter
-    #
-    response = requests.get("https://cdn104.picsart.com/201671193005202.jpg?r1024x1024")
-
-    img = Image.open(BytesIO(response.content))
-    img = numpy.array(img).sum(2) * 1.0
-    img = numpy.rot90(img,axes=(1,0))
-    image_data = img.max() - img
-    plot_image(image_data,cmap='binary')
-
-    x0 = numpy.arange(image_data.shape[0])
-    x1 = numpy.arange(image_data.shape[1])
-
-    print(image_data.shape)
-
-    s2d = Sampler2D(image_data,x0,x1)
-
-    # plot_image(s2d.pdf(),cmap='binary',title="pdf")
-
-    cdf2,cdf1 = s2d.cdf()
-    print("<><><>",cdf2.shape,cdf1.shape,s2d._pdf_x0.shape,s2d._pdf_x1.shape)
-    # plot_image(cdf2,cmap='binary',title="cdf")
-    # # plot(s2d.abscissas()[0],s2d.cdf()[0][:,-1])
-    # plot(s2d.abscissas()[0],cdf1)
-
-    x0s,x1s = s2d.get_n_sampled_points(100000)
-    plot_scatter(x0s,x1s)
-
-
-#
-########################################################################################################################
-#
 class Sampler3D(object):
 
     def __init__(self,pdf,pdf_x0=None,pdf_x1=None,pdf_x2=None):
@@ -406,57 +300,3 @@ class Sampler3D(object):
             delta = (edge - self._cdf3[index0,index1,ix]) / pendent
         return ix,delta,pendent
 
-
-def test3d():
-    from srxraylib.plot.gol import plot, plot_image, plot_scatter
-
-    from PIL import Image
-    import requests
-    from io import BytesIO
-    from srxraylib.plot.gol import plot_image, plot, plot_scatter
-    #
-    response = requests.get("https://cdn104.picsart.com/201671193005202.jpg?r1024x1024")
-
-    img = Image.open(BytesIO(response.content))
-    img = numpy.array(img) * 1.0
-    img = numpy.rot90(img,axes=(1,0))
-    image_data = img.max() - img
-    # print(">>>>>",image_data.shape)
-    plot_image(image_data[:,:,0],cmap='binary',title="channel0",show=1)
-    # plot_image(image_data[:,:,1],cmap='binary',title="channel1",show=0)
-    # plot_image(image_data[:,:,2],cmap='binary',title="channel2")
-
-    # x0 = numpy.arange(image_data.shape[0])
-    # x1 = numpy.arange(image_data.shape[1])
-    # x2 = numpy.arange(image_data.shape[2])
-
-    print(image_data.shape)
-
-    s2d = Sampler3D(image_data)
-
-
-    cdf3, cdf2, cdf1 = s2d.cdf()
-
-    # plot_image(cdf2)
-    #
-    # # plot_image(s2d.pdf(),cmap='binary',title="pdf")
-    #
-    # cdf2,cdf1 = s2d.cdf()
-    # plot_image(cdf2,cmap='binary',title="cdf")
-    # # plot(s2d.abscissas()[0],s2d.cdf()[0][:,-1])
-    # plot(s2d.abscissas()[0],cdf1)
-    #
-    x0s,x1s,x2s = s2d.get_n_sampled_points(100000)
-    plot_scatter(x0s,x1s)
-    print(x2s)
-
-
-if __name__ == "__main__":
-
-    test_1d()
-
-    # test_2d()
-
-    # test_2d_bis()
-
-    # test3d()
