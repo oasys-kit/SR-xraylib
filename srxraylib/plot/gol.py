@@ -28,7 +28,9 @@ except:
 def plot_show():
     plt.show()
 
-def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap=None,aspect=None,show=1,
+def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
+               xrange=None, yrange=None,
+               cmap=None,aspect=None,show=1,
                add_colorbar=True,figsize=None):
 
     n_arguments = len(positional_parameters)
@@ -59,6 +61,9 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",cmap
     ax.set_ylabel(ytitle)
 
     plt.title(title)
+
+    plt.xlim( xrange )
+    plt.ylim( yrange )
 
     if show:
         plt.show()

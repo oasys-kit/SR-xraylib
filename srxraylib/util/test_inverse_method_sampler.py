@@ -19,6 +19,9 @@ import unittest
 
 do_plots = False
 
+def Std_zero_mean(array): # std for zero mean!!!
+    return numpy.sqrt( (array**2).sum() / (array.size-1) )
+
 class TestSamplers(unittest.TestCase):
     def test_1d(self):
 
@@ -195,3 +198,78 @@ class TestSamplers(unittest.TestCase):
         assert ((numpy.abs( x1s.mean() ) - 498.805) < 10.0)
         assert ((numpy.abs( x1s.std() )  - 301.21)  < 10.0)
 
+    def test_radial_1D_gaussian_distribution(self):
+
+
+        print("\n#\n# running test_radial_1D_gaussian_distribution() \n#\n")
+
+
+        R = 50.0e-6
+        sigma = 5e-6
+        NRAYS = 10000
+
+
+        x = numpy.linspace(0,R,300)
+        y = numpy.exp(- x*x/2/sigma/sigma) # numpy.ones_like(x) * R
+
+        s = Sampler1D(y*x,x)
+
+        sampled_point, hy, hx = s.get_n_sampled_points_and_histogram(NRAYS,bins=101)
+
+
+        angle = numpy.random.random(NRAYS) * 2 * numpy.pi
+
+        if do_plots:
+            plot(x,y,title="Gaussian Radial Distribution sigma:%f"%sigma)
+            plot(x,y*x,title="pdf")
+            plot(hx,hy,title="histogram of sampled r")
+
+        X = sampled_point / numpy.sqrt(2) * numpy.sin(angle)
+        Y = sampled_point / numpy.sqrt(2) * numpy.cos(angle)
+
+
+
+        if do_plots:
+            plot_scatter(X,Y)
+
+        print("sigma, stdev R,  stdev X, srdev Y: ",sigma,Std_zero_mean(numpy.sqrt(X*X+Y*Y)),Std_zero_mean(X),Std_zero_mean(Y))
+        print("stdev sampled R: ",Std_zero_mean(sampled_point))
+        print("error (percent) : ",100/sigma*numpy.abs(sigma - (Std_zero_mean(numpy.sqrt(X*X+Y*Y)))) )
+
+        assert ( numpy.abs(sigma - (Std_zero_mean(numpy.sqrt(X*X+Y*Y)))) < 0.05 * sigma) # 5% difference
+
+
+
+    def test_radial_1D_flat_distribution(self):
+
+
+        print("\n#\n# running test_radial_1D_flat_distribution() \n#\n")
+
+        R = 50.0e-6
+        NRAYS = 10000
+
+
+        x = numpy.linspace(0,R,300)
+        y = numpy.ones_like(x)
+
+        s = Sampler1D(y*x,x)
+
+        sampled_point, hy, hx = s.get_n_sampled_points_and_histogram(NRAYS,bins=101)
+
+
+        angle = numpy.random.random(NRAYS) * 2 * numpy.pi
+
+        if do_plots:
+            plot(x,y,title="Constant Radial Distribution")
+            plot(x,y*x,title="pdf")
+            plot(hx,hy,title="histogram of sampled r")
+
+        X = sampled_point * numpy.sin(angle)
+        Y = sampled_point * numpy.cos(angle)
+
+
+        if do_plots:
+            plot_scatter(X,Y)
+
+        RR = numpy.sqrt(X*X+Y*Y)
+        assert ( numpy.abs(RR.max()) - R < 0.05 * R) # 5% difference
