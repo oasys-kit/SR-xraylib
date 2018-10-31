@@ -1,6 +1,6 @@
 # SR-xraylib
 
-Miscellaneaous utilities and tools for synchrotron radiation and x-ray optics.
+Miscellaneous utilities and tools for synchrotron radiation and x-ray optics.
 
 The classes and functions here can be used in a standalone more. They are separated in different folders: 
 
