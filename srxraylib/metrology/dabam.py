@@ -1589,7 +1589,7 @@ def dabam_summary_dictionary(surface=None, slp_err_from=None, slp_err_to=None, l
         tmp = dm._dictionary_line()
 
         add_element = True
-        if not surface is None: add_element = tmp["surface"] == surface
+        if not surface is None and not tmp["surface"] is None: add_element = tmp["surface"].capitalize() == surface.capitalize()
         if add_element and not slp_err_from is None and not slp_err_to is None: add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
         if add_element and not length_from is None and not length_to is None: add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
         if add_element: out.append(tmp)
