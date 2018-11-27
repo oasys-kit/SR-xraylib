@@ -34,6 +34,11 @@ class H5SimpleWriter(object):
         self.label_dataset_y = b'y'
         self.label_dataset_x = b'x'
 
+        self.label_stack_data   = "stack_data"
+        self.label_stack_axis0 = b'axis0'
+        self.label_stack_axis1 = b'axis1'
+        self.label_stack_axis2 = b'axis2'
+
     @classmethod
     def initialize_file(cls, filename, creator="H5BasicWriter"):
         tmp = H5SimpleWriter(filename,creator)
@@ -49,6 +54,12 @@ class H5SimpleWriter(object):
     def set_label_dataset(self, str_x, str_y):
         self.label_dataset_x = str_x
         self.label_dataset_y = str_y
+
+    def set_label_stack(self, str_data, str_0, str_1, str_2):
+        self.label_stack_data   = str_data
+        self.label_stack_axis0 = str_0
+        self.label_stack_axis1 = str_1
+        self.label_stack_axis2 = str_2
 
     def create_new_file(self):
         try:
@@ -173,6 +184,40 @@ class H5SimpleWriter(object):
         ds = f2.create_dataset(self.label_image_axis_x, data=image_x)
         # ds.attrs['units'] = 'microns'
         ds.attrs['long_name'] = title_x    # suggested Y axis plot label
+
+        f.close()
+
+    def add_stack(self,e,h,v,p,stack_name="Radiation",entry_name=None,
+                     title_0="",title_1="",title_2=""):
+
+        f = h5py.File(self.filename, 'a')
+
+        if entry_name is None:
+            f1 = f
+        else:
+            f1 = f[entry_name]
+
+
+        f2 = f1.create_group(stack_name)
+
+        # f2.attrs['NX_class'] = 'NXdata'
+        # f2.attrs['signal'] = '%s'%("image_data")
+        # f2.attrs['axes'] = [b'axis_y', b'axis_x']
+
+        # Image data
+        ds = f2.create_dataset(self.label_stack_data, data=p)
+
+        ds = f2.create_dataset(self.label_stack_axis0, data=e)
+        ds.attrs['long_name'] = title_0    # suggested 0 axis plot label
+
+        # X axis data
+        ds = f2.create_dataset(self.label_stack_axis1, data=h)
+        ds.attrs['long_name'] = title_1    # suggested 1 axis plot label
+
+
+        # Y axis data
+        ds = f2.create_dataset(self.label_stack_axis2, data=v)
+        ds.attrs['long_name'] = title_2    # suggested 2 axis plot label
 
         f.close()
 
