@@ -68,7 +68,113 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
     if show:
         plt.show()
 
-    return fig
+    return fig,ax
+
+
+def plot_image_with_histograms(*positional_parameters,
+            title="",xtitle=r"X",ytitle=r"Y",
+            xrange=None, yrange=None,
+            cmap=None,aspect_ratio=None,show=True,
+            add_colorbar=False,figsize=(8,8)
+            ):
+
+    n_arguments = len(positional_parameters)
+    if n_arguments == 1:
+        z = positional_parameters[0]
+        x = np.arange(0,z.shape[0])
+        y = np.arange(0,z.shape[1])
+    elif n_arguments == 2:
+        z = positional_parameters[0]
+        x = positional_parameters[1]
+        y = positional_parameters[1]
+    elif n_arguments == 3:
+        z = positional_parameters[0]
+        x = positional_parameters[1]
+        y = positional_parameters[2]
+    else:
+        raise Exception("Bad number of inputs")
+
+    if xrange is None:
+        xrange = [x.min(),x.max()]
+
+    if yrange is None:
+        yrange = [y.min(),y.max()]
+
+
+    figure = plt.figure(figsize=figsize)
+
+    hfactor = 1.0
+    vfactor = 1.0
+
+    left, width = 0.1, 0.6
+    bottom, height = 0.1, 0.6
+    bottom_h = left_h = left + width + 0.02
+    rect_scatter = [left, bottom, width, height]
+    rect_histx = [left, bottom_h, width, 0.2]
+    rect_histy = [left_h, bottom, 0.2, height]
+
+    #
+    #main plot
+    #
+    axScatter = figure.add_axes(rect_scatter)
+
+    axScatter.set_xlabel(xtitle)
+    axScatter.set_ylabel(ytitle)
+
+
+    axScatter.axis(xmin=hfactor*xrange[0],xmax=xrange[1])
+    axScatter.axis(ymin=vfactor*yrange[0],ymax=yrange[1])
+
+    if aspect_ratio is not None:
+        axScatter.set_aspect(aspect_ratio)
+
+    axs = axScatter.pcolormesh(x,y,z,cmap=cmap)
+
+    #
+    #histograms
+    #
+    axHistx = figure.add_axes(rect_histx, sharex=axScatter)
+    axHisty = figure.add_axes(rect_histy, sharey=axScatter)
+
+    hx = z.sum(axis=0)
+    hy = z.sum(axis=1)
+    axHistx.plot(x,hx)
+    axHisty.plot(hy,y)
+
+
+    # tt = np.where(hx >= hx.max() * 0.5)
+    # if hx[tt].size > 1:
+    #     binSize = x[1] - x[0]
+    #     print("FWHM X: ",binSize * (tt[0][-1] - tt[0][0]))
+    #
+    #
+    # tt = np.where(hy >= hy.max() * 0.5)
+    # if hx[tt].size > 1:
+    #     binSize = y[1] - y[0]
+    #     print("FWHM Y: ",binSize * (tt[0][-1] - tt[0][0]))
+
+
+
+    # supress ordinates labels ans ticks
+    axHistx.get_yaxis().set_visible(False)
+    axHisty.get_xaxis().set_visible(False)
+
+    # supress abscissas labels (keep ticks)
+    for tl in axHistx.get_xticklabels(): tl.set_visible(False)
+    for tl in axHisty.get_yticklabels(): tl.set_visible(False)
+
+    if title != "":
+        axHistx.set_title(title)
+
+    if add_colorbar:
+        plt.colorbar(axs)
+
+    if show:
+        plt.show()
+
+    return figure #,ax
+
+
 
 def plot(*positional_parameters,title="",xtitle="",ytitle="",
          xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None,
@@ -259,7 +365,7 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
     if show:
         plt.show()
 
-    return fig
+    return fig,ax
 
 def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
                title="",xtitle="",ytitle="",show=1,
@@ -329,7 +435,7 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
     if show:
         plt.show()
 
-    return fig
+    return fig,ax
 def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,yrange=None,show=True):
     """
     Creates four plots in a window
@@ -402,7 +508,7 @@ def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,
 
     if show: plt.show()
 
-    return f
+    return f,ax00,ax01,ax10,ax11
 
 def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,
                  figsize=None,show=1):
@@ -436,7 +542,7 @@ def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",le
     if show:
         plt.show()
 
-    return fig
+    return fig,ax
 
 def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=True,title="",xtitle="",ytitle=""):
     """
@@ -593,6 +699,14 @@ def example_plot_image():
     z = np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
     plot_image(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
 
+def example_plot_image_with_histograms():
+    x = np.linspace(-4, 4, 200)
+    y = np.linspace(-4, 4, 90)
+    print('Size %d pixels' % (len(x) * len(y)))
+    z = -np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
+    plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
+                               cmap=None,show=1,figsize=(8,8),add_colorbar=True)
+
 def example_plot_surface():
     x = np.linspace(-4, 4, 20)
     y = np.linspace(-4, 4, 20)
@@ -699,7 +813,8 @@ if __name__ == "__main__":
     # example_plot_table_one_curve()
     # example_plot_table_with_errorbars()
     # example_plot_image()
+    # example_plot_image_with_histograms()
     # example_plot_surface()
     # example_plot_contour()
     # example_plot_scatter()
-    example_plot_image_ascent()
+    # example_plot_image_ascent()
