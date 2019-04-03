@@ -1185,10 +1185,11 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
 
     # get period [m], number of periods, harmonics [T]
     if b_from >= 1:
-        if type(inData) == type(""):   # file input
-            if os.path.isfile(inData) == False:
-                sys.exit('File nor found: '+inData)
-            a = numpy.loadtxt(inData)
+        if isinstance(inData,str):   # file input
+            try:
+                a = numpy.loadtxt(inData)
+            except:
+                raise Exception('Cannot load file: '+inData)
         else:  # numpy array input
             a = inData
 
