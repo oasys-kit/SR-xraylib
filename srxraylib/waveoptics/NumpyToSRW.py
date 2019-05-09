@@ -1,4 +1,4 @@
-from srwlib import *
+from oasys_srw.srwlib import *
 import numpy as np
 
 #
