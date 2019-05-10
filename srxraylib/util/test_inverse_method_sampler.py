@@ -17,7 +17,7 @@ from io import BytesIO
 import unittest
 
 
-do_plots = False
+do_plots = True
 
 def Std_zero_mean(array): # std for zero mean!!!
     return numpy.sqrt( (array**2).sum() / (array.size-1) )
