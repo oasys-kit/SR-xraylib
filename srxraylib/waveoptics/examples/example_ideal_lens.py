@@ -28,7 +28,7 @@ from pySRU.RadiationFactory import RadiationFactory,RADIATION_METHOD_NEAR_FIELD,
 from pySRU.SourceUndulatorPlane import SourceUndulatorPlane
 
 try:
-    import srwlib
+    import oasys_srw.srwlib as srwlib
     SRWLIB_AVAILABLE = True
 except:
     SRWLIB_AVAILABLE = False

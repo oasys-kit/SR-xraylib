@@ -17,7 +17,7 @@ if do_plot:
     from srxraylib.plot.gol import plot,plot_image,plot_table
 
 try:
-    import srwlib
+    import oasys_srw.srwlib
     SRWLIB_AVAILABLE = True
 except:
     SRWLIB_AVAILABLE = False

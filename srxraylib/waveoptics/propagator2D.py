@@ -37,7 +37,7 @@ from srxraylib.waveoptics.wavefront2D import Wavefront2D
 
 
 try:
-    import srwlib
+    import oasys_srw.srwlib as srwlib
     SRWLIB_AVAILABLE = True
 except:
     SRWLIB_AVAILABLE = False
