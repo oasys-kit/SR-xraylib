@@ -302,7 +302,7 @@ def sync_g1(x,polarization=0):
     raise ValueError("invalid polarization=: %s" % polarization)
 
 
-def sync_f(rAngle,rEnergy=None,polarization=0,gauss=0,l2=1,l1=0 ):
+def sync_f(rAngle,rEnergy=None,polarization=0,gauss=0,l2=1,l3=0 ):
     r""" angular dependency of synchrotron radiation emission
 
       NAME:
