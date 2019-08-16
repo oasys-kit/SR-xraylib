@@ -31,7 +31,7 @@ srfunc: calculates synchrotron radiation emission (radiation and angle
              wiggler_harmonics: computes the harmonic decomposition of the 
                               magnetic field B(s)
 
- 
+             wiggler_cdf: computes the cumulative distribution function from radiation
 
 TODO:
 - elliptical wigglers
@@ -46,7 +46,7 @@ __contact__ = "srio@esrf.eu"
 __copyright = "ESRF, 2002-2014"
 
 
-import numpy, math
+import numpy
 import scipy.special
 import scipy.constants.codata
 import os
@@ -66,6 +66,7 @@ try:
     codata_ec = codata.e
 
 except ImportError:
+    #TODO update these constants
     print("Failed to import scipy. Finding alternative ways.")
     codata_c = numpy.array(299792458.0)
     codata_me = numpy.array(9.10938291e-31)
@@ -561,8 +562,7 @@ def sync_ang(flag,angle_mrad,polarization=0, \
         eene = energy/ec_ev
         gamma = e_gev*1e3/codata_mee
         a5=sync_f(angle_mrad*gamma/1e3,eene,polarization=polarization)* \
-        numpy.power(eene,2)* \
-            a8*i_a*hdiv_mrad*numpy.power(e_gev,2)
+            numpy.power(eene,2)*a8*i_a*hdiv_mrad*numpy.power(e_gev,2)
         return a5
 
 
@@ -791,7 +791,7 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
 #------------------------- WIGGLER FUNCTIONS -----------------------------------
 #
 def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
-                     per=0.2, electronCurrent=0.2, outFile="", elliptical=False):
+                     per=0.2, electronCurrent=0.2, outFile="", elliptical=False, verbose=True):
     r"""
      NAME:
            wiggler_spectrum
@@ -851,8 +851,9 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
                                numpy.power(betax[1],2) - \
                                numpy.power(betaz[1],2))
     bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
-    print("\nElectron beam energy (from velocities) = %f GeV "%(bener))
-    print("\ngamma (from velocities) = %f "%(gamma))
+    if verbose:
+        print("\nElectron beam energy (from velocities) = %f GeV "%(bener))
+        print("\ngamma (from velocities) = %f "%(gamma))
 
 
     #;
@@ -862,16 +863,19 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
     curv_max = numpy.abs(curv).max()
     curv_min = numpy.abs(curv).min()
 
-
-    print("Radius of curvature (max) = %f m "%(1.0/curv_min))
-    print("                    (min) = %f m "%(1.0/curv_max))
+    if verbose:
+        print("curvature (max) = %f m "%(curv_max))
+        print("          (min) = %f m "%(curv_min))
+        print("Radius of curvature (max) = %f m "%(1.0/curv_min))
+        print("                    (min) = %f m "%(1.0/curv_max))
 
     TOANGS  =  m2ev*1e10 
     phot_min = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_min
     phot_max = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_max
 
-    print("Critical Energy (max.) = %f eV"%(phot_max))
-    print("                (min.) = %f eV"%(phot_min))
+    if verbose:
+        print("Critical Energy (max.) = %f eV"%(phot_max))
+        print("                (min.) = %f eV"%(phot_min))
 
     out = numpy.zeros((3,nPoints))
     #;
@@ -879,7 +883,20 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
     #;
     mul_fac=numpy.abs(curv)*numpy.sqrt(1+numpy.power(betax/betay,2)+ \
                                          numpy.power(betaz/betay,2))*1.0e3
-    energy_array = numpy.linspace(enerMin,enerMax,nPoints) 
+    energy_array = numpy.linspace(enerMin,enerMax,nPoints)
+
+
+    rad = numpy.abs(1.0 / curv)
+
+    # REMOVE INFINITIES
+    for i,irad in enumerate(rad):
+        if rad[i] == float("-inf"):
+            rad[i] = -1e20
+        if rad[i] == float("+inf"):
+            rad[i] = 1e20
+        # print(i,curv[i],rad[i],rad[i] == float("-inf"), rad[i] == float("+inf"))
+
+
     for i in range(len(energy_array)):
         energy = energy_array[i]
 
@@ -889,7 +906,8 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
         #; each point. It is then used to generate the no. of photons per axial 
         #; length (PHOT_NUM) along the trajectory S.
         phot_num = numpy.zeros(len(curv))
-        rad= numpy.abs(1.0/curv)
+        # rad= numpy.abs(1.0/curv)
+        # print(">>>>>> rad: ",rad)
         ang_num = wiggler_nphoton(rad,electronEnergy=bener,photonEnergy=energy)
         phot_num=ang_num*mul_fac
         #;
@@ -1052,11 +1070,23 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
     # (basically the integrat of G1). May be it can be parametrized using
     # Mathematica? 
     phot_num = numpy.zeros(np) 
-    energy_array = numpy.linspace(enerMin,enerMax,enerPoints) 
-    energy_step = energy_array[1] - energy_array[0]
+    energy_array = numpy.linspace(enerMin,enerMax,enerPoints)
 
+    if energy_array.size == 1: # scalar
+        energy_step = enerMin * 1e-3 # 0.1%bw, by default
+    else:
+        energy_step = energy_array[1] - energy_array[0]
 
     rad = numpy.abs(1.0/curv)
+
+
+    # REMOVE INFINITIES
+    for i,irad in enumerate(rad):
+        if rad[i] == float("-inf"):
+            rad[i] = -1e20
+        if rad[i] == float("+inf"):
+            rad[i] = 1e20
+
     ang_num = numpy.zeros(len(curv))
 
     for j in range(len(energy_array)):
@@ -1100,31 +1130,39 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
             phot_cdf = numpy.cumsum(phot_num0+phot_num) * 0.5 * ( y - y0 ) 
 
     tot_num   = phot_cdf[-1]
-    print("wiggler_cdf: Total no.of photons = %e "%(tot_num))
+    if enerMin == enerMax:
+        print("wiggler_cdf: Total no.of photons = %e (in DE=4.3%f eV)"%(tot_num,energy_step,))
+    else:
+        print("wiggler_cdf: Total no.of photons = %e (in DE=%9.3f eV)" % (tot_num,energy_array[-1]-energy_array[0], ))
+    cdf = phot_cdf / tot_num
+    angle = numpy.arctan2( betax, betay )
 
     if outFile != "":
         f = open(outFile,"w")
+        #NP_TRAJ,PATH_STEP,BENER,RAD_MIN,RAD_MAX,PH1,PH2
         f.write("%d %e %e %e %e %e %e \n"%(np,step,bener,1.0/curv_max, 1.0/curv_min,energy_array[0],energy_array[-1]))
 
-        cdf = phot_cdf / tot_num
+
 
         if elliptical: 
-            pass     # TODO: complete elliptical wiggler
+            raise Exception(NotImplemented)
         else:
-            angle = numpy.arctan2( betax, betay )
             for i in range(np):
                 f.write("%e %e %e %e %e \n"%(x[i],y[i],cdf[i],angle[i],curv[i]))
 
         f.close()
         print("wiggler_cdf: File with wiggler cdf written to file: %s "%(outFile))
 
-    return None
+    return {"np":np,"step":step,"bener":bener,"inv_curv_max":(1.0/curv_max),"inv_curv_min":(1.0/curv_min),
+                    "emin":energy_array[0],"emax":energy_array[-1],
+                    "x":x,"y":y,"cdf":cdf,"angle":angle,"curv":curv}
 
 
 def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
                        ener_gev=6.04, per=0.125, kValue=14.0, trajFile="",
                        shift_x_flag=0,shift_x_value=0.0,
-                       shift_betax_flag=0,shift_betax_value=0.0):
+                       shift_betax_flag=0,shift_betax_value=0.0,
+                       verbose=False):
     r"""
     Calculates the trajectory of the electrons under a magnetic field in Z direction.
 
@@ -1138,7 +1176,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
                    1: A file with the magnetic field (y[m] B[T]) is given
                    2: A file with the magnetic field harmonics (n Bn[T]) is given
     :param inData: A string with the file with the file name containing the field information (for b_from:1,2),
-                    or a [2,npoint] numpy array with the field information.
+                    or a [npoint,2] numpy array with the field information.
     :param nPer: Number of periods
     :param nTrajPoints: Number of trajectory points (per period)
     :param ener_gev: The electron energy in GeV
@@ -1161,6 +1199,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
                         4 = Value at zero
                         5 = User value
     :param shift_betax_value: The user value for shift betax (if shift_betax_flag=5)
+    :param verbose: is True prints some info
     :return:           (traj,pars)
            traj: a variable to store the output matrix (8 colums with:
            x[m]  y[m]  z[m]  BetaX  BetaY  BetaZ  Curvature  B[T] )
@@ -1185,39 +1224,41 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
 
     # get period [m], number of periods, harmonics [T]
     if b_from >= 1:
-        if isinstance(inData,str):   # file input
-            try:
-                a = numpy.loadtxt(inData)
-            except:
-                raise Exception('Cannot load file: '+inData)
+        if type(inData) == type(""):   # file input
+            if os.path.isfile(inData) == False:
+                sys.exit('File nor found: '+inData)
+            a = numpy.loadtxt(inData)
         else:  # numpy array input
             a = inData
 
     if b_from == 1:
         yy = a.T[0,:]
         bz = a.T[1,:]
+
         nmax = len(bz) + 1
         nTrajPoints = len(bz)
         ystep = yy[1]-yy[0]
         per  = yy[-1]-yy[0]
-        print("%d points read "%(nTrajPoints))
-        print("Period of the ID is %f m "%(per))
-
+        if verbose:
+            print("%d points read "%(nTrajPoints))
+            print("Period of the ID is %f m "%(per))
 
     if b_from == 2:
         n = a.T[0,:]
         bh = a.T[1,:]
         nharm = len(n)
-        print("%d harmonics read"%(nharm))
-        print("Period of the ID is %f m "%(per))
-        print("Number of periods is %d "%(nPer))
+        if verbose:
+            print("%d harmonics read"%(nharm))
+            print("Period of the ID is %f m "%(per))
+            print("Number of periods is %d "%(nPer))
 
     gamma = 1.0e3/codata_mee*ener_gev
     beta02 = 1.0 - numpy.power(gamma,-2)
     beta0 = numpy.sqrt(beta02)
-    print(" gamma = %f"%(gamma))
-    print(" beta = v/c = %20.10f"%(beta0))
-    print(" beta^2 = %20.12f"%(beta02))
+    if verbose:
+        print(" gamma = %f"%(gamma))
+        print(" beta = v/c = %20.10f"%(beta0))
+        print(" beta^2 = %20.12f"%(beta02))
     start_len = per * (nPer-1) / 2.
 
     #;
@@ -1256,7 +1297,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
             betax = betax + tmp
         betax = betax*(per/2.0/numpy.pi)
 
-    print(" integral of b = %20.12e T.m "%(betax[nTrajPoints-1]))
+    if verbose:
+        print(" integral of b = %20.12e T.m "%(betax[nTrajPoints-1]))
     #;
     #;    rescale b to speeds v/c = 0.3/e[gev] * integral (bz [t] ds[m])
     #;
@@ -1296,7 +1338,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
     pars += "\nBeta = v/c :                   %30.15e"%(beta0)
     #pars += "\nB = Cte*curv; Cte:             "+repr(-1.0*beta0/emc)
     pars += "\nElectron energy [GeV] :        "+repr(ener_gev)
-    pars += "\nTotal emitted power [W] per 100 mA electron current:  energy [GeV] :        "+repr(tmpP)
+    pars += "\nTotal emitted power [W] per 100 mA electron current:  "+repr(tmpP)
     pars += "\nMaximum of B = %f T "%(bz.max())
     #pars += "\nMaximum of K = %f T "%(93.36*bz.max()*per)
     pars += "\nMaximum of K = %f "%(codata_ec/codata_me/codata_c/2/numpy.pi*bz.max()*per)
@@ -1335,7 +1377,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
     elif shift_betax_flag == 5:  # user value
         shift_betax_local = shift_betax_value
     else:
-        raise "Unknown value for shift_betax_flag"
+        raise Exception("Unknown value for shift_betax_flag")
 
     if shift_betax_local != 0.0:
         betax += shift_betax_local
@@ -1356,7 +1398,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
     elif shift_x_flag == 5: # user value
         shift_x_local =  shift_x_value
     else:
-        raise "Unknown value for shift_x_flag"
+        raise Exception("Unknown value for shift_x_flag")
 
     if shift_x_local != 0.0:
         yx +=  shift_x_local
@@ -1539,9 +1581,9 @@ def wiggler_harmonics(Bs,Nh=41,fileOutH=""):
 # tests
 #
 def test_xraybooklet_fig2_1(pltOk=False):
-    # 
-    # example 1, Fig 2-1 in http://xdb.lbl.gov/Section2/Sec_2-1.html
-    #
+    print("# ")
+    print("# example 1, Fig 2-1 in http://xdb.lbl.gov/Section2/Sec_2-1.html ")
+    print("# ")
     y = numpy.logspace(-3,1,100)  #  from 0.001 to 10, 100 points
     g1 = sync_g1(y,polarization=0)
     h2 = sync_hi(y,i=2,polarization=0)
@@ -1570,9 +1612,9 @@ def test_xraybooklet_fig2_1(pltOk=False):
             print(" %f  %e %e "%(y[i],g1[i],h2[i]))
 
 def test_xraybooklet_fig2_2(pltOk=False):
-    # 
-    # example  2, Fig 2-2 in http://xdb.lbl.gov/Section2/Sec_2-1.html
-    #
+    print("# ")
+    print("# example  2, Fig 2-2 in http://xdb.lbl.gov/Section2/Sec_2-1.html ")
+    print("# ")
 
     y = numpy.linspace(0,8,100)  #  from 0.001 to 10, 100 points
     f3   = sync_f(y,3.0,polarization=1)
@@ -1630,9 +1672,9 @@ def test_xraybooklet_fig2_2(pltOk=False):
             print(" %f  %e %e "%(y[i],f3[i],f3pi[i]))
 
 def test_esrf_bm_spectrum(pltOk=False):
-    # 
-    # example 3, ESRF BM spectrum
-    #
+    print("#")
+    print("# example 3, ESRF BM spectrum")
+    print("#")
     # input for ESRF
     e_gev = 6.04    # electron energy in GeV
     r_m = 25.0      # magnetic radius in m
@@ -1665,9 +1707,9 @@ def test_esrf_bm_spectrum(pltOk=False):
             print(" %f  %12.3e"%(energy_ev[i],flux[i]))
 
 def test_esrf_bm_angle_power(pltOk=False):
-    # 
-    # example 4: ESRF BM angular emission of power
-    #
+    print("#")
+    print("# example 4: ESRF BM angular emission of power")
+    print("#")
     # input for ESRF
     e_gev = 6.04    # electron energy in GeV
     r_m = 25.0      # magnetic radius in m
@@ -1695,9 +1737,9 @@ def test_esrf_bm_angle_power(pltOk=False):
             print("  %f  %f"%(angle_mrad[i],flux[i]))
 
 def test_esrf_bm_angle_flux(pltOk=False):
-    # 
-    # example 5: ESRF BM angular emission of flux
-    #
+    print("#")
+    print("# example 5: ESRF BM angular emission of flux")
+    print("#")
 
     # input for ESRF
     e_gev = 6.04    # electron energy in GeV
@@ -1737,10 +1779,10 @@ def test_esrf_bm_angle_flux(pltOk=False):
             print("  %f  %f"%(angle_mrad[i],fluxEc[i]))
 
 def test_clarke_43(pltOk=False):
-    #
-    # Example 6 Slide 35 of
-    # http:https://www.cockcroft.ac.uk/wp-content/uploads/2014/12/Lecture-1.pdf
-    #
+    print("#")
+    print("# Example 6 Slide 35 of")
+    print("# http:https://www.cockcroft.ac.uk/wp-content/uploads/2014/12/Lecture-1.pdf")
+    print("#")
 
 
     def calcFWHM(h,binSize):
@@ -1809,7 +1851,7 @@ def test_clarke_43(pltOk=False):
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
 
-        plt.figure(63)
+        plt.figure(62)
         plt.plot(a,fm[:,2],'green',label="10*$\omega_c$")
         plt.plot(a,fmPar[:,2],"g--")
         plt.plot(a,fmPer[:,2],"g-.")
@@ -1825,9 +1867,9 @@ def test_clarke_43(pltOk=False):
                 print("  %f  %f  %e   "%(e[j],a[i],fm[i,j]))
 
 def test_esrf_bm_2d(pltOk=False):
-    #
-    # Example 7, ESRF flux vs energy and angle
-    #
+    print("#")
+    print("# Example 7, ESRF flux vs energy and angle")
+    print("#")
     # input for ESRF
     e_gev = 6.04    # electron energy in GeV
     r_m = 25.0      # magnetic radius in m
@@ -1868,9 +1910,9 @@ def test_esrf_bm_2d(pltOk=False):
                 print("  %f  %f  %e   "%(a[i],e[j],fm[i,j]))
 
 def test_wiggler_flux_vs_r(pltOk=False):
-    #
-    # Example 8 (Wiggler flux vs bending radius at a given photon energy)
-    #
+    print("#")
+    print("# Example 8 (Wiggler flux vs bending radius at a given photon energy)")
+    print("#")
     r_m = numpy.linspace(1.0,500.0,100)
     flux = wiggler_nphoton(r_m,electronEnergy=6.04,photonEnergy=10000.0)
     toptitle = "Wiggler flux vs bending radius at photon energy E=10 keV"
@@ -1891,9 +1933,9 @@ def test_wiggler_flux_vs_r(pltOk=False):
 
 
 def test_wiggler_external_b(pltOk=False):
-    #
-    # Example 9 (Wiggler trajectory and flux for a 3pole wiggler 
-    #
+    print("#")
+    print("# Example 9 (Wiggler trajectory and flux for a 3pole wiggler ")
+    print("#")
 
     # this is the B(s) map (T, m)
     b_t = numpy.array([[ -1.00000000e-01,   1.08200000e-03],

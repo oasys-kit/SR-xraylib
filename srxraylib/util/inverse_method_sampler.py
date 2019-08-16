@@ -65,7 +65,8 @@ class Sampler1D(object):
     def _cdf_calculate(self):
         cdf = numpy.cumsum(self._pdf)
         cdf -= cdf[0]
-        cdf /= cdf.max()
+        if cdf.max() != 0.0:
+            cdf /= cdf.max()
         return cdf
 
     def _get_index(self,edge):

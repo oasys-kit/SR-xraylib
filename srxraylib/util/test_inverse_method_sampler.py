@@ -118,6 +118,7 @@ class TestSamplers(unittest.TestCase):
         print("\n#\n# running test_2d() \n#\n")
         #
         response = requests.get("https://cdn104.picsart.com/201671193005202.jpg?r1024x1024")
+        # response = requests.get("https://www.lbl.gov/wp-content/uploads/2013/06/Lawrence-tb.jpg")
 
         img = Image.open(BytesIO(response.content))
         img = numpy.array(img).sum(2) * 1.0
