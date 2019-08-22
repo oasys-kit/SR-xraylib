@@ -11,7 +11,7 @@ except AttributeError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.25'
+VERSION = '1.0.26'
 ISRELEASED = True
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
@@ -30,6 +30,7 @@ KEYWORDS = (
     'synchrotron radiation',
     'wavefront propagation'
     'ray tracing',
+    'surface metrology',
     'simulation',
 )
 

@@ -1,5 +1,5 @@
 
-import h5py,sys,time
+import h5py,sys,time, os
 
 
 class H5SimpleWriter(object):
@@ -40,7 +40,12 @@ class H5SimpleWriter(object):
         self.label_stack_axis2 = b'axis2'
 
     @classmethod
-    def initialize_file(cls, filename, creator="H5BasicWriter"):
+    def initialize_file(cls, filename, creator="H5BasicWriter", overwrite=True):
+        if overwrite:
+            try:
+                os.remove(filename)
+            except:
+                pass
         tmp = H5SimpleWriter(filename,creator)
         tmp.create_new_file()
         tmp.add_file_header()
