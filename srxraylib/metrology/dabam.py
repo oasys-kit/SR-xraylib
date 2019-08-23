@@ -1895,7 +1895,7 @@ def main():
 # main call
 #
 if __name__ == '__main__':
-    # main()
+    main()
 
     # # dump summary
     #
@@ -1922,11 +1922,11 @@ if __name__ == '__main__':
     # # dm = dabam()
     # # dm.load(12)
 
-    h = load_json_summary("dabam-summary.json")
-    for key in h:
-        print(key)
-
-    out = dabam_summary_dictionary_from_json_indexation(surface="elliptical(detrended)", slp_err_from=None, slp_err_to=None, length_from=None, length_to=None)
-
-    for ilist in out:
-        print(ilist)
+    # h = load_json_summary("dabam-summary.json")
+    # for key in h:
+    #     print(key)
+    #
+    # out = dabam_summary_dictionary_from_json_indexation(surface="elliptical(detrended)", slp_err_from=None, slp_err_to=None, length_from=None, length_to=None)
+    #
+    # for ilist in out:
+    #     print(ilist)
