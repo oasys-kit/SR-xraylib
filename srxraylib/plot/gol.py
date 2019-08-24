@@ -20,10 +20,12 @@ try:
 except:
     raise ImportError("Please install matplotlib to allow graphics")
 
-# try:
-#     plt.switch_backend("Qt5Agg")
-# except:
-#     raise Exception("Failed to set matplotlib backend to Qt5Agg")
+
+def set_qt():
+    try:
+        plt.switch_backend("Qt5Agg")
+    except:
+        raise Exception("Failed to set matplotlib backend to Qt5Agg")
 
 def plot_show():
     plt.show()
