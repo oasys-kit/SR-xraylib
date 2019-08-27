@@ -1446,6 +1446,83 @@ class dabam(object):
             "hgt_err_user": self.metadata['CALC_HEIGHT_RMS'] }
 
 
+    def load_json_summary(self,filename=None):
+        if filename is None:
+
+            if self.is_remote_access:
+                # json summary file
+                myfileurl = self.server+"dabam-summary.json"
+                u = urlopen(myfileurl)
+                ur = u.read()
+                ur1 = ur.decode(encoding='UTF-8')
+                h = json.loads(ur1) # dictionnary with summary
+            else: # TODO local server
+                try:
+                    with open(filename, mode='r') as f1:
+                        h = json.load(f1)
+                except:
+                    print ("Error accessing local file: "+filename)
+        else:
+            try:
+                with open(filename, mode='r') as f1:
+                    h = json.load(f1)
+            except:
+                print("Error accessing local file: " + filename)
+
+        return h
+
+    def dabam_summary_dictionary_from_scratch(self,surface=None,
+                                              slp_err_from=None,
+                                              slp_err_to=None,
+                                              length_from=None,
+                                              length_to=None,
+                                              nmax=1000000,
+                                              verbose=True):
+        out = []
+        for i in range(nmax):
+            if verbose: print(">>>>>>>>>>>>>>>>>>>>>>", i)
+            self.set_input_outputFileRoot("")  # avoid output files
+            self.set_input_silent(1)
+            self.set_entry(i + 1)
+            try:
+                self.load()
+            except:
+                break
+            tmp = self._dictionary_line()
+
+            if verbose:
+                print(">>>>>>>>>>>>>>>>>>>>>>", i, "loaded")
+            add_element = True
+            if not surface is None and not tmp["surface"] is None:
+                add_element = tmp["surface"].capitalize() == surface.capitalize()
+            if add_element and not slp_err_from is None and not slp_err_to is None:
+                add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
+            if add_element and not length_from is None and not length_to is None:
+                add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
+            if add_element:
+                out.append(tmp)
+                if verbose:
+                    print(">>>>>>>>>>>>>>>>>>>>>>", i, "appended")
+        return (out)
+
+    def dabam_summary_dictionary_from_json_indexation(self,surface=None, slp_err_from=None, slp_err_to=None,
+                                                      length_from=None, length_to=None):
+
+        h = self.load_json_summary()
+        out = []
+        for key in h.keys():
+            tmp = h[key]
+
+            add_element = True
+            if not surface is None and not tmp["surface"] is None:
+                add_element = tmp["surface"].capitalize() == surface.capitalize()
+            if add_element and not slp_err_from is None and not slp_err_to is None:
+                add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
+            if add_element and not length_from is None and not length_to is None:
+                add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
+            if add_element:
+                out.append(tmp)
+        return (out)
 #
 # main functions (these function are sitting here for autoconsistency of dabam.py, otherwise can be in a dependency)
 #
@@ -1760,70 +1837,39 @@ def dabam_summary(nmax=None,latex=0):
         else:
             txt += dm._text_line()+"\n"
     return(txt)
-# '''
-# def dabam_summary_dictionary():
-#     nmax = 1000000  # this is like infinity
-#     out = []
-#     for i in range(nmax):
-#         dm = dabam()
-#         dm.set_input_outputFileRoot("")  # avoid output files
-#         dm.set_input_silent(1)
-#         dm.set_entry(i+1)
-#         try:
-#             dm.load()
-#         except:
-#             break
-#         tmp = dm._dictionary_line()
+
+
 #
-#         out.append(tmp)
-#     return(out)
-# '''
+# this is kept for back compatibility. Use dabam methods instead.
+#
+def dabam_summary_dictionary(surface=None,
+                            slp_err_from=None,
+                            slp_err_to=None,
+                            length_from=None,
+                            length_to=None,
+                            verbose=True,
+                            server=None):
+    dm = dabam()
+    if server is not None:
+        dm.set_server(server)
 
-def dabam_summary_dictionary(surface=None, slp_err_from=None, slp_err_to=None, length_from=None, length_to=None, server=None, nmax = 1000000):
-    out = []
-    for i in range(nmax):
-        print(">>>>>>>>>>>>>>>>>>>>>>",i)
-        dm = dabam()
-        if server is not None:
-            dm.set_server(server)
-        dm.set_input_outputFileRoot("")  # avoid output files
-        dm.set_input_silent(1)
-        dm.set_entry(i+1)
-        try:
-            dm.load()
-        except:
-            break
-        tmp = dm._dictionary_line()
-
-        print(">>>>>>>>>>>>>>>>>>>>>>", i, "loaded")
-        add_element = True
-        if not surface is None and not tmp["surface"] is None:
-            add_element = tmp["surface"].capitalize() == surface.capitalize()
-        if add_element and not slp_err_from is None and not slp_err_to is None:
-            add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
-        if add_element and not length_from is None and not length_to is None:
-            add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
-        if add_element:
-            out.append(tmp)
-            print(">>>>>>>>>>>>>>>>>>>>>>", i, "appended")
-    return(out)
-
-def dabam_summary_dictionary_from_json_indexation(surface=None, slp_err_from=None, slp_err_to=None, length_from=None, length_to=None):
-    h = load_json_summary(filename="dabam-summary.json")
-    out = []
-    for key in h.keys():
-        tmp = h[key]
-
-        add_element = True
-        if not surface is None and not tmp["surface"] is None:
-            add_element = tmp["surface"].capitalize() == surface.capitalize()
-        if add_element and not slp_err_from is None and not slp_err_to is None:
-            add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
-        if add_element and not length_from is None and not length_to is None:
-            add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
-        if add_element:
-            out.append(tmp)
-    return(out)
+    try:
+        out = dm.dabam_summary_dictionary_from_json_indexation(
+                            surface=surface,
+                            slp_err_from=slp_err_from,
+                            slp_err_to=slp_err_to,
+                            length_from=length_from,
+                            length_to=length_to)
+        return out
+    except:
+        out = dm.dabam_summary_dictionary_from_scratch(
+                            surface=surface,
+                            slp_err_from=slp_err_from,
+                            slp_err_to=slp_err_to,
+                            length_from=length_from,
+                            length_to=length_to,
+                            verbose=True)
+        return out
 
 def make_json_summary(nmax=100000):
     # dump summary
@@ -1846,32 +1892,7 @@ def make_json_summary(nmax=100000):
     f.close()
     print("File dabam-summary.json written to disk")
 
-def load_json_summary(filename=None):
-    self = dabam()
 
-    if filename is None:
-
-        if self.is_remote_access:
-            # json summary file
-            myfileurl = self.server+"dabam-summary.json"
-            u = urlopen(myfileurl)
-            ur = u.read()
-            ur1 = ur.decode(encoding='UTF-8')
-            h = json.loads(ur1) # dictionnary with summary
-        else: # TODO local server
-            try:
-                with open(filename, mode='r') as f1:
-                    h = json.load(f1)
-            except:
-                print ("Error accessing local file: "+filename)
-    else:
-        try:
-            with open(filename, mode='r') as f1:
-                h = json.load(f1)
-        except:
-            print("Error accessing local file: " + filename)
-
-    return h
 #
 # main program
 #
@@ -1897,36 +1918,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-    # # dump summary
-    #
-    # out_list = dabam_summary_dictionary()
-    #
-    # # print(out,type(out))
-    #
-    # out_dict = {}
-    #
-    # for i,ilist in enumerate(out_list):
-    #     print("analyzing entry: ",i+1)
-    #     out_dict["entry_%03d"%ilist["entry"]] = ilist
-    #
-    # print(out_dict)
-    #
-    # j = json.dumps(out_dict, ensure_ascii=True, indent="    ")
-    #
-    # print(j)
-    # f = open("dabam-summary.json", 'w')
-    # f.write(j)
-    # f.close()
-    # print("File dabam-summary.json written to disk")
-    #
-    # # dm = dabam()
-    # # dm.load(12)
 
-    # h = load_json_summary("dabam-summary.json")
-    # for key in h:
-    #     print(key)
-    #
-    # out = dabam_summary_dictionary_from_json_indexation(surface="elliptical(detrended)", slp_err_from=None, slp_err_to=None, length_from=None, length_to=None)
-    #
-    # for ilist in out:
-    #     print(ilist)
+

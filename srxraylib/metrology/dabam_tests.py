@@ -226,14 +226,45 @@ def test_local_server():
     assert_almost_equal(m0, m2)
 
 
+def test_summary_dictionary():
+    dm = dabam()
+    out1 = dm.dabam_summary_dictionary_from_json_indexation(surface=None,
+                                                            slp_err_from=None,
+                                                            slp_err_to=None,
+                                                            length_from=None,
+                                                            length_to=None)
 
+    out2 = dm.dabam_summary_dictionary_from_scratch(surface=None,
+                                                            slp_err_from=None,
+                                                            slp_err_to=None,
+                                                            length_from=None,
+                                                            length_to=None,
+                                                            verbose=True)
+    for i,ilist in enumerate(out1):
+        for key in ilist.keys():
+            # print(i,key,out1[i][key],out2[i][key])
+            if isinstance(out1[i][key],float):
+                assert_almost_equal(out1[i][key],out2[i][key])
+            else:
+                assert (out1[i][key] == out2[i][key])
+
+def test_load_dictionary():
+    from dabam import dabam_summary_dictionary
+    d = dabam_summary_dictionary(surface=None,
+                                 slp_err_from=None,
+                                 slp_err_to=None,
+                                 length_from=None,
+                                 length_to=None,
+                                 verbose=True,
+                                 server=None)
+
+    print(d)
 
 if __name__ == "__main__":
 
-  
     test_entry_file()
     test_write_dabam_formatted_files()
-    #
     test_local_server()
-
+    # test_summary_dictionary() #slow...
+    test_load_dictionary()
 
