@@ -64,13 +64,19 @@ class Sampler1D(object):
 
     def _cdf_calculate(self):
         cdf = numpy.cumsum(self._pdf)
+        cdf = numpy.roll(cdf,1)
+        cdf[0] = cdf[1]
         cdf -= cdf[0]
         if cdf.max() != 0.0:
             cdf /= cdf.max()
         return cdf
 
     def _get_index(self,edge):
-        ix = numpy.where(self._cdf > edge)[0][0]
+        ix = numpy.where(self._cdf > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf.size-1):
@@ -134,24 +140,32 @@ class Sampler2D(object):
 
 
     def _cdf_calculate(self):
-
         pdf2 = self._pdf
         pdf1 = pdf2.sum(axis=1)
 
         cdf2 = numpy.zeros_like(pdf2)
         for i in range(cdf2.shape[0]):
-            cdf2[i,:] = numpy.cumsum(pdf2[i,:])
+            tmp = numpy.cumsum(pdf2[i,:])
+            tmp = numpy.roll(tmp,1)
+            tmp[0] = tmp[1]
+            cdf2[i, :] = tmp
             cdf2[i,:] -= cdf2[i,:][0]
             cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
 
         cdf1 = numpy.cumsum(pdf1)
+        cdf1 = numpy.roll(cdf1,1)
+        cdf1[0] = cdf1[1]
         cdf1 -= cdf1[0]
         cdf1 /= cdf1.max()
 
         return cdf2,cdf1
 
     def _get_index0(self,edge):
-        ix = numpy.where(self._cdf1 > edge)[0][0]
+        ix = numpy.where(self._cdf1 > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf1.size-1):
@@ -163,7 +177,11 @@ class Sampler2D(object):
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
-        ix = numpy.where(self._cdf2[index0,:] > edge)[0][0]
+        ix = numpy.where(self._cdf2[index0,:] > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf2[index0,:].size-1):
@@ -248,24 +266,36 @@ class Sampler3D(object):
 
         for i in range(cdf3.shape[0]):
             for j in range(cdf3.shape[1]):
-                cdf3[i,j,:] = numpy.cumsum(pdf3[i,j,:])
+                tmp = numpy.cumsum(pdf3[i,j,:])
+                tmp = numpy.roll(tmp,1)
+                tmp[0] = tmp[1]
+                cdf3[i, j, :] = tmp
                 cdf3[i,j,:] -= cdf3[i,j,0] # cdf3[i,j,:][0]
                 cdf3[i,j,:] = cdf3[i,j,:] / float(cdf3[i,j,:].max())
         #
         for i in range(cdf3.shape[0]):
-            cdf2[i,:] = numpy.cumsum(pdf2[i,:])
+            tmp = numpy.cumsum(pdf2[i,:])
+            tmp = numpy.roll(tmp,1)
+            tmp[0] = tmp[1]
+            cdf2[i, :] = tmp
             cdf2[i,:] -= cdf2[i,0] # cdf2[i,:][0]
             cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
         #
         #
         cdf1 = numpy.cumsum(pdf1)
+        cdf1 = numpy.roll(cdf1,1)
+        cdf1[0] = cdf1[1]
         cdf1 -= cdf1[0]
         cdf1 /= cdf1.max()
 
         return cdf3,cdf2,cdf1
 
     def _get_index0(self,edge):
-        ix = numpy.where(self._cdf1 > edge)[0][0]
+        ix = numpy.where(self._cdf1 > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf1.size-1):
@@ -277,7 +307,11 @@ class Sampler3D(object):
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
-        ix = numpy.where(self._cdf2[index0,:] > edge)[0][0]
+        ix = numpy.where(self._cdf2[index0,:] > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf2[index0,:].size-1):
@@ -290,7 +324,11 @@ class Sampler3D(object):
 
 
     def _get_index2(self,edge,index0,index1):
-        ix = numpy.where(self._cdf3[index0,index1,:] > edge)[0][0]
+        ix = numpy.where(self._cdf3[index0, index1, :] > edge)
+        if len(ix) > 0:
+            ix = ix[0][0]
+        else:
+            ix = 0
         if ix > 0:
             ix -= 1
         if ix == (self._cdf3[index0,index1,:].size-1):

@@ -7,7 +7,7 @@ __date__ = "30/08/2018"
 import numpy
 from srxraylib.util.inverse_method_sampler import Sampler1D, Sampler2D, Sampler3D
 from scipy import interpolate
-from srxraylib.plot.gol import plot, plot_image, plot_scatter, plot
+from srxraylib.plot.gol import plot, plot_image, plot_scatter, plot, set_qt
 
 # used in test2d_bis()
 from PIL import Image
@@ -18,6 +18,7 @@ import unittest
 
 
 do_plots = True
+set_qt()
 
 def Std_zero_mean(array): # std for zero mean!!!
     return numpy.sqrt( (array**2).sum() / (array.size-1) )
