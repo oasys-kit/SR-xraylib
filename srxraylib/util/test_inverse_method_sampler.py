@@ -17,65 +17,73 @@ from io import BytesIO
 import unittest
 
 
-do_plots = True
+do_plots = False
 set_qt()
 
 def Std_zero_mean(array): # std for zero mean!!!
     return numpy.sqrt( (array**2).sum() / (array.size-1) )
 
+def histogram_path(histogram,bin_left):
+    tmp_b = []
+    tmp_h = []
+    # bin_center = bin_left[:-1] + (bin_left[1] - bin_left[0]) * 0.5
+    bin_right = bin_left[:-1] + (bin_left[1] - bin_left[0])
+
+    for s, t, v in zip(bin_left, bin_right, histogram):
+        tmp_b.append(s)
+        tmp_h.append(v)
+        tmp_b.append(t)
+        tmp_h.append(v)
+
+    histogram_path = numpy.array(tmp_h)
+    bin_path = numpy.array(tmp_b)
+    return histogram_path,bin_path
+
+
 class TestSamplers(unittest.TestCase):
-    def test_1d(self):
+    def test_1d_constant(self):
 
         print("\n#\n# running test_1d() \n#\n")
 
-        x0=0.0
-        sigma=2.0
-        x = numpy.linspace(-10,10,51)
-        y = numpy.exp(- (x-x0)**2 / 2 / sigma**2)
-
-        y[0:21] = 100.0
-        y[21:31] = 4.0
-        y[31:41] = 5.0
-        y[41:51] = 10.0
+        x = numpy.linspace(0.0,10,100)
+        y = numpy.ones_like(x)
+        y[50:55] = 0.5
 
 
         s1 = Sampler1D(y,x)
 
         if do_plots:
             plot(s1.abscissas(),s1.pdf(),title="pdf")
-            plot(s1.abscissas(),s1.cdf(),title="cdf")
+            plot(s1.abscissas(),s1.pdf()/s1.pdf().max(),
+                 s1.abscissas(),s1.cdf(),legend=["pdf normalized","cdf"])
 
 
         #
         # defingn random points
         #
         cdf_rand_array = numpy.random.random(100000)
-        sampled_points,h,hx = s1.get_sampled_and_histogram(cdf_rand_array)
-
+        sampled_points, h_center, bin_center = s1.get_sampled_and_histogram(cdf_rand_array)
+        h_path, bin_path = histogram_path(h_center, bin_center)
         model_x = s1.abscissas()
         model_y = s1.pdf()/s1.pdf().max()
-        sampled_x = hx
-        sampled_y = h/h.max()
+
+        print("Min: %d (pdf: %d), Max: %f (pdf: %f) "%(sampled_points.min(),y.min(),sampled_points.max(),y.max()))
 
         if do_plots:
-            plot(numpy.arange(cdf_rand_array.size),sampled_points,title="sampled points")
-            plot(sampled_x,sampled_y,model_x,model_y,title="histogram",legend=["histo","data"])
+            # plot(numpy.arange(cdf_rand_array.size),sampled_points,title="sampled points")
+            plot(bin_path,h_path/h_path.max(),model_x,model_y,title="histogram",legend=["histo","data"])
 
-        # interpolate for comparing model with resulting histogram
-        fn = interpolate.interp1d(model_x, model_y)
-        sampled_y_interpolated = fn(sampled_x)
+        assert( sampled_points.min() < x[1])
+        assert (sampled_points.max() > x[-2])
 
-        diff = sum( (1./sampled_y_interpolated.size) * (model_y-sampled_y_interpolated)**2 )
-        assert(diff < 1e-2)
 
-    def test_1d_bis(self):
 
-        print("\n#\n# running test_1d_bis() \n#\n")
+    def test_1d(self):
 
-        x0=0.0
-        sigma=2.0
+        print("\n#\n# running test_1d() \n#\n")
+
         x = numpy.linspace(-10,10,51)
-        y = numpy.exp(- (x-x0)**2 / 2 / sigma**2)
+        y = numpy.zeros_like(x)
 
         y[0:21] = 100.0
         y[21:31] = 4.0
@@ -86,33 +94,77 @@ class TestSamplers(unittest.TestCase):
         s1 = Sampler1D(y,x)
 
         if do_plots:
-            plot(s1.abscissas(),s1.pdf(),title="pdf")
-            plot(s1.abscissas(),s1.cdf(),title="cdf")
-
+            plot(s1.abscissas(),s1.pdf()/s1.pdf().max(),
+                 s1.abscissas(),s1.cdf(),legend=["pdf normalized","cdf"])
 
         #
-        # defining N
+        # defingn random points
         #
-        sampled_points,h,hx = s1.get_n_sampled_points_and_histogram(120000)
+        cdf_rand_array = numpy.random.random(100000)
+        sampled_points,h_center,bin_center = s1.get_sampled_and_histogram(cdf_rand_array)
 
+        h_path, bin_path = histogram_path(h_center,bin_center)
         model_x = s1.abscissas()
         model_y = s1.pdf()/s1.pdf().max()
-        sampled_x = hx
-        sampled_y = h/h.max()
-
 
         if do_plots:
-            plot(numpy.arange(120000),sampled_points,title="120000 sampled points")
-            plot(sampled_x,sampled_y,model_x,model_y,title="histogram",legend=["histo","data"])
+            plot(bin_path,h_path/h_path.max(),
+                 model_x,model_y,title="histogram",legend=["histo","data"])
 
         # interpolate for comparing model with resulting histogram
         fn = interpolate.interp1d(model_x, model_y)
-        sampled_y_interpolated = fn(sampled_x)
+        sampled_y_interpolated = fn(bin_center)
 
         diff = sum( (1./sampled_y_interpolated.size) * (model_y-sampled_y_interpolated)**2 )
         assert(diff < 1e-2)
 
 
+
+    def test2d_radial(self):
+        import h5py
+        from srxraylib.plot.gol import plot_image
+        import Shadow
+        f = h5py.File("/Users/srio/Downloads/manolone.hdf5","r")
+        r = numpy.linspace(0,5,100)
+        theta = numpy.linspace(0,2*numpy.pi,100)
+
+        R = numpy.outer(r,numpy.ones_like(theta))
+        T = numpy.outer(numpy.ones_like(r),theta)
+        Z = R
+        s2d = Sampler2D(Z, r , theta)
+        sampled_points_r, sampled_points_theta = s2d.get_n_sampled_points(100000)
+
+        X = sampled_points_r * numpy.cos(sampled_points_theta)
+        Y = sampled_points_r * numpy.sin(sampled_points_theta)
+
+        if do_plots:
+            plot_scatter(X,Y)
+        assert(False)
+
+    # def test2d_shadow_undulator(self):
+    #     import h5py
+    #     from srxraylib.plot.gol import plot_image
+    #     import Shadow
+    #     f = h5py.File("/Users/srio/Downloads/manolone.hdf5","r")
+    #     X = f["surface_file/X"][:]
+    #     Y = f["surface_file/Y"][:]
+    #     Z = f["surface_file/Z"][:].T
+    #     f.close()
+    #     print(Z.shape,X.shape,Y.shape)
+    #     # plot_image(Z,X,Y)
+    #     X = numpy.linspace(0,10,X.size)
+    #     Y = numpy.linspace(0, 10, Y.size)
+    #
+    #     s2d = Sampler2D(Z, X , Y)
+    #     sampled_points_x, sampled_points_y = s2d.get_n_sampled_points(100000)
+    #     S = Shadow.Beam(sampled_points_x.size)
+    #     S.rays[:,0] = sampled_points_x
+    #     S.rays[:,2] = sampled_points_y
+    #     S.rays[:,16] = 1
+    #     S.rays[:, 9] = 1
+    #     Shadow.ShadowTools.plotxy(S,1,3,nbins_h=101,nbins_v=101)
+    #     S.write("/Users/srio/Oasys/tmp.dat")
+    #     plot_scatter(sampled_points_x,sampled_points_y)
 
     def test_2d(self):
 
@@ -216,15 +268,16 @@ class TestSamplers(unittest.TestCase):
 
         s = Sampler1D(y*x,x)
 
-        sampled_point, hy, hx = s.get_n_sampled_points_and_histogram(NRAYS,bins=101)
+        sampled_point,  hy, hx = s.get_n_sampled_points_and_histogram(NRAYS,bins=101)
 
+        hy_path, hx_path = histogram_path(hy, hx)
 
         angle = numpy.random.random(NRAYS) * 2 * numpy.pi
 
         if do_plots:
             plot(x,y,title="Gaussian Radial Distribution sigma:%f"%sigma)
             plot(x,y*x,title="pdf")
-            plot(hx,hy,title="histogram of sampled r")
+            plot(hx_path,hy_path,title="histogram of sampled r")
 
         X = sampled_point / numpy.sqrt(2) * numpy.sin(angle)
         Y = sampled_point / numpy.sqrt(2) * numpy.cos(angle)
@@ -239,6 +292,41 @@ class TestSamplers(unittest.TestCase):
         print("error (percent) : ",100/sigma*numpy.abs(sigma - (Std_zero_mean(numpy.sqrt(X*X+Y*Y)))) )
 
         assert ( numpy.abs(sigma - (Std_zero_mean(numpy.sqrt(X*X+Y*Y)))) < 0.05 * sigma) # 5% difference
+
+
+    def test_radial_2D_gaussian_distribution(self):
+
+
+        print("\n#\n# running test_radial_2D_gaussian_distribution() \n#\n")
+
+
+        R = 50.0e-6
+        sigma = 5e-6
+        NRAYS = 10000
+
+
+        r = numpy.linspace(0,R,100)
+        theta = numpy.linspace(0,2*numpy.pi,600)
+
+        R = numpy.outer(r,numpy.ones_like(theta))
+        T = numpy.outer(numpy.ones_like(r),theta)
+        G = numpy.exp(- R*R/2/sigma/sigma) * R
+
+
+
+        s2d = Sampler2D(G,r,theta)
+
+        sampled_points_r, sampled_points_theta = s2d.get_n_sampled_points(100000)
+
+
+        X = sampled_points_r / numpy.sqrt(2) * numpy.sin(sampled_points_theta)
+        Y = sampled_points_r / numpy.sqrt(2) * numpy.cos(sampled_points_theta)
+
+
+        if do_plots:
+            plot_scatter(X,Y)
+
+        assert ( (numpy.abs(X.std() - sigma) < sigma))
 
 
 
