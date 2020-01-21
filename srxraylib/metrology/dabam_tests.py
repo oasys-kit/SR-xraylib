@@ -262,9 +262,33 @@ def test_load_dictionary():
 
 if __name__ == "__main__":
 
+    test_entry()
     test_entry_file()
+    test_entry_elliptical()
+    test_entry_text()
+    test_dabam_names()
+    test_dabam_stdev_slopes()
+
     test_write_dabam_formatted_files()
+    test_write_dabam_formatted_files()
+
     test_local_server()
-    # test_summary_dictionary() #slow...
     test_load_dictionary()
+
+    # test_summary_dictionary() #slow...
+
+
+    # filename = "/tmp/tmp18"
+    # f = open(filename,'r')
+    # txt = f.readlines()
+    #
+    # dm = dabam.initialize_from_external_data(txt,
+    #                                          column_index_abscissas=0,
+    #                                          column_index_ordinates=4,
+    #                                          skiprows=1,
+    #                                          useHeightsOrSlopes=0,
+    #                                          to_SI_abscissas=1e-3,
+    #                                          to_SI_ordinates=1e-9,
+    #                                          detrending_flag=-3)
+
 

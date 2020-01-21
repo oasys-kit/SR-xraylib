@@ -12,23 +12,29 @@ import numpy
 
 class Sampler1D(object):
 
-    def __init__(self,pdf,pdf_x=None):
+    def __init__(self,pdf,pdf_x=None,cdf_interpolation_factor=1):
 
         self._pdf = pdf
         if pdf_x is None:
             self._set_default_pdf_x()
         else:
             self._pdf_x = pdf_x
-        self._cdf = self._cdf_calculate()
+
+
+        self._cdf_interpolation_factor = cdf_interpolation_factor
+        self._cdf_calculate()  # defines self._cdf and self._cdf_x
 
     def pdf(self):
         return self._pdf
 
+    def abscissas(self):
+        return self._pdf_x
+
     def cdf(self):
         return self._cdf
 
-    def abscissas(self):
-        return self._pdf_x
+    def cdf_abscissas(self):
+        return self._cdf_x
 
     def get_sampled(self,random_in_0_1):
         y = numpy.array(random_in_0_1)
@@ -47,9 +53,11 @@ class Sampler1D(object):
         s1 = self.get_sampled(random_in_0_1)
         if range is None:
             range = [self._pdf_x.min(),self._pdf_x.max()]
-        h,h_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
-        h_center = h_edges[0:-1] + 0.5*numpy.diff(h_edges)
-        return s1,h,h_center
+        #
+        # histogram
+        #
+        h,bin_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
+        return s1,h,bin_edges
 
     def get_n_sampled_points(self,npoints):
         cdf_rand_array = numpy.random.random(npoints)
@@ -63,29 +71,35 @@ class Sampler1D(object):
         self._pdf_x = numpy.arange(self._pdf.size)
 
     def _cdf_calculate(self):
-        cdf = numpy.cumsum(self._pdf)
-        cdf = numpy.roll(cdf,1)
-        cdf[0] = cdf[1]
-        cdf -= cdf[0]
-        if cdf.max() != 0.0:
-            cdf /= cdf.max()
-        return cdf
+        if self._cdf_interpolation_factor != 1:
+            xx = numpy.linspace(self.abscissas()[0],self.abscissas()[-1],self.abscissas().size*2)
+            yy = numpy.interp(xx,self.abscissas(),self.pdf())
+            self._cdf = numpy.cumsum(yy)
+            self._cdf_x = xx
+        else:
+            self._cdf = numpy.cumsum(self._pdf)
+            self._cdf_x = self._pdf_x.copy()
+        self._cdf -= self._cdf[0]
+        if self._cdf.max() != 0.0:
+            self._cdf /= self._cdf.max()
 
     def _get_index(self,edge):
-        ix = numpy.where(self._cdf > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+        try:
+            ix = numpy.nonzero(self._cdf >= edge)[0][0]
+        except:
             ix = 0
+
         if ix > 0:
             ix -= 1
-        if ix == (self._cdf.size-1):
+
+        if ix >= (self._cdf.size - 1):
             pendent = 0.0
             delta = 0.0
         else:
-            pendent = self._cdf[ix+1] - self._cdf[ix]
+            pendent = self._cdf[ix + 1] - self._cdf[ix]
             delta = (edge - self._cdf[ix]) / pendent
-        return ix,delta,pendent
+
+        return ix//self._cdf_interpolation_factor,delta,pendent
 
 
 class Sampler2D(object):
@@ -125,9 +139,7 @@ class Sampler2D(object):
             for i,cdf_rand0 in enumerate(y0):
                 ival,idelta,pendent = self._get_index0(cdf_rand0)
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
-
-
-                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival)
+                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival+1)  # <==================== changed to ival+1
                 x1_rand_array[i] = self._pdf_x1[ival1] + idelta1*(self._pdf_x1[1]-self._pdf_x1[0])
             return x0_rand_array,x1_rand_array
         else:
@@ -145,29 +157,26 @@ class Sampler2D(object):
 
         cdf2 = numpy.zeros_like(pdf2)
         for i in range(cdf2.shape[0]):
-            tmp = numpy.cumsum(pdf2[i,:])
-            tmp = numpy.roll(tmp,1)
-            tmp[0] = tmp[1]
-            cdf2[i, :] = tmp
+            cdf2[i,:] = numpy.cumsum(pdf2[i,:])
             cdf2[i,:] -= cdf2[i,:][0]
             cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
 
         cdf1 = numpy.cumsum(pdf1)
-        cdf1 = numpy.roll(cdf1,1)
-        cdf1[0] = cdf1[1]
         cdf1 -= cdf1[0]
         cdf1 /= cdf1.max()
 
         return cdf2,cdf1
 
     def _get_index0(self,edge):
-        ix = numpy.where(self._cdf1 > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+
+        try:
+            ix = numpy.nonzero(self._cdf1 >= edge)[0][0]
+        except:
             ix = 0
+
         if ix > 0:
             ix -= 1
+
         if ix == (self._cdf1.size-1):
             pendent = 0.0
             delta = 0.0
@@ -177,13 +186,15 @@ class Sampler2D(object):
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
-        ix = numpy.where(self._cdf2[index0,:] > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+
+        try:
+            ix = numpy.nonzero(self._cdf2[index0, :] >= edge)[0][0]
+        except:
             ix = 0
+
         if ix > 0:
             ix -= 1
+
         if ix == (self._cdf2[index0,:].size-1):
             pendent = 0.0
             delta = 0.0
@@ -237,10 +248,10 @@ class Sampler3D(object):
                 ival,idelta,pendent = self._get_index0(cdf_rand0)
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
 
-                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival)
+                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival+1) # <==================== TODO: test changed to ival+1
                 x1_rand_array[i] = self._pdf_x1[ival1] + idelta1*(self._pdf_x1[1]-self._pdf_x1[0])
 
-                ival2,idelta2,pendent2 = self._get_index2(y2[i],ival,ival1)
+                ival2,idelta2,pendent2 = self._get_index2(y2[i],ival+1,ival1+1)  # <==================== TODO: test changed to ival+1,ival1+1
                 x2_rand_array[i] = self._pdf_x2[ival2] + idelta2*(self._pdf_x2[1]-self._pdf_x2[0])
 
             return x0_rand_array,x1_rand_array,x2_rand_array
@@ -267,34 +278,28 @@ class Sampler3D(object):
         for i in range(cdf3.shape[0]):
             for j in range(cdf3.shape[1]):
                 tmp = numpy.cumsum(pdf3[i,j,:])
-                tmp = numpy.roll(tmp,1)
-                tmp[0] = tmp[1]
                 cdf3[i, j, :] = tmp
-                cdf3[i,j,:] -= cdf3[i,j,0] # cdf3[i,j,:][0]
+                cdf3[i,j,:] -= cdf3[i,j,0]
                 cdf3[i,j,:] = cdf3[i,j,:] / float(cdf3[i,j,:].max())
         #
         for i in range(cdf3.shape[0]):
             tmp = numpy.cumsum(pdf2[i,:])
-            tmp = numpy.roll(tmp,1)
-            tmp[0] = tmp[1]
             cdf2[i, :] = tmp
-            cdf2[i,:] -= cdf2[i,0] # cdf2[i,:][0]
+            cdf2[i,:] -= cdf2[i,0]
             cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
         #
         #
         cdf1 = numpy.cumsum(pdf1)
-        cdf1 = numpy.roll(cdf1,1)
-        cdf1[0] = cdf1[1]
         cdf1 -= cdf1[0]
         cdf1 /= cdf1.max()
 
         return cdf3,cdf2,cdf1
 
     def _get_index0(self,edge):
-        ix = numpy.where(self._cdf1 > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+
+        try:
+            ix = numpy.nonzero(self._cdf1 > edge)[0][0]
+        except:
             ix = 0
         if ix > 0:
             ix -= 1
@@ -307,10 +312,9 @@ class Sampler3D(object):
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
-        ix = numpy.where(self._cdf2[index0,:] > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+        try:
+            ix = numpy.nonzero(self._cdf2[index0,:] > edge)[0][0]
+        except:
             ix = 0
         if ix > 0:
             ix -= 1
@@ -324,11 +328,11 @@ class Sampler3D(object):
 
 
     def _get_index2(self,edge,index0,index1):
-        ix = numpy.where(self._cdf3[index0, index1, :] > edge)
-        if len(ix) > 0:
-            ix = ix[0][0]
-        else:
+        try:
+            ix = numpy.nonzero(self._cdf3[index0, index1, :] > edge)[0][0]
+        except:
             ix = 0
+
         if ix > 0:
             ix -= 1
         if ix == (self._cdf3[index0,index1,:].size-1):
