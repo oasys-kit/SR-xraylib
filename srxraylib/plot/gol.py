@@ -637,8 +637,8 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=Tr
             axHisty.hist(y, bins=nbins, orientation='horizontal')
             axHisty.set_ylim( axScatter.get_ylim() )
         else:
-            axHistx.hist(x, bins=nbins)
-            axHisty.hist(y, bins=nbins, orientation='horizontal')
+            axHistx.hist(x, bins=nbins, range=xrange)
+            axHisty.hist(y, bins=nbins, range=yrange, orientation='horizontal')
 
             axHistx.set_xlim( axScatter.get_xlim() )
 
