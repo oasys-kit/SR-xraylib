@@ -791,7 +791,8 @@ def sync_ene(f_psi,energy_ev,ec_ev=1.0,polarization=0,  \
 #------------------------- WIGGLER FUNCTIONS -----------------------------------
 #
 def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
-                     per=0.2, electronCurrent=0.2, outFile="", elliptical=False, verbose=True):
+                     per=0.2, electronCurrent=0.2, outFile="", elliptical=False, verbose=True,
+                     polarization=0):
     r"""
      NAME:
            wiggler_spectrum
@@ -813,11 +814,14 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
            enerMin:    Minimum photon energy [eV]
            enerMax:    Maximum photon energy [eV]
            nPoints:     Number of energy points
-    	   electronCurrent:     The electron beam current in mA
+    	   electronCurrent:     The electron beam current in A
     	   per:         The ID period in m
     
            outFile:    The name of the file with results
            elliptical: False (for elliptical wigglers, not yet implemented)
+           polarization: 0 Total
+              1 Parallel       (l2=1, l3=0, in Sokolov&Ternov notation)
+              2 Perpendicular  (l2=0, l3=1)
     
      OUTPUTS:
            An array with the resulting spectrum
@@ -850,7 +854,8 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
     gamma = 1.0/numpy.sqrt(1 - numpy.power(betay[1],2) - \
                                numpy.power(betax[1],2) - \
                                numpy.power(betaz[1],2))
-    bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
+    # bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
+    bener = gamma * (codata.m_e) * numpy.power(codata.c, 2) / (codata.e) * 1.0e-9
     if verbose:
         print("\nElectron beam energy (from velocities) = %f GeV "%(bener))
         print("\ngamma (from velocities) = %f "%(gamma))
@@ -864,18 +869,18 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
     curv_min = numpy.abs(curv).min()
 
     if verbose:
-        print("curvature (max) = %f m "%(curv_max))
-        print("          (min) = %f m "%(curv_min))
-        print("Radius of curvature (max) = %f m "%(1.0/curv_min))
-        print("                    (min) = %f m "%(1.0/curv_max))
+        print("curvature (max) = %g m "%(curv_max))
+        print("          (min) = %g m "%(curv_min))
+        print("Radius of curvature (max) = %g m "%(1.0/curv_min))
+        print("                    (min) = %g m "%(1.0/curv_max))
 
     TOANGS  =  m2ev*1e10 
     phot_min = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_min
     phot_max = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_max
 
     if verbose:
-        print("Critical Energy (max.) = %f eV"%(phot_max))
-        print("                (min.) = %f eV"%(phot_min))
+        print("Critical Energy (max.) = %g eV"%(phot_max))
+        print("                (min.) = %g eV"%(phot_min))
 
     out = numpy.zeros((3,nPoints))
     #;
@@ -908,7 +913,7 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, \
         phot_num = numpy.zeros(len(curv))
         # rad= numpy.abs(1.0/curv)
         # print(">>>>>> rad: ",rad)
-        ang_num = wiggler_nphoton(rad,electronEnergy=bener,photonEnergy=energy)
+        ang_num = wiggler_nphoton(rad,electronEnergy=bener,photonEnergy=energy,polarization=polarization)
         phot_num=ang_num*mul_fac
         #;
         #; Computes CDF of the no. of photon along the trajectory S.
@@ -1032,7 +1037,8 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, \
     gamma = 1.0/numpy.sqrt(1.0 - numpy.power(betay[1],2) - \
                                  numpy.power(betax[1],2) - \
                                  numpy.power(betaz[1],2))
-    bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
+    # bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
+    bener = gamma * (codata.m_e) * numpy.power(codata.c, 2) / (codata.e) * 1.0e-9
     print("\nwiggler_cdf: Electron beam energy (from velocities) = %f GeV "%(bener))
     print("\nwiggler_cdf: gamma (from velocities) = %f GeV "%(gamma))
 
@@ -1407,7 +1413,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
     #;    creates trajectory and file 
     #;
 
-    nPointsTot = nTrajPoints+(nPer-1)*(nTrajPoints-1)
+    nPointsTot = int(nTrajPoints+(nPer-1)*(nTrajPoints-1))
     traj = numpy.zeros((8,nPointsTot))
 
 
@@ -2107,6 +2113,39 @@ def test_wiggler_external_b(pltOk=False):
                 print(("%.2e "*4+"\n")%( e[i],f0[i], f1[i], f2[i] ))
 
 
+def test_wiggler_polarization(pltOk=False):
+    print("#")
+    print("# Example 10 (Wiggler flux vs polarization)")
+    print("#")
+
+    t0, p = wiggler_trajectory(b_from=0, nPer=37, nTrajPoints=1001, \
+                                      ener_gev=3.0, per=0.120, kValue=22.416, \
+                                      trajFile="")
+    e, f0, p0 = wiggler_spectrum(t0, enerMin=100, enerMax=100100, nPoints=500, \
+                                        electronCurrent=0.1, outFile="", elliptical=False, polarization=0)
+    e, f1, p1 = wiggler_spectrum(t0, enerMin=100, enerMax=100100, nPoints=500, \
+                                        electronCurrent=0.1, outFile="", elliptical=False, polarization=1)
+    e, f2, p2 = wiggler_spectrum(t0, enerMin=100, enerMax=100100, nPoints=500, \
+                                        electronCurrent=0.1, outFile="", elliptical=False, polarization=2)
+    toptitle = "Wiggler flux vs polarization"
+    xtitle   = "Photon energy [eV]"
+    ytitle   = "Flux [phot/s]"
+
+    if pltOk:
+        plt.figure(10)
+        plt.plot(e, f0)
+        plt.plot(e, f1)
+        plt.plot(e, f2)
+        # plt.plot(e, f1 + f2)
+        plt.title(toptitle)
+        plt.xlabel(xtitle)
+        plt.ylabel(ytitle)
+    else:
+        print("\n\n\n\n\n#########  %s ######### "%(toptitle))
+        print("\n  %s  %s "%(xtitle,ytitle))
+        for i in range(len(e)):
+            print("  %f  %e"%(e[i],f0[i]))
+
 #
 #------------------------- MAIN ------------------------------------------------
 #
@@ -2117,18 +2156,21 @@ if __name__ == '__main__':
         import matplotlib.pylab as plt
         from mpl_toolkits.mplot3d import Axes3D  # need for example 6
         pltOk = True
+        from srxraylib.plot.gol import set_qt
+        set_qt()
     except ImportError:
         print("failed to import matplotlib. No on-line plots.")
 
-    test_xraybooklet_fig2_1(pltOk=pltOk)
-    test_xraybooklet_fig2_2(pltOk=pltOk)
-    test_esrf_bm_spectrum(pltOk=pltOk)
-    test_esrf_bm_angle_power(pltOk=pltOk)
-    test_esrf_bm_angle_flux(pltOk=pltOk)
-    test_clarke_43(pltOk=pltOk)
-    test_esrf_bm_2d(pltOk=pltOk)
-    test_wiggler_flux_vs_r(pltOk=pltOk)
-    test_wiggler_external_b(pltOk=pltOk)
+    # test_xraybooklet_fig2_1(pltOk=pltOk)
+    # test_xraybooklet_fig2_2(pltOk=pltOk)
+    # test_esrf_bm_spectrum(pltOk=pltOk)
+    # test_esrf_bm_angle_power(pltOk=pltOk)
+    # test_esrf_bm_angle_flux(pltOk=pltOk)
+    # test_clarke_43(pltOk=pltOk)
+    # test_esrf_bm_2d(pltOk=pltOk)
+    # test_wiggler_flux_vs_r(pltOk=pltOk)
+    # test_wiggler_external_b(pltOk=pltOk)
+    test_wiggler_polarization(pltOk=pltOk)
 
     if pltOk: plt.show()
 
