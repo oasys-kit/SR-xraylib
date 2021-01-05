@@ -202,146 +202,23 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
         y = positional_parameters[1]
         if linestyle == None:
             linestyle = '-'
-        plt.plot(x,y,label=legend,color=color,marker=marker,linestyle=linestyle)
-    elif n_arguments == 4:
-        x1 = positional_parameters[0]
-        y1 = positional_parameters[1]
-        x2 = positional_parameters[2]
-        y2 = positional_parameters[3]
+        plt.plot(x, y, label=legend, color=color, marker=marker, linestyle=linestyle)
+    elif n_arguments % 2 == 0:
         if legend is None:
-            legend1 = None
-            legend2 = None
-        else:
-            legend1 = legend[0]
-            legend2 = legend[1]
-
+            legend = [None] * (n_arguments // 2)
         if color is None:
-            color1 = None
-            color2 = None
-        else:
-            color1 = color[0]
-            color2 = color[1]
+            color = [None] * (n_arguments // 2)
 
         if marker is None:
-            marker1 = None
-            marker2 = None
-        else:
-            marker1 = marker[0]
-            marker2 = marker[1]
+            marker = [None] * (n_arguments // 2)
 
         if linestyle is None:
-            linestyle1 = '-'
-            linestyle2 = '-'
-        else:
-            linestyle1 = linestyle[0]
-            linestyle2 = linestyle[1]
+            linestyle = ['-'] * (n_arguments // 2)
 
-        plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
-        plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
-    elif n_arguments == 6:
-        x1 = positional_parameters[0]
-        y1 = positional_parameters[1]
-        x2 = positional_parameters[2]
-        y2 = positional_parameters[3]
-        x3 = positional_parameters[4]
-        y3 = positional_parameters[5]
-        if legend is None:
-            legend1 = None
-            legend2 = None
-            legend3 = None
-        else:
-            legend1 = legend[0]
-            legend2 = legend[1]
-            legend3 = legend[2]
-
-        if color is None:
-            color1 = None
-            color2 = None
-            color3 = None
-        else:
-            color1 = color[0]
-            color2 = color[1]
-            color3 = color[2]
-
-        if marker is None:
-            marker1 = None
-            marker2 = None
-            marker3 = None
-        else:
-            marker1 = marker[0]
-            marker2 = marker[1]
-            marker3 = marker[2]
-
-        if linestyle is None:
-            linestyle1 = '-'
-            linestyle2 = '-'
-            linestyle3 = '-'
-        else:
-            linestyle1 = linestyle[0]
-            linestyle2 = linestyle[1]
-            linestyle3 = linestyle[2]
-
-        plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
-        plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
-        plt.plot(x3,y3,label=legend3,marker=marker3,linestyle=linestyle3,color=color3)
-    elif n_arguments == 8:
-        x1 = positional_parameters[0]
-        y1 = positional_parameters[1]
-        x2 = positional_parameters[2]
-        y2 = positional_parameters[3]
-        x3 = positional_parameters[4]
-        y3 = positional_parameters[5]
-        x4 = positional_parameters[6]
-        y4 = positional_parameters[7]
-        if legend is None:
-            legend1 = None
-            legend2 = None
-            legend3 = None
-            legend4 = None
-        else:
-            legend1 = legend[0]
-            legend2 = legend[1]
-            legend3 = legend[2]
-            legend4 = legend[3]
-        if color is None:
-            color1 = None
-            color2 = None
-            color3 = None
-            color4 = None
-        else:
-            color1 = color[0]
-            color2 = color[1]
-            color3 = color[2]
-            color4 = color[3]
-
-        if marker is None:
-            marker1 = None
-            marker2 = None
-            marker3 = None
-            marker4 = None
-        else:
-            marker1 = marker[0]
-            marker2 = marker[1]
-            marker3 = marker[2]
-            marker4 = marker[3]
-
-        if linestyle is None:
-            linestyle1 = '-'
-            linestyle2 = '-'
-            linestyle3 = '-'
-            linestyle4 = '-'
-        else:
-            linestyle1 = linestyle[0]
-            linestyle2 = linestyle[1]
-            linestyle3 = linestyle[2]
-            linestyle4 = linestyle[3]
-
-        plt.plot(x1,y1,label=legend1,marker=marker1,linestyle=linestyle1,color=color1)
-        plt.plot(x2,y2,label=legend2,marker=marker2,linestyle=linestyle2,color=color2)
-        plt.plot(x3,y3,label=legend3,marker=marker3,linestyle=linestyle3,color=color3)
-        plt.plot(x4,y4,label=legend4,marker=marker4,linestyle=linestyle4,color=color4)
+        for i in range(n_arguments // 2):
+            plt.plot(positional_parameters[2*i],positional_parameters[2*i+1],label=legend[i],marker=marker[i],linestyle=linestyle[i],color=color[i])
     else:
-        raise Exception("Incorrect number of arguments, maximum 4 data sets")
+        raise Exception("Incorrect number of arguments: found an odd number of data sets")
         # x = positional_parameters[0]
         # y = positional_parameters[1]
         # plt.plot(x,y,label=legend)
@@ -730,14 +607,31 @@ def example_plot_scatter():
     plot_show()
 
 def example_plot_contour():
+    # deprecated in matplotlib. Copied from" https://github.com/matplotlib/matplotlib/blob/81e8154dbba54ac1607b21b22984cabf7a6598fa/lib/matplotlib/mlab.py#L1866
+    def bivariate_normal(X, Y, sigmax=1.0, sigmay=1.0,
+                         mux=0.0, muy=0.0, sigmaxy=0.0):
+        """
+        Bivariate Gaussian distribution for equal shape *X*, *Y*.
+        See `bivariate normal
+        <http://mathworld.wolfram.com/BivariateNormalDistribution.html>`_
+        at mathworld.
+        """
+        Xmu = X - mux
+        Ymu = Y - muy
+
+        rho = sigmaxy / (sigmax * sigmay)
+        z = Xmu ** 2 / sigmax ** 2 + Ymu ** 2 / sigmay ** 2 - 2 * rho * Xmu * Ymu / (sigmax * sigmay)
+        denom = 2 * np.pi * sigmax * sigmay * np.sqrt(1 - rho ** 2)
+        return np.exp(-z / (2 * (1 - rho ** 2))) / denom
+
     # inspired by http://stackoverflow.com/questions/10291221/axis-limits-for-scatter-plot-not-holding-in-matplotlib
     # random data
     x = np.random.randn(50)
     y = np.random.randn(100)
 
     X, Y = np.meshgrid(y, x)
-    Z1 = plt.bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
-    Z2 = plt.bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
+    Z1 = bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
+    Z2 = bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
     Z = 10 * (Z1 - Z2)
 
     plot_contour(Z,x,y,title='example_plot_contour',xtitle='x-stuff',ytitle='y-stuff',plot_points=1,show=1)
