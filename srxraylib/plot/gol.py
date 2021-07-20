@@ -76,9 +76,12 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
 def plot_image_with_histograms(*positional_parameters,
             title="",xtitle=r"X",ytitle=r"Y",
             xrange=None, yrange=None,
-            cmap=None,aspect_ratio=None,show=True,
-            add_colorbar=False,figsize=(8,8)
+            cmap=None,aspect_ratio='auto',show=True,
+            add_colorbar=False,figsize=(8,8),
+            use_profiles_instead_histograms=False,
             ):
+
+    if aspect_ratio is None: aspect_ratio == 'auto'
 
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
@@ -123,23 +126,36 @@ def plot_image_with_histograms(*positional_parameters,
     axScatter.set_xlabel(xtitle)
     axScatter.set_ylabel(ytitle)
 
+    if aspect_ratio == 'equal':
+        axScatter.set_aspect(aspect_ratio)
 
     axScatter.axis(xmin=hfactor*xrange[0],xmax=xrange[1])
     axScatter.axis(ymin=vfactor*yrange[0],ymax=yrange[1])
 
-    if aspect_ratio is not None:
-        axScatter.set_aspect(aspect_ratio)
+
 
     axs = axScatter.pcolormesh(x,y,z,cmap=cmap)
 
     #
     #histograms
     #
-    axHistx = figure.add_axes(rect_histx, sharex=axScatter)
-    axHisty = figure.add_axes(rect_histy, sharey=axScatter)
 
-    hx = z.sum(axis=0)
-    hy = z.sum(axis=1)
+    if aspect_ratio == 'equal':
+        pos0 = axScatter.get_position()
+        mm = np.min((pos0.height, pos0.width)) * 0.6
+        axHistx = figure.add_axes([pos0.x0, pos0.y0 +pos0.height, pos0.width, mm], sharex=axScatter)
+        axHisty = figure.add_axes([pos0.x0 + pos0.width, pos0.y0, mm * figsize[1] / figsize[0], pos0.height], sharey=axScatter)
+    else:
+        axHistx = figure.add_axes(rect_histx, sharex=axScatter)
+        axHisty = figure.add_axes(rect_histy, sharey=axScatter)
+
+    if use_profiles_instead_histograms:
+        hx = z[z.shape[0]//2, :]
+        hy = z[:, z.shape[1]//2]
+    else:
+        hx = z.sum(axis=0)
+        hy = z.sum(axis=1)
+
     axHistx.plot(x,hx)
     axHisty.plot(hy,y)
 
@@ -174,7 +190,7 @@ def plot_image_with_histograms(*positional_parameters,
     if show:
         plt.show()
 
-    return figure #,ax
+    return figure, axScatter, axHistx, axHisty
 
 
 
@@ -586,6 +602,9 @@ def example_plot_image_with_histograms():
     plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
                                cmap=None,show=1,figsize=(8,8),add_colorbar=True)
 
+    plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
+                               cmap=None,show=1,figsize=(10,4),aspect_ratio='equal',add_colorbar=True)
+
 def example_plot_surface():
     x = np.linspace(-4, 4, 20)
     y = np.linspace(-4, 4, 20)
@@ -701,6 +720,7 @@ def example_plot_image_ascent():
 # main
 #
 if __name__ == "__main__":
+    # set_qt()
     pass
     # example_plot_one_curve()
     # example_plot_two_curves()

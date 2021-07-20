@@ -1327,7 +1327,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
             yx = yx - (numpy.cos(phase*(n+1)) - numpy.cos(phase0*(n+1))) * \
                       (-bh[n]/numpy.power(n+1,2))
 
-        yx = yx * (-3.e-1/ener_gev) * numpy.power(per/2.0/numpy.pi,2)
+        yx = yx * (-codata_c*1e-9/ener_gev) * numpy.power(per/2.0/numpy.pi,2)
     #;
     #;    creates parameters text
     #;
