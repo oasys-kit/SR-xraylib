@@ -74,26 +74,26 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
 
 
 def plot_image_with_histograms(*positional_parameters,
-            title="",xtitle=r"X",ytitle=r"Y",
-            xrange=None, yrange=None,
-            cmap=None,aspect_ratio='auto',show=True,
-            add_colorbar=False,figsize=(8,8),
-            use_profiles_instead_histograms=False,
-            ):
+                               title="", xtitle=r"X", ytitle=r"Y",
+                               xrange=None, yrange=None,
+                               cmap=None, aspect='auto', show=True,
+                               add_colorbar=False, figsize=(8,8),
+                               use_profiles_instead_histograms=False,
+                               ):
 
-    if aspect_ratio is None: aspect_ratio == 'auto'
+    if aspect is None: aspect == 'auto'
 
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
-        z = positional_parameters[0]
+        z = positional_parameters[0].T
         x = np.arange(0,z.shape[0])
         y = np.arange(0,z.shape[1])
     elif n_arguments == 2:
-        z = positional_parameters[0]
+        z = positional_parameters[0].T
         x = positional_parameters[1]
         y = positional_parameters[1]
     elif n_arguments == 3:
-        z = positional_parameters[0]
+        z = positional_parameters[0].T
         x = positional_parameters[1]
         y = positional_parameters[2]
     else:
@@ -126,8 +126,8 @@ def plot_image_with_histograms(*positional_parameters,
     axScatter.set_xlabel(xtitle)
     axScatter.set_ylabel(ytitle)
 
-    if aspect_ratio == 'equal':
-        axScatter.set_aspect(aspect_ratio)
+    if aspect == 'equal':
+        axScatter.set_aspect(aspect)
 
     axScatter.axis(xmin=hfactor*xrange[0],xmax=xrange[1])
     axScatter.axis(ymin=vfactor*yrange[0],ymax=yrange[1])
@@ -140,7 +140,7 @@ def plot_image_with_histograms(*positional_parameters,
     #histograms
     #
 
-    if aspect_ratio == 'equal':
+    if aspect == 'equal':
         pos0 = axScatter.get_position()
         mm = np.min((pos0.height, pos0.width)) * 0.6
         axHistx = figure.add_axes([pos0.x0, pos0.y0 +pos0.height, pos0.width, mm], sharex=axScatter)
@@ -602,8 +602,8 @@ def example_plot_image_with_histograms():
     plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
                                cmap=None,show=1,figsize=(8,8),add_colorbar=True)
 
-    plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
-                               cmap=None,show=1,figsize=(10,4),aspect_ratio='equal',add_colorbar=True)
+    plot_image_with_histograms(z, x, y, title="example_plot_image", xtitle=r"X [$\mu m$]", ytitle=r"Y [$\mu m$]",
+                               cmap=None, show=1, figsize=(10,4), aspect='equal', add_colorbar=True)
 
 def example_plot_surface():
     x = np.linspace(-4, 4, 20)
