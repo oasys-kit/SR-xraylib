@@ -37,6 +37,7 @@ import sys
 import argparse
 import json
 import os
+import socket
 from io import StringIO
 
 try:
@@ -46,7 +47,11 @@ except ImportError:
     # Fall back to Python 2's urllib2
     from urllib2 import urlopen
 
-default_server = "http://ftp.esrf.fr/pub/scisoft/dabam/data/"
+# default server name is different outside and inside ESRF
+if socket.getfqdn().find("esrf") < 0:
+    default_server = "http://ftp.esrf.eu/pub/scisoft/dabam/data/"
+else:
+    default_server = "http://ftp.esrf.fr/pub/scisoft/dabam/data/"
 
 class dabam(object):
 
@@ -66,12 +71,14 @@ class dabam(object):
             'outputFileRoot':"",     # 'Define the root for output files. Default is "", so no output files'
             'setDetrending':-2,      # 'Detrending: if >0 is the polynomial degree, -1=skip, -2=read from metadata DETRENDING, -3=ellipse(optimized) -4=ellipse(design)'
             'detrendingWindowFactor': 1.0, # 'if setDetrending>0, this is the window covering for the fit (1.0 is full window)'
+            'resetZeroHeight': 0,     # 'reset zero in heights profile 0=No, 1=to heihjty minimum, 2=to center'
             'nbinS':101,             # 'number of bins of the slopes histogram in rads. '
             'nbinH':101,             # 'number of bins heights histogram in m. '
             'shadowCalc':False,      # 'Write file with mesh for SHADOW.'
             'shadowNy':-1,           # 'For SHADOW file, the number of points along Y (length). If negative, use the profile points. '
             'shadowNx':11,           # 'For SHADOW file, the number of points along X (width). '
-            'shadowWidth':6.0,       # 'For SHADOW file, the surface dimension along X (width) in cm. '
+            'shadowWidth':6.0,       # 'For SHADOW file, the surface dimension along X (width) in cm.'
+            'shadowFactor': 100.0,   # 'For SHADOW file, the factor from m to user unit (e.g. 100 for cm) '
             'multiply':1.0,          # 'Multiply input profile (slope or height) by this number (to play with StDev values). '
             'oversample':0.0,        # 'Oversample factor for abscissas. Interpolate profile foor a new one with this factor times npoints'
             'useHeightsOrSlopes':-1, # 'Force calculations using profile heights (0) or slopes (1). Overwrites FILE_FORMAT keyword. Default=-1 (like FILE_FORMAT)'
@@ -132,6 +139,7 @@ class dabam(object):
                               to_SI_ordinates=1.0,
                               detrending_flag=-1,
                               detrending_window_factor=1.0,
+                              reset_zero_height=0, # 0=None, 1=to minimum, 2=to center
                               ):
         dm = dabam()
         dm.is_remote_access = False
@@ -170,6 +178,8 @@ class dabam(object):
         dm.set_input_setDetrending(detrending_flag)
 
         dm.set_input_detrendingWindowFactor(detrending_window_factor)
+
+        dm.set_input_resetZeroHeight(reset_zero_height)
 
         dm.make_calculations()
 
@@ -221,6 +231,8 @@ class dabam(object):
         self.inputs["setDetrending"] = value
     def set_input_detrendingWindowFactor(self,value):
         self.inputs["detrendingWindowFactor"] = value
+    def set_input_resetZeroHeight(self,value):
+        self.inputs["resetZeroHeight"] = value
     def set_input_nbinS(self,value):
         self.inputs["nbinS"] = value
     def set_input_nbinH(self,value):
@@ -233,6 +245,8 @@ class dabam(object):
         self.inputs["shadowNx"] = value
     def set_input_shadowWidth(self,value):
         self.inputs["shadowWidth"] = value
+    def set_input_shadowFactor(self,value):
+        self.inputs["shadowFactor"] = value
     def set_input_multiply(self,value):
         self.inputs["multiply"] = value
     def set_input_oversample(self,value):
@@ -264,12 +278,14 @@ class dabam(object):
             self.set_input_outputFileRoot     ( dict["outputFileRoot"]      )
             self.set_input_setDetrending      ( dict["setDetrending"]       )
             self.set_input_detrendingWindowFactor   ( dict["detrendingWindowFactor"]    )
+            self.set_input_resetZeroHeight   ( dict["resetZeroHeight"]    )
             self.set_input_nbinS              ( dict["nbinS"]               )
             self.set_input_nbinH              ( dict["nbinH"]               )
             self.set_input_shadowCalc         ( dict["shadowCalc"]          )
             self.set_input_shadowNy           ( dict["shadowNy"]            )
             self.set_input_shadowNx           ( dict["shadowNx"]            )
             self.set_input_shadowWidth        ( dict["shadowWidth"]         )
+            self.set_input_shadowFactor       ( dict["shadowFactor"]         )
             self.set_input_multiply           ( dict["multiply"]            )
             self.set_input_oversample         ( dict["oversample"]          )
             self.set_input_useHeightsOrSlopes ( dict["useHeightsOrSlopes"]  )
@@ -312,12 +328,14 @@ class dabam(object):
         if key == 'outputFileRoot':     return 'Define the root for output files. Set to "" for no output.  Default is "'+self.get_input_value("outputFileRoot")+'"'
         if key == 'setDetrending':      return 'Detrending: if >0 is the polynomial degree, -1=skip, -2=read from metadata DETRENDING, -3=ellipse(optimized), -4=ellipse(design). Default=%d'%self.get_input_value("setDetrending")
         if key == 'detrendingWindowFactor':   return 'detrendingWindowFactor: the fraction of the window used for fit (1.0 is full). Default=%f'%self.get_input_value("detrendingWindowFactor")
+        if key == 'resetZeroHeight':    return 'resetZeroHeight: 0=None , 1=to minimum, 2=to center Default=%d'%self.get_input_value("resetZeroHeight")
         if key == 'nbinS':              return 'Number of bins for the slopes histogram in rads. Default is %d'%self.get_input_value("nbinS")
         if key == 'nbinH':              return 'Number of bins for the heights histogram in m. Default is %d'%self.get_input_value("nbinH")
         if key == 'shadowCalc':         return 'Write file with mesh for SHADOW. Default=No'
         if key == 'shadowNy':           return 'For SHADOW file, the number of points along Y (length). If negative, use the profile points. Default=%d'%self.get_input_value("shadowNy")
         if key == 'shadowNx':           return 'For SHADOW file, the number of points along X (width). Default=%d'%self.get_input_value("shadowNx")
         if key == 'shadowWidth':        return 'For SHADOW file, the surface dimension along X (width) in cm. Default=%4.2f'%self.get_input_value("shadowWidth")
+        if key == 'shadowFactor':       return 'For SHADOW file, the factor from m to user units. Default=%4.2f'%self.get_input_value("shadowFactor")
         if key == 'multiply':           return 'Multiply input profile (slope or height) by this number (to play with StDev values). Default=%4.2f'%self.get_input_value("multiply")
         if key == 'oversample':         return 'Oversample factor for the number of abscissas points. 0=No oversample. (Default=%2.1f)'%self.get_input_value("oversample")
         if key == 'useHeightsOrSlopes': return 'Force calculations using profile heights (0) or slopes (1). If -1, used metadata keyword FILE_FORMAT. Default=%d'%self.get_input_value("useHeightsOrSlopes")
@@ -336,12 +354,14 @@ class dabam(object):
         if key == 'outputFileRoot':      return 'r'
         if key == 'setDetrending':       return 'D'
         if key == 'detrendingWindowFactor':    return 'W'
+        if key == 'resetZeroHeight':     return 'H'
         if key == 'nbinS':               return 'b'
         if key == 'nbinH':               return 'e'
         if key == 'shadowCalc':          return 'S'
         if key == 'shadowNy':            return 'y'
         if key == 'shadowNx':            return 'x'
         if key == 'shadowWidth':         return 'w'
+        if key == 'shadowFactor':        return 'f'
         if key == 'multiply':            return 'm'
         if key == 'oversample':          return 'I'
         if key == 'useHeightsOrSlopes':  return 'Z'
@@ -454,6 +474,10 @@ class dabam(object):
         #calculate detrended profiles
         self._calc_detrended_profiles()
 
+        # reset heights
+        self._reset_heights()
+
+
         #calculate psd
         self._calc_psd()
 
@@ -463,6 +487,8 @@ class dabam(object):
         #calculate moments
         self.momentsHeights = moment(self.zHeights)
         self.momentsSlopes = moment(self.zSlopes)
+
+
 
         # write files
         if self.get_input_value("outputFileRoot") != "":
@@ -478,6 +504,7 @@ class dabam(object):
         #info
         if not(self.get_input_value("silent")):
             print(self.info_profiles())
+
 
 
     def stdev_profile_heights(self):
@@ -592,6 +619,11 @@ class dabam(object):
            txt += '         q = %f m \n'%self.coeffs[1]
            txt += '         theta = %f rad \n'%self.coeffs[2]
            txt += '         vertical shift = %f nm \n'%self.coeffs[3]
+
+        if int(self.get_input_value("resetZeroHeight")) == 1:
+            txt += 'Heights profile reset to minumum\n'
+        elif int(self.get_input_value("resetZeroHeight")) == 2:
+                txt += 'Heights profile reset to center\n'
 
         txt += self.statistics_summary()
 
@@ -758,6 +790,12 @@ class dabam(object):
     # auxiliar methods for internal use
     #
 
+    def _reset_heights(self):
+        if int(self.get_input_value("resetZeroHeight")) == 1:
+            self.zHeights = self.zHeights - self.zHeights.min()
+        elif int(self.get_input_value("resetZeroHeight")) == 2:
+            self.zHeights = self.zHeights - self.zHeights[self.zHeights.size // 2]
+
     def _get_polDegree(self):
 
         try:
@@ -811,6 +849,9 @@ class dabam(object):
         parser.add_argument('-'+self.get_input_value_short_name('detrendingWindowFactor'), '--detrendingWindowFactor', default=self.get_input_value('detrendingWindowFactor'),
             help=self.get_input_value_help('detrendingWindowFactor'))
 
+        parser.add_argument('-'+self.get_input_value_short_name('resetZeroHeight'), '--resetZeroHeight', default=self.get_input_value('resetZeroHeight'),
+            help=self.get_input_value_help('resetZeroHeight'))
+
         parser.add_argument('-'+self.get_input_value_short_name('nbinS'), '--nbinS', default=self.get_input_value('nbinS'),
             help=self.get_input_value_help('nbinS'))
 
@@ -827,6 +868,9 @@ class dabam(object):
 
         parser.add_argument('-'+self.get_input_value_short_name('shadowWidth'), '--shadowWidth', default=self.get_input_value('shadowWidth'),
             help=self.get_input_value_help('shadowWidth'))
+
+        parser.add_argument('-'+self.get_input_value_short_name('shadowFactor'), '--shadowFactor', default=self.get_input_value('shadowFactor'),
+            help=self.get_input_value_help('shadowFactor'))
 
         parser.add_argument('-'+self.get_input_value_short_name('multiply'), '--multiply', default=self.get_input_value('multiply'),
             help=self.get_input_value_help('multiply'))
@@ -855,12 +899,14 @@ class dabam(object):
         self.set_input_outputFileRoot(args.outputFileRoot)
         self.set_input_setDetrending(args.setDetrending)
         self.set_input_detrendingWindowFactor(args.detrendingWindowFactor)
+        self.set_input_resetZeroHeight(args.resetZeroHeight)
         self.set_input_nbinS(args.nbinS)
         self.set_input_nbinH(args.nbinH)
         self.set_input_shadowCalc(args.shadowCalc)
         self.set_input_shadowNy(args.shadowNy)
         self.set_input_shadowNx(args.shadowNx)
         self.set_input_shadowWidth(args.shadowWidth)
+        self.set_input_shadowFactor(args.shadowFactor)
         self.set_input_multiply(args.multiply)
         self.set_input_oversample(args.oversample)
         self.set_input_useHeightsOrSlopes(args.useHeightsOrSlopes)
@@ -889,7 +935,10 @@ class dabam(object):
         if self.is_remote_access:
             # metadata file
             myfileurl = self.server+self.file_metadata()
-            u = urlopen(myfileurl)
+            try:
+                u = urlopen(myfileurl)
+            except:
+                raise Exception("Failed to access url: %s" % myfileurl )
             ur = u.read()
             ur1 = ur.decode(encoding='UTF-8')
             h = json.loads(ur1) # dictionnary with metadata
@@ -1040,15 +1089,14 @@ class dabam(object):
             detrendingWindowFactor = float(self.get_input_value("detrendingWindowFactor"))
             imin = 0
             imax = sz.size - 1
-            print(">>>>>>>>>>>>>>>>>", detrendingWindowFactor, imin, imax)
-            print(">>>>>>>>>>>>>>>>>Full window: ", sy[imin], sy[-1], imin, imax)
+
+            print(">>Full window: ", sy[imin], sy[-1], imin, imax)
 
             if detrendingWindowFactor < 1.0:
                 shift = int(sz.size * (1 - detrendingWindowFactor) / 2)
-                print(">>>> shift, detrendingWindowFactor", shift, detrendingWindowFactor)
                 imin += shift
                 imax -= shift
-                print(">>>>>>>>>>>>>>>>>Fitting window: ", sy[imin], sy[imax], imin, imax)
+                print(">>Fitting window: ", sy[imin], sy[imax], imin, imax)
 
             coeffs = numpy.polyfit(sy[imin:(imax+1)], sz1[imin:(imax+1)], polDegree)
             pol = numpy.poly1d(coeffs)
@@ -1263,6 +1311,10 @@ class dabam(object):
 
     def _write_output_files(self):
 
+        y = self.y.copy()
+        zHeights = self.zHeights.copy()
+        zSlopes = self.zSlopes.copy()
+
         # write header file
         outFile = self.get_input_value("outputFileRoot") + "Header.txt"
         with open(outFile, mode='w') as f1:
@@ -1274,13 +1326,13 @@ class dabam(object):
         # Dump heights and slopes profiles to files
         #
         outFile = self.get_input_value("outputFileRoot")+'Heights.dat'
-        dd=numpy.concatenate( (self.y.reshape(-1,1), self.zHeights.reshape(-1,1)),axis=1)
+        dd=numpy.concatenate( (y.reshape(-1,1), zHeights.reshape(-1,1)),axis=1)
         numpy.savetxt(outFile,dd,comments="#",header="F %s\nS 1  heights profile\nN 2\nL  coordinate[m]  height[m]"%(outFile))
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" containing heights profile written to disk.")
 
         outFile = self.get_input_value("outputFileRoot")+'Slopes.dat'
-        dd=numpy.concatenate( (self.y.reshape(-1,1), self.zSlopes.reshape(-1,1)),axis=1)
+        dd=numpy.concatenate( (y.reshape(-1,1), zSlopes.reshape(-1,1)),axis=1)
         numpy.savetxt(outFile,dd,comments="#",header="F %s\nS 1  slopes profile\nN 2\nL  coordinate[m]  slopes[rad]"%(outFile))
         if not(self.get_input_value("silent")):
             print ("File "+outFile+" written to disk.")
@@ -1377,11 +1429,14 @@ class dabam(object):
         #inputs
         npointsy = int(self.get_input_value("shadowNy"))
         npointsx = int(self.get_input_value("shadowNx"))
-        mirror_width = float(self.get_input_value("shadowWidth")) # in cm
+        shadowFactor = float(self.get_input_value("shadowFactor"))
+        print(">>>>>>>>>>>>>>>>>>>>> shadowFactor: ", shadowFactor)
+        # note that for back compatibility that shadowWidth is in cm!!
+        mirror_width = float(self.get_input_value("shadowWidth")) * 0.01 * shadowFactor
 
         # units to cm
-        y = (self.y).copy() * 100.0 # from m to cm
-        z = (self.zHeights).copy() * 100.0 # from m to cm
+        y = (self.y).copy() * shadowFactor # from m to user units
+        z = (self.zHeights).copy() * shadowFactor # from m to user units
 
         # set origin at the center of the mirror. TODO: allow any point for origin
         z = z - z.min()
@@ -1645,7 +1700,7 @@ def psd(xx, yy, onlyrange = None):
     return s,f
 
 
-def autocorrelationfunction(x,f):
+def autocorrelationfunction(x1,f1):
     """
     calculates the autocovariance function and correlation length of a 1-d profile f(x).
 
@@ -1676,6 +1731,9 @@ def autocorrelationfunction(x,f):
     # %
     # % Last updated: 2010-07-26 (David Bergstrom)
     # %
+
+    x = x1.copy()
+    f = f1.copy()
 
     N = len(x)
     lags = numpy.linspace(0,x[-1]-x[0],N)
