@@ -342,8 +342,6 @@ class ScaledArray(object):
     '''
     def set_scale_from_steps(self, initial_scale_value, scale_step):
         if self.size() > 0:
-            if scale_step <= 0.0: raise Exception("Scale Step must be > 0.0")
-
             # Problem in comparison between float64 and numpy.float64:
             # reduce precision to avoid crazy research results
 
