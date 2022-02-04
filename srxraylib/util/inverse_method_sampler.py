@@ -49,7 +49,7 @@ class Sampler1D(object):
             ival,idelta,pendent = self._get_index(random_in_0_1)
             return self._pdf_x[ival] + idelta*(self._pdf_x[1]-self._pdf_x[0])
 
-    def get_sampled_and_histogram(self,random_in_0_1,bins=51,range=None):
+    def get_sampled_and_histogram(self, random_in_0_1, bins=51, range=None):
         s1 = self.get_sampled(random_in_0_1)
         if range is None:
             range = [self._pdf_x.min(),self._pdf_x.max()]
@@ -59,11 +59,13 @@ class Sampler1D(object):
         h,bin_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
         return s1,h,bin_edges
 
-    def get_n_sampled_points(self,npoints):
+    def get_n_sampled_points(self, npoints, seed=None):
+        if seed: numpy.random.seed(seed)
         cdf_rand_array = numpy.random.random(npoints)
         return self.get_sampled(cdf_rand_array)
 
-    def get_n_sampled_points_and_histogram(self,npoints,bins=51,range=None):
+    def get_n_sampled_points_and_histogram(self, npoints, bins=51, range=None, seed=None):
+        if seed: numpy.random.seed(seed)
         cdf_rand_array = numpy.random.random(npoints)
         return self.get_sampled_and_histogram(cdf_rand_array,bins=bins,range=range)
 
