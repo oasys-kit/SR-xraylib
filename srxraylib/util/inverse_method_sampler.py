@@ -60,12 +60,12 @@ class Sampler1D(object):
         return s1,h,bin_edges
 
     def get_n_sampled_points(self, npoints, seed=None):
-        if seed: numpy.random.seed(seed)
+        if not seed is None: numpy.random.seed(seed)
         cdf_rand_array = numpy.random.random(npoints)
         return self.get_sampled(cdf_rand_array)
 
     def get_n_sampled_points_and_histogram(self, npoints, bins=51, range=None, seed=None):
-        if seed: numpy.random.seed(seed)
+        if not seed is None: numpy.random.seed(seed)
         cdf_rand_array = numpy.random.random(npoints)
         return self.get_sampled_and_histogram(cdf_rand_array,bins=bins,range=range)
 
@@ -147,7 +147,8 @@ class Sampler2D(object):
         else:
             pass # TODO make scalar case
 
-    def get_n_sampled_points(self,npoints):
+    def get_n_sampled_points(self,npoints, seed=None):
+        if not seed is None: numpy.random.seed(seed)
         cdf_rand_array0 = numpy.random.random(npoints)
         cdf_rand_array1 = numpy.random.random(npoints)
         return self.get_sampled(cdf_rand_array0,cdf_rand_array1)
@@ -261,7 +262,8 @@ class Sampler3D(object):
             pass #TODO do the scalar case
 
 
-    def get_n_sampled_points(self,npoints):
+    def get_n_sampled_points(self,npoints, seed=None):
+        if not seed is None: numpy.random.seed(seed)
         cdf_rand_array0 = numpy.random.random(npoints)
         cdf_rand_array1 = numpy.random.random(npoints)
         cdf_rand_array2 = numpy.random.random(npoints)
