@@ -60,13 +60,20 @@ class Sampler1D(object):
         return s1,h,bin_edges
 
     def get_n_sampled_points(self, npoints, seed=None):
-        if not seed is None: numpy.random.seed(seed)
-        cdf_rand_array = numpy.random.random(npoints)
+        if not seed is None:
+            rng = numpy.random.default_rng(seed)
+            cdf_rand_array = rng.random(npoints)
+        else:
+            cdf_rand_array = numpy.random.random(npoints)
+
         return self.get_sampled(cdf_rand_array)
 
     def get_n_sampled_points_and_histogram(self, npoints, bins=51, range=None, seed=None):
-        if not seed is None: numpy.random.seed(seed)
-        cdf_rand_array = numpy.random.random(npoints)
+        if not seed is None:
+            rng = numpy.random.default_rng(seed)
+            cdf_rand_array = rng.random(npoints)
+        else:
+            cdf_rand_array = numpy.random.random(npoints)
         return self.get_sampled_and_histogram(cdf_rand_array,bins=bins,range=range)
 
     def _set_default_pdf_x(self):
@@ -148,10 +155,15 @@ class Sampler2D(object):
             pass # TODO make scalar case
 
     def get_n_sampled_points(self,npoints, seed=None):
-        if not seed is None: numpy.random.seed(seed)
-        cdf_rand_array0 = numpy.random.random(npoints)
-        cdf_rand_array1 = numpy.random.random(npoints)
-        return self.get_sampled(cdf_rand_array0,cdf_rand_array1)
+        if not seed is None:
+            rng = numpy.random.default_rng(seed)
+            cdf_rand_array0 = rng.random(npoints)
+            cdf_rand_array1 = rng.random(npoints)
+        else:
+            cdf_rand_array0 = numpy.random.random(npoints)
+            cdf_rand_array1 = numpy.random.random(npoints)
+
+        return self.get_sampled(cdf_rand_array0, cdf_rand_array1)
 
 
     def _cdf_calculate(self):
@@ -263,11 +275,17 @@ class Sampler3D(object):
 
 
     def get_n_sampled_points(self,npoints, seed=None):
-        if not seed is None: numpy.random.seed(seed)
-        cdf_rand_array0 = numpy.random.random(npoints)
-        cdf_rand_array1 = numpy.random.random(npoints)
-        cdf_rand_array2 = numpy.random.random(npoints)
-        return self.get_sampled(cdf_rand_array0,cdf_rand_array1,cdf_rand_array2)
+        if not seed is None:
+            rng = numpy.random.default_rng(seed)
+            cdf_rand_array0 = rng.random(npoints)
+            cdf_rand_array1 = rng.random(npoints)
+            cdf_rand_array2 = numpy.random.random(npoints)
+        else:
+            cdf_rand_array0 = numpy.random.random(npoints)
+            cdf_rand_array1 = numpy.random.random(npoints)
+            cdf_rand_array2 = numpy.random.random(npoints)
+
+        return self.get_sampled(cdf_rand_array0, cdf_rand_array1, cdf_rand_array2)
 
 
     def _cdf_calculate(self):
