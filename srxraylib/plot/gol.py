@@ -171,12 +171,11 @@ def plot_image_with_histograms(*positional_parameters,
     #     binSize = y[1] - y[0]
     #     print("FWHM Y: ",binSize * (tt[0][-1] - tt[0][0]))
 
-
-
     # supress ordinates labels ans ticks
     axHistx.get_yaxis().set_visible(False)
     axHisty.get_xaxis().set_visible(False)
-
+    axHistx.set_ylim(ymin=0, ymax=hy.max()*1.1)
+    axHisty.set_xlim(xmin=0, xmax=hx.max() * 1.1)
     # supress abscissas labels (keep ticks)
     for tl in axHistx.get_xticklabels(): tl.set_visible(False)
     for tl in axHisty.get_yticklabels(): tl.set_visible(False)
