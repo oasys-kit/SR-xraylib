@@ -57,23 +57,14 @@ import sys
 #
 
 #Physical constants (global, by now)
-try:
-    import scipy.constants as codata
-    codata_c = codata.c
-    codata_mee = 1e-6 * codata.m_e * codata.c**2 / codata.e
-    codata_me = codata.m_e
-    codata_h = codata.h
-    codata_ec = codata.e
 
-except ImportError:
-    #TODO update these constants
-    print("Failed to import scipy. Finding alternative ways.")
-    codata_c = numpy.array(299792458.0)
-    codata_me = numpy.array(9.10938291e-31)
-    codata_mee = numpy.array(0.510999)
-    codata_h = numpy.array(6.62606957e-34)
-    codata_ec = numpy.array(1.602176565e-19)
+import scipy.constants as codata
+codata_c = codata.c
+codata_me = codata.m_e
+codata_h = codata.h
+codata_ec = codata.e
 
+codata_mee = 1e-6 * codata.m_e * codata.c**2 / codata.e
 m2ev = codata_c*codata_h/codata_ec      # lambda(m)  = m2eV / energy(eV)
 
 
@@ -1230,10 +1221,12 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100, \
 
     # get period [m], number of periods, harmonics [T]
     if b_from >= 1:
-        if type(inData) == type(""):   # file input
-            if os.path.isfile(inData) == False:
-                sys.exit('File nor found: '+inData)
-            a = numpy.loadtxt(inData)
+        if isinstance(inData, str):   # file input
+            try:
+                a = numpy.loadtxt(inData)
+            except:
+                raise Exception('File not loaded: %s ' % inData)
+
         else:  # numpy array input
             a = inData
 
@@ -1586,7 +1579,7 @@ def wiggler_harmonics(Bs,Nh=41,fileOutH=""):
 #
 # tests
 #
-def test_xraybooklet_fig2_1(pltOk=False):
+def check_xraybooklet_fig2_1(pltOk=False):
     print("# ")
     print("# example 1, Fig 2-1 in http://xdb.lbl.gov/Section2/Sec_2-1.html ")
     print("# ")
@@ -1617,7 +1610,7 @@ def test_xraybooklet_fig2_1(pltOk=False):
         for i in range(len(y)):
             print(" %f  %e %e "%(y[i],g1[i],h2[i]))
 
-def test_xraybooklet_fig2_2(pltOk=False):
+def check_xraybooklet_fig2_2(pltOk=False):
     print("# ")
     print("# example  2, Fig 2-2 in http://xdb.lbl.gov/Section2/Sec_2-1.html ")
     print("# ")
@@ -1677,7 +1670,7 @@ def test_xraybooklet_fig2_2(pltOk=False):
         for i in range(len(y)):
             print(" %f  %e %e "%(y[i],f3[i],f3pi[i]))
 
-def test_esrf_bm_spectrum(pltOk=False):
+def check_esrf_bm_spectrum(pltOk=False):
     print("#")
     print("# example 3, ESRF BM spectrum")
     print("#")
@@ -1712,7 +1705,7 @@ def test_esrf_bm_spectrum(pltOk=False):
         for i in range(len(flux)):
             print(" %f  %12.3e"%(energy_ev[i],flux[i]))
 
-def test_esrf_bm_angle_power(pltOk=False):
+def check_esrf_bm_angle_power(pltOk=False):
     print("#")
     print("# example 4: ESRF BM angular emission of power")
     print("#")
@@ -1742,7 +1735,7 @@ def test_esrf_bm_angle_power(pltOk=False):
         for i in range(len(flux)):
             print("  %f  %f"%(angle_mrad[i],flux[i]))
 
-def test_esrf_bm_angle_flux(pltOk=False):
+def check_esrf_bm_angle_flux(pltOk=False):
     print("#")
     print("# example 5: ESRF BM angular emission of flux")
     print("#")
@@ -1784,7 +1777,7 @@ def test_esrf_bm_angle_flux(pltOk=False):
         for i in range(len(fluxEc)):
             print("  %f  %f"%(angle_mrad[i],fluxEc[i]))
 
-def test_clarke_43(pltOk=False):
+def check_clarke_43(pltOk=False):
     print("#")
     print("# Example 6 Slide 35 of")
     print("# http:https://www.cockcroft.ac.uk/wp-content/uploads/2014/12/Lecture-1.pdf")
@@ -1872,7 +1865,7 @@ def test_clarke_43(pltOk=False):
             for i in range(len(a)):
                 print("  %f  %f  %e   "%(e[j],a[i],fm[i,j]))
 
-def test_esrf_bm_2d(pltOk=False):
+def check_esrf_bm_2d(pltOk=False):
     print("#")
     print("# Example 7, ESRF flux vs energy and angle")
     print("#")
@@ -1915,7 +1908,7 @@ def test_esrf_bm_2d(pltOk=False):
             for j in range(len(e)):
                 print("  %f  %f  %e   "%(a[i],e[j],fm[i,j]))
 
-def test_wiggler_flux_vs_r(pltOk=False):
+def check_wiggler_flux_vs_r(pltOk=False):
     print("#")
     print("# Example 8 (Wiggler flux vs bending radius at a given photon energy)")
     print("#")
@@ -1938,7 +1931,7 @@ def test_wiggler_flux_vs_r(pltOk=False):
             print("  %f  %e"%(r_m[i],flux[i]))
 
 
-def test_wiggler_external_b(pltOk=False):
+def check_wiggler_external_b(pltOk=False):
     print("#")
     print("# Example 9 (Wiggler trajectory and flux for a 3pole wiggler ")
     print("#")
@@ -2113,7 +2106,7 @@ def test_wiggler_external_b(pltOk=False):
                 print(("%.2e "*4+"\n")%( e[i],f0[i], f1[i], f2[i] ))
 
 
-def test_wiggler_polarization(pltOk=False):
+def check_wiggler_polarization(pltOk=False):
     print("#")
     print("# Example 10 (Wiggler flux vs polarization)")
     print("#")
@@ -2161,16 +2154,16 @@ if __name__ == '__main__':
     except ImportError:
         print("failed to import matplotlib. No on-line plots.")
 
-    # test_xraybooklet_fig2_1(pltOk=pltOk)
-    # test_xraybooklet_fig2_2(pltOk=pltOk)
-    # test_esrf_bm_spectrum(pltOk=pltOk)
-    # test_esrf_bm_angle_power(pltOk=pltOk)
-    # test_esrf_bm_angle_flux(pltOk=pltOk)
-    # test_clarke_43(pltOk=pltOk)
-    # test_esrf_bm_2d(pltOk=pltOk)
-    # test_wiggler_flux_vs_r(pltOk=pltOk)
-    # test_wiggler_external_b(pltOk=pltOk)
-    test_wiggler_polarization(pltOk=pltOk)
+    check_xraybooklet_fig2_1(pltOk=pltOk)
+    check_xraybooklet_fig2_2(pltOk=pltOk)
+    check_esrf_bm_spectrum(pltOk=pltOk)
+    check_esrf_bm_angle_power(pltOk=pltOk)
+    check_esrf_bm_angle_flux(pltOk=pltOk)
+    check_clarke_43(pltOk=pltOk)
+    check_esrf_bm_2d(pltOk=pltOk)
+    check_wiggler_flux_vs_r(pltOk=pltOk)
+    check_wiggler_external_b(pltOk=pltOk)
+    # check_wiggler_polarization(pltOk=pltOk)
 
     if pltOk: plt.show()
 
