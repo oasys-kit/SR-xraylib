@@ -16,8 +16,8 @@ class H5SimpleWriter(object):
 
         To allow display graphics correctly, the array with the image stored in the hdf5 file is transposed.
 
-        This has no effect for the user that use "silx view" for display, but must be taken into account if
-        one want to retrieve the data from the file.
+        This has no effect for the user that use "silx view" for display, but must be taken into account when
+        retrieving the data from the file.
 
     srio@esrf.eu 2018-03-23
 
@@ -205,9 +205,9 @@ class H5SimpleWriter(object):
 
         f2 = f1.create_group(stack_name)
 
-        # f2.attrs['NX_class'] = 'NXdata'
-        # f2.attrs['signal'] = '%s'%("image_data")
-        # f2.attrs['axes'] = [b'axis_y', b'axis_x']
+        f2.attrs['NX_class'] = 'NXdata'
+        f2.attrs['signal'] = '%s'%("stack_data")
+        f2.attrs['axes'] = [self.label_stack_axis0, self.label_stack_axis1, self.label_stack_axis2]
 
         # Image data
         ds = f2.create_dataset(self.label_stack_data, data=p)
