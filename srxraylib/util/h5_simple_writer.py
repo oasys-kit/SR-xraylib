@@ -226,6 +226,39 @@ class H5SimpleWriter(object):
 
         f.close()
 
+    def add_deepstack(self,list_of_axes_arrays,stack_array,stack_name="mydeepstack",entry_name=None,
+                     list_of_axes_labels=None, list_of_axes_titles=None):
+
+        f = h5py.File(self.filename, 'a')
+
+        if entry_name is None:
+            f1 = f
+        else:
+            f1 = f[entry_name]
+
+
+        f2 = f1.create_group(stack_name)
+
+        f2.attrs['NX_class'] = 'NXdata'
+        f2.attrs['signal'] = '%s'%("stack_data")
+
+        if list_of_axes_labels is None:
+            list_of_axes_labels = []
+            for i in range(len(list_of_axes_arrays)):
+                list_of_axes_labels.append("axis%d" % i)
+            f2.attrs['axes'] = list_of_axes_labels
+
+        if list_of_axes_titles is None:
+            list_of_axes_titles = list_of_axes_labels
+
+        # stack data
+        ds = f2.create_dataset(self.label_stack_data, data=stack_array)
+        for i in range(len(list_of_axes_arrays)):
+            ds = f2.create_dataset(list_of_axes_labels[i], data=list_of_axes_arrays[i])
+            ds.attrs['long_name'] =  list_of_axes_titles[i]   # suggested 0 axis plot label
+
+        f.close()
+
 #
 ########################################################################################################################
 #
@@ -234,69 +267,117 @@ if __name__ == "__main__":
 
     import numpy
 
+    # example of data_set and image
+    if True:
+        #
+        # Create some Gaussian image
+        #
+        index_x2 = 150
+        index_y2 = 90
 
-    #
-    # Create some Gaussian image
-    #
-    index_x2 = 150
-    index_y2 = 90
+        x_coordinates = numpy.linspace(-20,20,400)
+        y_coordinates = numpy.linspace(-10,10,200)
 
-    x_coordinates = numpy.linspace(-20,20,400)
-    y_coordinates = numpy.linspace(-10,10,200)
-
-    X = numpy.outer(x_coordinates,numpy.ones_like(y_coordinates))
-    Y = numpy.outer(numpy.ones_like(x_coordinates),y_coordinates)
-
-    Z = numpy.exp( numpy.sqrt( (X-x_coordinates[index_x2])**2+(Y-y_coordinates[index_y2])**2)/2/30 )
-
-    #
-    # initialize file
-    #
-    h5w = H5SimpleWriter.initialize_file("test.h5",creator="h5_basic_writer.py")
-
-    # this is optional
-    h5w.set_label_image("my name for image",b'my name for image axis x',b'my name for image axis y')
-    h5w.set_label_dataset(b'my name for x',b'my name for y')
-
-    #
-    # put data in file
-    #
-
-    # add some data at the main level
-    h5w.add_key("image shape",Z.shape)
-
-    for nmax in range(6):
-        print("Calculating iteration %d"%nmax)
-
-        index_x2 = numpy.min( [x_coordinates.size-1, index_x2 + int(200*(numpy.random.random()-0.5))] )
-        index_y2 = numpy.min( [y_coordinates.size-1, index_y2 + int(100*(numpy.random.random()-0.5))] )
-
-        print(index_x2,index_y2)
+        X = numpy.outer(x_coordinates,numpy.ones_like(y_coordinates))
+        Y = numpy.outer(numpy.ones_like(x_coordinates),y_coordinates)
 
         Z = numpy.exp( numpy.sqrt( (X-x_coordinates[index_x2])**2+(Y-y_coordinates[index_y2])**2)/2/30 )
 
+        #
+        # initialize file
+        #
+        h5w = H5SimpleWriter.initialize_file("test.h5",creator="h5_basic_writer.py")
 
-        # create the entry for this iteration and set default plot to "Wintensity"
-        h5w.create_entry("iteration%d"%nmax,nx_default="Wintensity")
+        # this is optional
+        h5w.set_label_image("my name for image",b'my name for image axis x',b'my name for image axis y')
+        h5w.set_label_dataset(b'my name for x',b'my name for y')
 
-        # add some data for info at this entry level
-        h5w.add_key("r2_indices",[index_x2,index_y2], entry_name="iteration%d"%nmax)
-        h5w.add_key("r2",[x_coordinates[index_x2],y_coordinates[index_y2]], entry_name="iteration%d"%nmax)
+        #
+        # put data in file
+        #
 
-        # add the images at this entry level
-        h5w.add_image(Z,1e3*x_coordinates,1e3*y_coordinates,
-                     entry_name="iteration%d"%nmax,image_name="Wamplitude",
-                     title_x="X [mm]",title_y="Y [mm]")
+        # add some data at the main level
+        h5w.add_key("image shape",Z.shape)
 
-        h5w.add_image(numpy.absolute(Z),1e3*x_coordinates,1e3*y_coordinates,
-                    entry_name="iteration%d"%nmax,image_name="Wintensity",
-                    title_x="X [mm]",title_y="Y [mm]")
+        for nmax in range(6):
+            print("Calculating iteration %d"%nmax)
 
-                # add that y=f(x) data at this entry level
-        h5w.add_dataset(1e3*x_coordinates,Z[:,int(y_coordinates.size/2)],
-                    entry_name="iteration%d"%nmax,dataset_name="profileH",
-                    title_x="X [mm]",title_y="Profile along X")
+            index_x2 = numpy.min( [x_coordinates.size-1, index_x2 + int(200*(numpy.random.random()-0.5))] )
+            index_y2 = numpy.min( [y_coordinates.size-1, index_y2 + int(100*(numpy.random.random()-0.5))] )
 
-        h5w.add_dataset(1e3*y_coordinates,Z[int(x_coordinates.size/2),:],
-                    entry_name="iteration%d"%nmax,dataset_name="profileV",
-                    title_x="Y [mm]",title_y="Profile along Y")
+            print(index_x2,index_y2)
+
+            Z = numpy.exp( numpy.sqrt( (X-x_coordinates[index_x2])**2+(Y-y_coordinates[index_y2])**2)/2/30 )
+
+
+            # create the entry for this iteration and set default plot to "Wintensity"
+            h5w.create_entry("iteration%d"%nmax,nx_default="Wintensity")
+
+            # add some data for info at this entry level
+            h5w.add_key("r2_indices",[index_x2,index_y2], entry_name="iteration%d"%nmax)
+            h5w.add_key("r2",[x_coordinates[index_x2],y_coordinates[index_y2]], entry_name="iteration%d"%nmax)
+
+            # add the images at this entry level
+            h5w.add_image(Z,1e3*x_coordinates,1e3*y_coordinates,
+                         entry_name="iteration%d"%nmax,image_name="Wamplitude",
+                         title_x="X [mm]",title_y="Y [mm]")
+
+            h5w.add_image(numpy.absolute(Z),1e3*x_coordinates,1e3*y_coordinates,
+                        entry_name="iteration%d"%nmax,image_name="Wintensity",
+                        title_x="X [mm]",title_y="Y [mm]")
+
+                    # add that y=f(x) data at this entry level
+            h5w.add_dataset(1e3*x_coordinates,Z[:,int(y_coordinates.size/2)],
+                        entry_name="iteration%d"%nmax,dataset_name="profileH",
+                        title_x="X [mm]",title_y="Profile along X")
+
+            h5w.add_dataset(1e3*y_coordinates,Z[int(x_coordinates.size/2),:],
+                        entry_name="iteration%d"%nmax,dataset_name="profileV",
+                        title_x="Y [mm]",title_y="Profile along Y")
+
+    # example of stack
+    if True:
+        #
+        # Create some Gaussian images
+        #
+        x_coordinates = numpy.linspace(-20, 20, 400)
+        y_coordinates = numpy.linspace(-10, 10, 200)
+
+        X = numpy.outer(x_coordinates, numpy.ones_like(y_coordinates))
+        Y = numpy.outer(numpy.ones_like(x_coordinates), y_coordinates)
+
+        index_x2 = 150
+        index_y2 = 90
+        nmax = 6
+        for i in range(nmax):
+            index_x2 = numpy.min([x_coordinates.size - 1, index_x2 + int(200 * (numpy.random.random() - 0.5))])
+            index_y2 = numpy.min([y_coordinates.size - 1, index_y2 + int(100 * (numpy.random.random() - 0.5))])
+            print(nmax,index_x2, index_y2)
+            zz = numpy.exp(numpy.sqrt((X - x_coordinates[index_x2]) ** 2 + (Y - y_coordinates[index_y2]) ** 2) / 2 / 30)
+            if i == 0:
+                Z = numpy.zeros((nmax,zz.shape[0],zz.shape[1]))
+            Z[i,:,:] = zz
+
+        #
+        # initialize file
+        #
+        h5w = H5SimpleWriter.initialize_file("test2.h5", creator="h5_basic_writer.py")
+
+        #
+        # put data in file
+        #
+
+        # add some data at the main level
+        h5w.add_key("stack shape", Z.shape)
+
+        h5w.create_entry("mystackcollection", nx_default="mystack1")
+
+
+        h5w.add_stack(numpy.arange(nmax), 1e3 * x_coordinates, 1e3 * y_coordinates, Z,
+                      stack_name="stack1", entry_name="mystackcollection",
+                      title_0="n", title_1="x", title_2="y")
+
+        # the same data in a deepstack
+        h5w.add_deepstack([numpy.arange(nmax), 1e3 * x_coordinates, 1e3 * y_coordinates], Z,
+                          stack_name="stackDeep", entry_name="mystackcollection",
+                          list_of_axes_titles=['n','x','y'])
