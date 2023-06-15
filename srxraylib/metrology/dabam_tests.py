@@ -2,7 +2,7 @@
 # tests
 #
 
-from dabam import dabam
+from srxraylib.metrology.dabam import dabam
 import copy
 from numpy.testing import assert_almost_equal
 
@@ -205,8 +205,8 @@ def test_write_dabam_formatted_files():
 def test_local_server():
 
     import urllib.request
-    urllib.request.urlretrieve ("http://ftp.esrf.eu/pub/scisoft/dabam/data/dabam-081.txt", "/tmp/dabam-081.txt")
-    urllib.request.urlretrieve("http://ftp.esrf.eu/pub/scisoft/dabam/data/dabam-081.dat", "/tmp/dabam-081.dat")
+    urllib.request.urlretrieve ("https://raw.githubusercontent.com/oasys-kit/DabamFiles/main/dabam-081.txt", "/tmp/dabam-081.txt")
+    urllib.request.urlretrieve("https://raw.githubusercontent.com/oasys-kit/DabamFiles/main/dabam-081.dat", "/tmp/dabam-081.dat")
     dm = dabam.initialize_from_local_server(81,"/tmp")
     m0 = dm.momentsHeights, dm.momentsSlopes
 
@@ -249,7 +249,7 @@ def test_summary_dictionary():
                 assert (out1[i][key] == out2[i][key])
 
 def test_load_dictionary():
-    from dabam import dabam_summary_dictionary
+    from srxraylib.metrology.dabam import dabam_summary_dictionary
     d = dabam_summary_dictionary(surface=None,
                                  slp_err_from=None,
                                  slp_err_to=None,

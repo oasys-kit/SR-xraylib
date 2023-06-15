@@ -37,27 +37,17 @@ import sys
 import argparse
 import json
 import os
-import socket
 from io import StringIO
 
-try:
-    # For Python 3.0 and later
-    from urllib.request import urlopen
-except ImportError:
-    # Fall back to Python 2's urllib2
-    from urllib2 import urlopen
+from urllib.request import urlopen
 
-# default server name is different outside and inside ESRF
-if socket.getfqdn().find("esrf") < 0:
-    default_server = "http://ftp.esrf.eu/pub/scisoft/dabam/data/"
-else:
-    default_server = "http://ftp.esrf.fr/pub/scisoft/dabam/data/"
+default_server = "https://raw.githubusercontent.com/oasys-kit/DabamFiles/main/"
 
 class dabam(object):
 
 
     def __init__(self):
-        self.description="dabam.py: python program to access and evaluate DAta BAse for Metrology (DABAM) files. See http://ftp.esrf.eu/pub/scisoft/dabam/README.md"
+        self.description="dabam.py: python program to access and evaluate DAta BAse for Metrology (DABAM) files. See https://github.com/oasys-kit/DabamFiles"
 
 
         self.is_remote_access = True
@@ -1934,38 +1924,48 @@ def dabam_summary_dictionary(surface=None,
                             length_from=None,
                             length_to=None,
                             verbose=True,
-                            server=None):
+                            server=None,
+                            force_from_scratch=False):
     dm = dabam()
     if server is not None:
         dm.set_server(server)
 
-    try:
-        out = dm.dabam_summary_dictionary_from_json_indexation(
-                            surface=surface,
-                            slp_err_from=slp_err_from,
-                            slp_err_to=slp_err_to,
-                            length_from=length_from,
-                            length_to=length_to)
-        return out
-    except:
+    if force_from_scratch:
         out = dm.dabam_summary_dictionary_from_scratch(
-                            surface=surface,
-                            slp_err_from=slp_err_from,
-                            slp_err_to=slp_err_to,
-                            length_from=length_from,
-                            length_to=length_to,
-                            verbose=True)
-        return out
+            surface=surface,
+            slp_err_from=slp_err_from,
+            slp_err_to=slp_err_to,
+            length_from=length_from,
+            length_to=length_to,
+            verbose=True)
+    else:
+        try:
+            out = dm.dabam_summary_dictionary_from_json_indexation(
+                                surface=surface,
+                                slp_err_from=slp_err_from,
+                                slp_err_to=slp_err_to,
+                                length_from=length_from,
+                                length_to=length_to)
+            return out
+        except:
+            out = dm.dabam_summary_dictionary_from_scratch(
+                                surface=surface,
+                                slp_err_from=slp_err_from,
+                                slp_err_to=slp_err_to,
+                                length_from=length_from,
+                                length_to=length_to,
+                                verbose=True)
+    return out
 
-def make_json_summary(nmax=100000):
+def make_json_summary(nmax=100000, force_from_scratch=False):
     # dump summary
 
-    out_list = dabam_summary_dictionary(nmax=100000)
+    out_list = dabam_summary_dictionary(force_from_scratch=force_from_scratch)
 
     out_dict = {}
 
     for i,ilist in enumerate(out_list):
-        # print("analyzing entry: ",i+1)
+        print("analyzing entry: ",i+1)
         out_dict["entry_%03d"%ilist["entry"]] = ilist
 
     # print(out_dict)

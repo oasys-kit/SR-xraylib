@@ -5,7 +5,7 @@ Miscellaneous utilities and tools for synchrotron radiation and x-ray optics.
 The classes and functions here can be used in a standalone more. They are separated in different folders: 
 
 - metrology: tools for x-ray optics metrology
-  - dabam: [http://ftp.esrf.eu/pub/scisoft/dabam/readme.html]
+  - dabam: [https://github.com/oasys-kit/DabamFiles]
 - plot: plotting tools
   - gol (Graphics in One Line): some functions to make easily simple plots using matplotlib
 - sources: 
