@@ -1957,10 +1957,10 @@ def dabam_summary_dictionary(surface=None,
                                 verbose=True)
     return out
 
-def make_json_summary(nmax=100000, force_from_scratch=False):
+def make_json_summary(nmax=100000, force_from_scratch=False, server=None):
     # dump summary
 
-    out_list = dabam_summary_dictionary(force_from_scratch=force_from_scratch)
+    out_list = dabam_summary_dictionary(force_from_scratch=force_from_scratch, server=server)
 
     out_dict = {}
 
