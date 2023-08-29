@@ -1,13 +1,9 @@
 """
-
-
 GOL: Graphics in One Line
 
-To make matplotlib plots in a single command line
+A collection of functions to create matplotlib plots in a single command line.
 
-(I am tired of polluting my code with matplotlib instructions)
-
-
+(I am tired of polluting my code with matplotlib instructions).
 """
 
 __author__ = "Manuel Sanchez del Rio"
@@ -22,19 +18,59 @@ except:
 
 
 def set_qt():
+    """
+    Sets the 'correct' qt backend: plt.switch_backend("Qt5Agg").
+    This is useful in python scripts making graphs inside oasys in some platforms.
+    """
     try:
         plt.switch_backend("Qt5Agg")
     except:
         raise Exception("Failed to set matplotlib backend to Qt5Agg")
 
 def plot_show():
+    """
+    executes matplotlib's plt.show().
+    """
     plt.show()
 
 def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
                xrange=None, yrange=None,
                cmap=None,aspect=None,show=1,
                add_colorbar=True,figsize=None):
+    """
+    Plots an image.
 
+    Parameters
+    ----------
+    *positional_parameters : tuple(s)
+        z [, x, y]
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    xrange : 2D tuple or list
+        [min, max] values.
+    yrange : 2D tuple or list
+        [min, max] values.
+    cmap : str, optional
+        The matplotlin color map.
+    aspect : str, optional
+        The matplotlib aspect (e..g. 'auto')
+    show : int, optional
+        if 1 executes show_plot()
+    add_colorbar : boolean, optional
+        if True adds the color bar.
+    figsize : tuple
+        The matplotlib figure size.
+
+    Returns
+    -------
+    tuple
+        The matplotlib (fig, ax).
+
+    """
     n_arguments = len(positional_parameters)
     if n_arguments == 1:
         z = positional_parameters[0]
@@ -70,7 +106,7 @@ def plot_image(*positional_parameters,title="TITLE",xtitle=r"X",ytitle=r"Y",
     if show:
         plt.show()
 
-    return fig,ax
+    return fig, ax
 
 
 def plot_image_with_histograms(*positional_parameters,
@@ -80,6 +116,42 @@ def plot_image_with_histograms(*positional_parameters,
                                add_colorbar=False, figsize=(8,8),
                                use_profiles_instead_histograms=False,
                                ):
+    """
+    Plots an image with an histogram.
+
+    Parameters
+    ----------
+    *positional_parameters : tuple(s)
+        z [, x, y]  Note that here, z array has Y in the first index z(y,x)!!!!
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    xrange : 2D tuple or list
+        [min, max] values.
+    yrange : 2D tuple or list
+        [min, max] values.
+    cmap : str, optional
+        The matplotlin color map.
+    aspect : str, optional
+        The matplotlib aspect (e..g. 'auto')
+    show : int, optional
+        if 1 executes show_plot()
+    add_colorbar : boolean, optional
+        if True adds the color bar.
+    figsize : tuple
+        The matplotlib figure size.
+    use_profiles_instead_histograms : boolean, optional
+        If True, display the profiles at (0,0) instead of the histograms.
+
+    Returns
+    -------
+    tuple
+        The matplotlib objects (figure, axScatter, axHistx, axHisty).
+
+    """
 
     if aspect is None: aspect == 'auto'
 
@@ -193,9 +265,51 @@ def plot_image_with_histograms(*positional_parameters,
 
 
 
-def plot(*positional_parameters,title="",xtitle="",ytitle="",
-         xrange=None,yrange=None,show=1,legend=None,legend_position=None,color=None,marker=None,linestyle=None,
-         xlog=False,ylog=False,figsize=None):
+def plot(*positional_parameters, title="", xtitle="", ytitle="",
+         xrange=None, yrange=None, show=1, legend=None, legend_position=None, color=None, marker=None, linestyle=None,
+         xlog=False, ylog=False, figsize=None):
+    """
+    makes a plot.
+
+    Parameters
+    ----------
+    *positional_parameters : numpy arrays
+        x1, y1 [, x2, y2, x3, y3, ...]
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    xrange : 2D tuple or list
+        [min, max] values.
+    yrange : 2D tuple or list
+        [min, max] values.
+    show : int, optional
+        if 1 executes show_plot()
+    legend : str or list
+        The legend for the different datasets.
+    legend_position : list or tuple
+        2D list with coordinates of the legend.
+    color : str
+        The matplotlib color code.
+    marker : str or list
+        The matplotlib marker or symbol.
+    linestyle : str or list
+        The matplotlib linestyle code.
+    xlog : boolean, optional
+        Set to True for logarithmic plot axis.
+    ylog : boolean, optional
+        Set to True for logarithmic plot axis.
+    figsize : tuple
+        The matplotlib figure size.
+
+    Returns
+    -------
+    tuple
+        The matplotmib (fig, ax).
+
+    """
 
     if isinstance(positional_parameters,tuple):
         if len(positional_parameters) == 1: # in the cvase that input is a tuple with all curves
@@ -259,12 +373,54 @@ def plot(*positional_parameters,title="",xtitle="",ytitle="",
     if show:
         plt.show()
 
-    return fig,ax
+    return fig, ax
 
-def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
-               title="",xtitle="",ytitle="",show=1,
-               legend=None,legend_position=None,color=None,
-               xlog=False,ylog=False,figsize=None):
+def plot_table(*positional_parameters, errorbars=None, xrange=None, yrange=None,
+               title="", xtitle="", ytitle="", show=1,
+               legend=None, legend_position=None, color=None,
+               xlog=False, ylog=False, figsize=None):
+    """
+    makes a plot with data in tabular arrays using one array with abscissas X (Nx values), and another array
+    (N, Nx) with ordinates Y for N datasets.
+
+    Parameters
+    ----------
+
+    *positional_parameters : numpy arrays
+        [X, ] Y
+    errorbars : numpy array
+        The values for the error bars.
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    xrange : 2D tuple or list
+        [min, max] values.
+    yrange : 2D tuple or list
+        [min, max] values.
+    show : int, optional
+        if 1 executes show_plot()
+    legend : str or list
+        The legend for the different datasets.
+    legend_position : list or tuple
+        2D list with coordinates of the legend.
+    color : str
+        The matplotlib color code.
+    xlog : boolean, optional
+        Set to True for logarithmic plot axis.
+    ylog : boolean, optional
+        Set to True for logarithmic plot axis.
+    figsize : tuple
+        The matplotlib figure size.
+
+    Returns
+    -------
+    tuple
+       The matplotlib objects (fig, ax).
+
+    """
 
     n_arguments = len(positional_parameters)
     if n_arguments == 0:
@@ -329,26 +485,48 @@ def plot_table(*positional_parameters,errorbars=None,xrange=None,yrange=None,
     if show:
         plt.show()
 
-    return fig,ax
-def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,yrange=None,show=True):
-    """
-    Creates four plots in a window
+    return fig, ax
 
-    :param x1: abscissas for plot 1
-    :param y1: ordinates for plot 1
-    :param x2: abscissas for plot 2
-    :param y2: ordinates for plot 2
-    :param x3: abscissas for plot 3
-    :param y3: ordinates for plot 3
-    :param x4: abscissas for plot 4
-    :param y4: ordinates for plot 4
-    :param title: a string or list of 4 strings with title
-    :param xtitle: a string or list of 4 strings with title for X
-    :param ytitle: a string or list of 4 strings with title for Y
-    :param xrange: the X range for all plots
-    :param yrange: the Y range for all plots
-    :param show:
-    :return:
+def four_plots(x1, y1, x2, y2, x3, y3, x4, y4, title="", xtitle="", ytitle="", xrange=None, yrange=None, show=True):
+    """
+    Creates four plots in a window.
+
+    Parameters
+    ----------
+    x1 : numpy array
+        abscissas for plot 1.
+    y1 : numpy array
+        ordinates for plot 1.
+    x2 : numpy array
+        abscissas for plot 2.
+    y2 : numpy array
+        ordinates for plot 2.
+    x3 : numpy array
+        abscissas for plot 3.
+    y3 : numpy array
+        ordinates for plot 3.
+    x4 : numpy array
+        abscissas for plot 4.
+    y4 : numpy array
+        ordinates for plot 4.
+    title : str or list, optional
+        a string or list of 4 strings with title.
+    xtitle : str or list, optional
+        a string or list of 4 strings with title for X.
+    ytitle : str or list, optional
+        a string or list of 4 strings with title for Y.
+    xrange : tuple or list, optional
+        the X range for all plots.
+    yrange : tuple or list, optional
+        the Y range for all plots.
+    show : boolean, optional
+        if True, execute plot_show() at the end.
+
+    Returns
+    -------
+    tuple
+        The matplotlib objects (f, ax00, ax01, ax10, ax11).
+
     """
 
     if isinstance(title,list):
@@ -402,10 +580,44 @@ def four_plots(x1,y1,x2,y2,x3,y3,x4,y4,title="",xtitle="",ytitle="",xrange=None,
 
     if show: plt.show()
 
-    return f,ax00,ax01,ax10,ax11
+    return f, ax00, ax01, ax10, ax11
 
-def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",legend=None,cmap=None,
+def plot_surface(mymode, theta, psi, title="TITLE", xtitle="", ytitle="", ztitle="", legend=None, cmap=None,
                  figsize=None,show=1):
+    """
+    Plots a 2D surface given by an array mymode(theta, phi).
+
+    Parameters
+    ----------
+    mymode : numpy array
+        The 2D array with the surface to plot.
+    theta : numpy array
+        The array with X (H) values.
+    psi : numpy array
+        The array with Y (V) values.
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    ztitle : str, optional
+        The main title.
+    legend : str or list
+        The legend for the different datasets.
+    cmap : str, optional
+        The matplotlib color map.
+    figsize : tuple
+        The matplotlib figure size.
+    show : boolean, optional
+        If True, executes plot_show() at the end.
+
+    Returns
+    -------
+    tuple
+        The matplotlib objects (fig, ax).
+
+    """
 
     from matplotlib import cm
     from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -436,30 +648,44 @@ def plot_surface(mymode,theta,psi,title="TITLE",xtitle="",ytitle="",ztitle="",le
     if show:
         plt.show()
 
-    return fig,ax
+    return fig, ax
 
-def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=True,title="",xtitle="",ytitle=""):
+def plot_scatter(x, y, show=1, nbins=100, xrange=None, yrange=None, plot_histograms=True, title="", xtitle="", ytitle=""):
     """
+    makes a scatter plot with histograms.
 
-    makes a scatter plot with histograms
+    Parameters
+    ----------
+    x : numpy array
+        x data array.
+    y : numpy array
+        y data array.
+    show : boolean, optional
+        If True, executes plot_show() at the end.
+    nbins : int
+        The number of bins for the histograms.
+    xrange : tuple or list, optional
+        the X range for all plots.
+    yrange : tuple or list, optional
+        the Y range for all plots.
+    plot_histograms : boolean, optional
+        Flag for plotting histograms: False or 0: plot no histograms;
+            True or 1: plot both histograms;
+            2: plot histograms vs abscissas only;
+            3: plot histogram vs ordinates only.
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
 
-    :param x: x data array
-    :param y: y data arrayif False the plot is not shown (use  not show
-    :param show: if False the plot is not shown (use  plot_show() later on)
-    :param nbins: number of bins for plots
-    :param xrange: [xmin,xmax] range for abscissas
-    :param yrange: [ymin,ymax] range for ordinates
-    :param plot_histograms: Flag to plot:
-            False or 0: plot no histograms
-            True or 1: plot both histograms
-            2: plot histograms vs abscissas only
-            3: plot histogram vs ordinates only
-    :param title: string with a title
-    :param xtitle: string with abscissas label
-    :param ytitle: string with ordinates label
-    :return: the matplotlib objects with the elements created
+    Returns
+    -------
+    tuple
+        The matplotlib objects (fig, axScatter).
+
     """
-
     from matplotlib.ticker import NullFormatter
 
     # the random data
@@ -467,8 +693,6 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=Tr
     nullfmt   = NullFormatter()         # no labels
 
     # definitions for the axes
-
-
 
     if plot_histograms:
         left, width    = 0.1, 0.65
@@ -548,10 +772,54 @@ def plot_scatter(x,y,show=1,nbins=100,xrange=None,yrange=None,plot_histograms=Tr
         else:
             return fig,axScatter,axHistx,axHisty
     else:
-        return fig,axScatter
+        return fig, axScatter
 
-def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None,plot_points=0,contour_levels=20,
-                 cmap=None,cbar=True,fill=False,cbar_title="",figsize=None,show=1):
+def plot_contour(z, x, y, title="TITLE", xtitle="", ytitle="", xrange=None, yrange=None, plot_points=0, contour_levels=20,
+                 cmap=None, cbar=True, fill=False, cbar_title="", figsize=None, show=1):
+    """
+    Plot a contour curves plot from data z(x,y).
+
+    Parameters
+    ----------
+    z : numpy array
+        The 2D data to plot.
+    x : numpy array
+        The 1D data for X axis.
+    y : numpy array
+        The 1D data for Y axis.
+    title : str, optional
+        The main title.
+    xtitle : str, optional
+        The X title.
+    ytitle : str, optional
+        The Y title.
+    xrange : tuple or list, optional
+        the X range for all plots.
+    yrange : tuple or list, optional
+        the Y range for all plots.
+    plot_points : int, optional
+        The number of ppoints for the contours.
+    contour_levels : int, optional
+        The number of contour levels.
+    cmap : str, optional
+        The matplotlib color map.
+    cbar : boolean, optional
+        Flag to plot the color table.
+    fill : boolean, optional
+        Flag to fill the contours.
+    cbar_title : str, optional
+        The titles for the contours.
+    figsize : tuple
+        The matplotlib figure size.
+    show : boolean, optional
+        If True, executes plot_show() at the end.
+
+    Returns
+    -------
+    instance of plt.contourf
+        The matplotlib plt.contourf instance.
+
+    """
 
     fig = plt.figure(figsize=figsize)
 
@@ -582,154 +850,3 @@ def plot_contour(z,x,y,title="TITLE",xtitle="",ytitle="",xrange=None,yrange=None
         plt.show()
 
     return fig
-#
-# examples
-#
-
-def example_plot_image():
-    x = np.linspace(-4, 4, 90)
-    y = np.linspace(-4, 4, 90)
-    print('Size %d pixels' % (len(x) * len(y)))
-    z = np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
-    plot_image(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
-
-def example_plot_image_with_histograms():
-    x = np.linspace(-4, 4, 200)
-    y = np.linspace(-4, 4, 90)
-    print('Size %d pixels' % (len(x) * len(y)))
-    z = -np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
-    plot_image_with_histograms(z,x,y,title="example_plot_image",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",
-                               cmap=None,show=1,figsize=(8,8),add_colorbar=True)
-
-    plot_image_with_histograms(z, x, y, title="example_plot_image", xtitle=r"X [$\mu m$]", ytitle=r"Y [$\mu m$]",
-                               cmap=None, show=1, figsize=(10,4), aspect='equal', add_colorbar=True)
-
-def example_plot_surface():
-    x = np.linspace(-4, 4, 20)
-    y = np.linspace(-4, 4, 20)
-    print('Size %d pixels' % (len(x) * len(y)))
-    z = np.sqrt(x[np.newaxis, :]**2 + y[:, np.newaxis]**2)
-    plot_surface(z,x,y,title="example_plot_surface",xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",cmap=None,show=1)
-
-def example_plot_scatter():
-    #example motivated by http://www.ster.kuleuven.be/~pieterd/python/html/core/scipystats.html
-    from scipy import stats
-    # x = np.random.rand(1000)
-    # y = np.random.rand(1000)
-    x = stats.norm.rvs(size=2000)
-    y = stats.norm.rvs(scale=0.5, size=2000)
-    data = np.vstack([x+y, x-y])
-    f = plot_scatter(data[0],data[1],xrange=[-10,10],title="example_plot_scatter",
-                     xtitle=r"X [$\mu m$]",ytitle=r"Y [$\mu m$]",plot_histograms=2,show=0)
-    f[1].plot(data[0],data[0]) # use directly matplotlib to overplot
-    plot_show()
-
-def example_plot_contour():
-    # deprecated in matplotlib. Copied from" https://github.com/matplotlib/matplotlib/blob/81e8154dbba54ac1607b21b22984cabf7a6598fa/lib/matplotlib/mlab.py#L1866
-    def bivariate_normal(X, Y, sigmax=1.0, sigmay=1.0,
-                         mux=0.0, muy=0.0, sigmaxy=0.0):
-        """
-        Bivariate Gaussian distribution for equal shape *X*, *Y*.
-        See `bivariate normal
-        <http://mathworld.wolfram.com/BivariateNormalDistribution.html>`_
-        at mathworld.
-        """
-        Xmu = X - mux
-        Ymu = Y - muy
-
-        rho = sigmaxy / (sigmax * sigmay)
-        z = Xmu ** 2 / sigmax ** 2 + Ymu ** 2 / sigmay ** 2 - 2 * rho * Xmu * Ymu / (sigmax * sigmay)
-        denom = 2 * np.pi * sigmax * sigmay * np.sqrt(1 - rho ** 2)
-        return np.exp(-z / (2 * (1 - rho ** 2))) / denom
-
-    # inspired by http://stackoverflow.com/questions/10291221/axis-limits-for-scatter-plot-not-holding-in-matplotlib
-    # random data
-    x = np.random.randn(50)
-    y = np.random.randn(100)
-
-    X, Y = np.meshgrid(y, x)
-    Z1 = bivariate_normal(X, Y, 1.0, 1.0, 0.0, 0.0)
-    Z2 = bivariate_normal(X, Y, 1.5, 0.5, 1, 1)
-    Z = 10 * (Z1 - Z2)
-
-    plot_contour(Z,x,y,title='example_plot_contour',xtitle='x-stuff',ytitle='y-stuff',plot_points=1,show=1)
-
-def example_plot_one_curve():
-    x = np.linspace(-100,100,10)
-    y = x**2
-    plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
-         ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,
-         figsize=(4,8),show=1)
-
-def example_plot_one_curve_log():
-    x = np.linspace(-100,100,10)
-    y = x**2
-    plot(x,y,xtitle=r'$x$',title="example_plot_one_curve",
-         ytitle=r'$y=f(x)=x^2$',legend="Example 1",color='pink',marker='o',linestyle=None,xlog=1,ylog=1,show=1)
-
-def example_plot_two_curves():
-    x1 = np.linspace(-100,100,1000)
-    y1 = x1**2
-    x2 = np.linspace(0,200,700)
-    y2 = x2**2.1
-    plot(x1,y1,x2,y2,xtitle=r'$x$',title="example_plot_two_curves",
-         ytitle=r'$y=f(x)$',legend=[r"$x^2$",r"$x^{2.1}$"],color=['green','blue'],marker=[' ','o'],linestyle=['-',' '],show=1)
-
-def example_plot_table():
-    x1 = np.linspace(0,100,100)
-    out = np.zeros((6,x1.size))
-    out[0,:] = x1**2
-    out[1,:] = x1**2.1
-    out[2,:] = x1**2.2
-    out[3,:] = x1**2.3
-    out[4,:] = x1**2.4
-    out[5,:] = x1**2.5
-    # another way
-    # out = np.vstack( (
-    #     x1**2,
-    #     x1**2.1,
-    #     x1**2.2,
-    #     x1**2.3,
-    #     x1**2.4,
-    #     x1**2.5 ))
-    legend=np.arange(out.shape[0]).astype("str")
-    plot_table(x1,out,xtitle=r'$x$',ytitle=r'$y=f(x)$',title="example_plot_table",legend=legend,show=1)
-
-def example_plot_table_one_curve():
-    x1 = np.linspace(-100,100,1000)
-    out = x1**2
-    plot_table(x1,out,title="example_plot_table_one_curve",xtitle=r'$x$',ytitle=r'$y=f(x)$',legend="Example 1",color='pink',show=1)
-
-def example_plot_table_with_errorbars():
-    x = np.linspace(0,100,30)
-    out = np.zeros((2,x.size))
-    out[0,:] = 1e-3 * x**2
-    out[1,:] = 5 + 1e-3 * x**2
-    yerr = np.sqrt(out)
-    yerr[1,:] = 1.0
-    plot_table(x,out,errorbars=yerr,title="example_plot_table_with_errorbars",xtitle=r'$x$',ytitle=r'$y=f(x)=x^2$',xrange=[20,80],
-               legend=["Statistical error","Constant error"],color=['black','magenta'],show=1)
-
-def example_plot_image_ascent():
-    from scipy.misc import ascent
-
-    ascent = np.rot90(ascent(),-1)
-    plot_image(ascent,np.arange(0,ascent.shape[0]),np.arange(0,ascent.shape[1]),cmap='gray' )
-#
-# main
-#
-if __name__ == "__main__":
-    # set_qt()
-    pass
-    # example_plot_one_curve()
-    # example_plot_two_curves()
-    # example_plot_one_curve_log()
-    # example_plot_table()
-    # example_plot_table_one_curve()
-    # example_plot_table_with_errorbars()
-    # example_plot_image()
-    # example_plot_image_with_histograms()
-    # example_plot_surface()
-    # example_plot_contour()
-    # example_plot_scatter()
-    # example_plot_image_ascent()
