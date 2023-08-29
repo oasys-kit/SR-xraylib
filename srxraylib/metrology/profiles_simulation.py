@@ -17,19 +17,6 @@ Functions:
     create_simulated_2D_profile_APS
     create_2D_profile_from_1D
 
-Tests utils:
-    package_dirname: gets the package path to retrieve test file
-    slopes: calculate the slope errors
-
-Tests:
-    test_1d_gaussian
-    test_1d_fractal
-    test_1d
-    test_2d_new
-    test_2d
-    test_2d_from_1d_new
-    test_2d_from_1d
-
 Authors and main contributors:
     Luca Rebuffi, Ruben Reininger, Manuel Sanchez del Rio, Xianbo Shi
 
@@ -37,7 +24,6 @@ Authors and main contributors:
 
 import numpy
 #todo: rename file to simulate_profiles
-
 #todo: remove these global variables?
 # define either profile_type=0, or better place a string in the flag, e.g.: profile_type='gaussian'
 
@@ -55,26 +41,37 @@ FRACTAL = 1
 #########################################################
 
 # "binding" for GAUSSIAN or FRACTAL
-def simulate_profile_1D(step=1.0, mirror_length=200.0, random_seed=8787,
-                        error_type=FIGURE_ERROR, rms=3e-9,
+def simulate_profile_1D(step=1.0,
+                        mirror_length=200.0,
+                        random_seed=8787,
+                        error_type=FIGURE_ERROR,
+                        rms=3e-9,
                         profile_type=GAUSSIAN,
                         rms_heights=3e-9,              # specific inputs for profile_type=GAUSSIAN,
                         correlation_length=30.,        # specific inputs for profile_type=GAUSSIAN,
                         power_law_exponent_beta=0.9,   # specific inputs for profile_type=FRACTAL,
                         ):
     """
-    binding to simulate_profile_1D_gaussian and simulate_profile_1D_fractal
-    :param step:
-    :param mirror_length:
-    :param random_seed:
-    :param error_type:
-    :param rms:
-    :param profile_type:
-    :param rms_heights:
-    :param correlation_length:
-    :param power_law_exponent_beta:
-    :return:
+
+    Parameters
+    ----------
+    step
+    mirror_length
+    random_seed
+    error_type
+    rms
+    profile_type
+    rms_heights
+    correlation_length
+    power_law_exponent_beta
+
+    Returns
+    -------
+    tuple
+        (x_coords, y_values) numpy arrays.
+
     """
+
     if error_type == FIGURE_ERROR:
         renormalize_to_heights_sd = rms
         renormalize_to_slopes_sd = None
@@ -110,25 +107,39 @@ def simulate_profile_1D(step=1.0, mirror_length=200.0, random_seed=8787,
 def simulate_profile_1D_gaussian(step=1.0, npoints=None, mirror_length=200.0, rms_heights=3e-9, correlation_length=30.0,
                                  random_seed=8787,renormalize_to_heights_sd=None,renormalize_to_slopes_sd=None):
     """
-    #
-    # this is based on a translation to python of the matlab function rsgeng1d from David Bergström
-    # see: http://www.mysimlabs.com/surface_generation.html
-    #
-    # % generates a 1-dimensional random rough surface f(x) with N surface points.
-    # % The surface has a Gaussian height distribution function and a Gaussian
-    # % autocovariance function, where rL is the length of the surface, h is the
-    # % RMS height and cl is the correlation length.
-    #
-    :param step: step in mirror length (default=0.2)
-    :param mirror_length: profile length
-    :param npoints: number of points in mirror length (default=None, i.e., undefined so use step and mirror_length
-                    to calculate it. If defined, use npoints and step is irrelevant)
-    :param rms_heights: rms height for the Gaussian. It is usually not important if normalize_to_{heights,slopes_sd is used}
-    :param correlation_length: correlation length
-    :param random_seed: a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787)
-    :param renormalize_to_heights_sd: set to a value to renormalize the profile to this height stdev value (default=None)
-    :param renormalize_to_slopes_sd: set to a value to renormalize the profile to this slope stdev value (default=None)
-    :return: (x,f) where x = profile abscissas, f = profile heights
+    generates a 1-dimensional random rough surface f(x) with N surface points.
+    The surface has a Gaussian height distribution function and a Gaussian autocovariance function, where rL is the
+    length of the surface, h is the RMS height and cl is the correlation length.
+
+    Parameters
+    ----------
+    step : float, optional
+        step in mirror length (default=0.2)
+    npoints : int, optional
+        number of points in mirror length (default=None, i.e., undefined so use step and mirror_length to calculate it. If defined, use npoints and step is irrelevant)
+    mirror_length : float, optional
+        profile length
+    rms_heights : float, optional
+        rms height for the Gaussian. It is usually not important if normalize_to_{heights,slopes_sd is used}
+    correlation_length : float, optional
+        correlation length
+    random_seed : int, optional
+        a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787)
+    renormalize_to_heights_sd : float, optional
+        set to a value to renormalize the profile to this height stdev value (default=None)
+    renormalize_to_slopes_sd : float, optional
+        set to a value to renormalize the profile to this slope stdev value (default=None)
+
+    Returns
+    -------
+    tuple
+        (x,f) where x = profile abscissas, f = profile heights
+
+    Note
+    ----
+    this is based on a translation to python of the matlab function rsgeng1d from David Bergström
+    see: http://www.mysimlabs.com/surface_generation.html
+
     """
     #
     # this is a translation to python of the matlab function rsgeng1d from David Bergström
@@ -203,25 +214,36 @@ def simulate_profile_1D_fractal(step=1.0, npoints=None, mirror_length=200.0,
                                 renormalize_to_heights_sd=None,renormalize_to_slopes_sd=None,
                                 frequency_max=None,frequency_min=None):
     """
-    #
-    # generates a 1-dimensional random rough surface z(x) with n_surface_points surface points.
-    # The surface has a power lar PSD |f|**(-beta).
-    # It is a fractal profile if 1<beta<3
-    #
-    :param step: step in mirror length (default=0.2)
-    :param mirror_length: profile length
-    :param npoints: number of points in mirror length (default=None, i.e., undefined so use step and mirror_length
-                    to calculate it. If defined, use npoints and step is irrelevant)
-    :param power_law_exponent_beta: beta value
-    :param npoints_ratio_f_over_x: ratio of the number of points in frequency domain over real space (default=1.0)
-    :param random_seed: a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787)
-    :param renormalize_to_heights_sd: set to a value to renormalize the profile to this height stdev value (default=None)
-    :param renormalize_to_slopes_sd: set to a value to renormalize the profile to this slope stdev value (default=None)
-    :param frequency_max:
-    :param frequency_min:
-    :return: (x,prof) where x = profile abscissas, prof = profile heights
-    """
 
+    Parameters
+    ----------
+    step : float, optional
+        step in mirror length (default=0.2).
+    npoints : int, optional
+        number of points in mirror length (default=None, i.e., undefined so use step and mirror_length to calculate it. If defined, use npoints and step is irrelevant).
+    mirror_length : float, optional
+        profile length.
+    power_law_exponent_beta : float, optional
+        beta value.
+    npoints_ratio_f_over_x : float, optional
+        ratio of the number of points in frequency domain over real space (default=1.0).
+    random_seed : int, optional
+        a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787).
+    renormalize_to_heights_sd : float, optional
+        set to a value to renormalize the profile to this height stdev value (default=None).
+    renormalize_to_slopes_sd : float, optional
+        set to a value to renormalize the profile to this slope stdev value (default=None).
+    frequency_max : float, optional
+        max of f.
+    frequency_min : float, optional
+        min of f.
+
+    Returns
+    -------
+    tuple
+        (x,prof) where x = profile abscissas, prof = profile heights.
+
+    """
     if npoints is None:
         n_surface_points = int(1 + (mirror_length / step))
     else:
@@ -273,35 +295,60 @@ def simulate_profile_2D(combination='FF',
                                 mirror_width=20.000, step_w=1.0, random_seed_w=8788, error_type_w=FIGURE_ERROR, rms_w=1e-6,
                                 power_law_exponent_beta_w=1.5,correlation_length_w=30.0,x_w=None, y_w=None, ):
     """
-    Combines two 1D simulated (GAUSSIAN or FRACTAL) or EXPERIMENTAL simulated profiles into a single 2D profile or surface
+    Combines two 1D simulated (GAUSSIAN or FRACTAL) or EXPERIMENTAL simulated profiles into a single 2D profile or surface.
 
-    :param combination: two character string with the comination of profile type (F-fractal, G=gaussian, E=experimental)
-                        The first character is for mirror length direction (Y, subscript _l) and
-                        the second character is for mirror width direction (X, subscript _w)
-                        Example: "FF" (fractal in Y, fractal in X), "EG" (Experimental in Y, Gaussian in X"
+    Parameters
+    ----------
+    combination : str, optional
+        two character string with the comination of profile type (F-fractal, G=gaussian, E=experimental)
+        The first character is for mirror length direction (Y, subscript _l) and the second character is for mirror
+        width direction (X, subscript _w).
+        Example: "FF" (fractal in Y, fractal in X), "EG" (Experimental in Y, Gaussian in X"
 
-    :param mirror_length: the mirror length (along Y)
-    :param step_l: step size
-    :param random_seed_l: seed to initialize random seed for Y simulation
-    :param error_type_l: normalize to heights error (0) or slopes error (1)
-    :param rms_l:  the vealue of eithe height error (if error_type_l=0) or slope error (if error_type_l=1)
-    :param power_law_exponent_beta_l: if Fractal, the beta value
-    :param correlation_length_l:  if Gaussian, the correlation length
-    :param x_l: if Experimental, the abscissas (Y coordinales)
-    :param y_l: if Experimental, the ordinates (heights)
-    The following parameters are the same as before, but for the direction along the width (X)
-    :param mirror_width:
-    :param step_w:
-    :param random_seed_w:
-    :param error_type_w:
-    :param rms_w:
-    :param power_law_exponent_beta_w:
-    :param correlation_length_w:
-    :param x_w:
-    :param y_w:
+    mirror_length : float, optional
+        the mirror length (along Y).
+    step_l : float, optional
+        step size.
+    random_seed_l : float, optional
+        seed to initialize random seed for Y simulation.
+    error_type_l : float, optional
+        normalize to heights error (0) or slopes error (1).
+    rms_l : float, optional
+        the vealue of eithe height error (if error_type_l=0) or slope error (if error_type_l=1).
+    power_law_exponent_beta_l : float, optional
+        if Fractal, the beta value.
+    correlation_length_l : float, optional
+        if Gaussian, the correlation length.
+    x_l : float, optional
+        if Experimental, the abscissas (Y coordinales).
+    y_l : float, optional
+        if Experimental, the ordinates (heights).
+    mirror_width : float, optional
+        the mirror width (along X).
+    step_w : float, optional
+        step size.
+    random_seed_w : float, optional
+        seed to initialize random seed for X simulation.
+    error_type_w : float, optional
+        normalize to heights error (0) or slopes error (1).
+    rms_w : float, optional
+        the vealue of eithe height error (if error_type_w=0) or slope error (if error_type_w=1).
+    power_law_exponent_beta_w : float, optional
+        if Fractal, the beta value.
+    correlation_length_w : float, optional
+        if Gaussian, the correlation length.
+    x_w : float, optional
+        if Experimental, the abscissas (X coordinales).
+    y_w : float, optional
+        if Experimental, the ordinates (heights).
 
-    :return: WW_x, SF_x, s  arrays along width (X), length (Y) and heights(SF_x.size,WW_x.size)
+    Returns
+    -------
+    tuple
+        (WW_x, SF_x, s)  arrays along width (X), length (Y) and heights(SF_x.size,WW_x.size).
+
     """
+
     if error_type_l == FIGURE_ERROR:
         renormalize_to_heights_sd_l = rms_l
         renormalize_to_slopes_sd_l = None
@@ -413,34 +460,39 @@ def simulate_profile_2D(combination='FF',
 def create_simulated_1D_file_APS(mirror_length=200.0, step=1.0, random_seed=8787, error_type=FIGURE_ERROR, rms=1e-6,
                                  power_law_exponent_beta=1.5, power_law_exponent_beta_two=1.5,
                                  frequency_power_law_match=0.001):
+    """
+    generates a 1-dimensional random rough surface z(x) with n_surface_points surface points.
+    The surface has a power law PSD |f|**(-beta) where:
+    beta=power_law_exponent_beta for frequencies < frequency_power_law_match
+    beta=power_law_exponent_beta for frequencies > frequency_power_law_match.
+    It is a fractal profile if 1<beta<3
+
+    Parameters
+    ----------
+    mirror_length : float, optional
+        the mirror length (mm or any user unit) (default=200.0)
+    step : float, optional
+        the mirror step (mm or user units) (default=1.0)
+    random_seed : int, optional
+        a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787)
+    error_type : float, optional
+        define where normalize the output profile to height error (0, default) or slope error (1)
+    rms : float, optional
+        either the height error in user units (if error_type=0) or the slope error in rad (error_type=1) (default=1e-6)
+    power_law_exponent_beta : float, optional
+        the beta value of the first interval of frequencies (default=1.5)
+    power_law_exponent_beta_two : float, optional
+        the beta value of the second interval of frequencies (default=1.5)
+    frequency_power_law_match : float, optional
+        the frequency (in 1/(user units) to match frequency intervals (default=0.001)
+
+    Returns
+    -------
+    tuple
+        (x coords, y values)
 
     """
-    #
-    # generates a 1-dimensional random rough surface z(x) with n_surface_points surface points.
-    # The surface has a power law PSD |f|**(-beta)
-    # where beta=power_law_exponent_beta for frequencies < frequency_power_law_match
-    #       beta=power_law_exponent_beta for frequencies > frequency_power_law_match
-    #
-    # It is a fractal profile if 1<beta<3
-    #
 
-    :param mirror_length: the mirror length (mm or any user unit) (default=200.0)
-    :param step: the mirror step (mm or user units) (default=1.0)
-    :param random_seed: a random seed to initialize numpy.seed(). Use zero to avoid initialization (default=8787)
-    :param error_type: define wherer normalize the output profile to height error (0, default) or slope error (1)
-    :param rms:  either the heigh error in user units (if error_type=0) or the slope error in rad (error_type=1) (default=1e-6)
-    :param power_law_exponent_beta: the beta value of the first interval of frequencies (default=1.5)
-    :param power_law_exponent_beta_two: the beta value of the second interval of frequencies (default=1.5)
-    :param frequency_power_law_match: the frequency (in 1/(user units) to match frequency intervals (default=0.001)
-    :return:
-
-    :param mirror_length: "Enter mirror length, even"
-    :param step: "Step for length "
-    :param random_seed: initialize numpy random seed to this value. Set to zero to avoid initialization
-    :param error_type: "Figure error (0) or Slope error (1)"
-    :param rms: "RMS value of the above"
-    :return: x coords, y values
-    """
     # if(step ==0):
     #     mirror_length=200.0	#Number of points surface wave
     #     step=1			      #Spacing surface wave
@@ -499,29 +551,46 @@ def create_simulated_2D_profile_APS(mirror_length=200.0, step_l=1.0, random_seed
                                     mirror_width=20.000, step_w=1.0, random_seed_w=8788, error_type_w=FIGURE_ERROR, rms_w=1e-6,
                                     power_law_exponent_beta_l=1.5,power_law_exponent_beta_w=1.5):
     """
-    #
-    # generates a 2-dimensional random rough surface z(x,y) with PSDs following a power law
-    # The surface has a power law PSD |f|**(-beta) in both y and x directions
-    #
-    # It is a fractal profile if 1<beta<3
-    :param  mirror_length: the mirror length (mm or any user unit) (default=200.0)
-    :param  mirror_with: the mirror width (mm or any user unit) (default=200.0)
-    :param  step_l (step_w): the step for mirror length (width) (mm or user units) (default=1.0)
-    :param  random_seed_l (random_seed_r): a random seed to initialize numpy.seed() when creating the longitudinal (transversal) profiles
-    :param  error_type_l (_w): normalize the output profile to height error (0, default) or slope error (1)
-    :param  rms_l (_w):  either the heigh error in user units (if error_type_{l,w}=0) or the slope error in rad (error_type=1)
-    :param  power_law_exponent_beta: the beta value of the first interval of frequencies (default=1.5)
-    :param  power_law_exponent_beta_l (_w): the beta value for the longitudinal (transversal) profile
+    generates a 2-dimensional random rough surface z(x,y) with PSDs following a power law.
+    The surface has a power law PSD |f|**(-beta) in both y and x directions
 
+    Parameters
+    ----------
+    mirror_length : float, optional
+        the mirror length (mm or any user unit) (default=200.0).
+    mirror_width : float, optional
+        the mirror width (mm or any user unit) (default=200.0).
+    step_l : float, optional
+        the step for mirror length (mm or user units) (default=1.0).
+    step_w : float, optional
+        the step for mirror width (mm or user units) (default=1.0).
+    random_seed_l : int, optional
+        a random seed to initialize numpy.seed() when creating the longitudinal profiles.
+    random_seed_w : int, optional
+        a random seed to initialize numpy.seed() when creating the transversal profiles.
+    error_type_l : int, optional
+        normalize the output longitudinal profile to height error (0, default) or slope error (1).
+    error_type_w : int, optional
+        normalize the output transversal profile to height error (0, default) or slope error (1).
+    rms_l : float, optional
+        either the heigh error in user units (if error_type_l=0) or the slope error in rad (error_type_l=1).
+    rms_w : float, optional
+        either the heigh error in user units (if error_type_w=0) or the slope error in rad (error_type_w=1).
+    power_law_exponent_beta_l : float
+        The beta value (exponent).
+    power_law_exponent_beta_w : float
+        The beta value (exponent).
 
-    :param error_type_w: "Figure error (0) or Slope error (1)"
-    :param rms_w: "RMS value of the above"
-    :return: x, y, z arrays for width direction x, longitudinal direction y, and heights z(x,y)
+    Returns
+    -------
+    tuple
+        (x, y, z) arrays for width direction x, longitudinal direction y, and heights z(x,y).
+
     """
 
-    WW_x, WW = create_simulated_1D_file_APS(mirror_width, step_w, random_seed_w, error_type_w, rms_w, \
+    WW_x, WW = create_simulated_1D_file_APS(mirror_width, step_w, random_seed_w, error_type_w, rms_w,
                                             power_law_exponent_beta=power_law_exponent_beta_l)
-    SF_x, SF = create_simulated_1D_file_APS(mirror_length, step_l, random_seed_l, error_type_l, rms_l, \
+    SF_x, SF = create_simulated_1D_file_APS(mirror_length, step_l, random_seed_l, error_type_l, rms_l,
                                             power_law_exponent_beta_two=power_law_exponent_beta_w)
 
     s = combine_two_transversal_profiles(WW_x, WW, SF_x, SF)
@@ -531,20 +600,26 @@ def create_simulated_2D_profile_APS(mirror_length=200.0, step_l=1.0, random_seed
 def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, step_w=1.0, random_seed_w=8787,
                               error_type_w=FIGURE_ERROR, rms_w=1e-6):
     """
-    #
-    # generates a 2-dimensional random rough surface z(x,y) with PSD following a power law
-    # The surface has a power law PSD |f|**(-beta) in both y and x directions
-    #
-    # It is a fractal profile if 1<beta<3
-    :param profile_1D_x:
-    :param profile_1D_y:
-    :param mirror_width:
-    :param step_w:
-    :param random_seed_w:
-    :param error_type_w:
-    :param rms_w:
-    :return:
+    generates a 2-dimensional random rough surface z(x,y) with PSD following a power law.
+    The surface has a power law PSD |f|**(-beta) in both y and x directions
+
+    Parameters
+    ----------
+    profile_1D_x
+    profile_1D_y
+    mirror_width
+    step_w
+    random_seed_w
+    error_type_w
+    rms_w
+
+    Returns
+    -------
+    tuple
+        (abscissas of transversal profile, profile_1D_x, profile_2D)
+
     """
+
 
     WW_x, WW = create_simulated_1D_file_APS(mirror_width, step_w, random_seed_w, error_type_w, rms_w)
     SF_x, SF = profile_1D_x, profile_1D_y
@@ -563,11 +638,26 @@ def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, ste
 def combine_two_transversal_profiles(WW_x, WW, SF_x, SF):
     """
     combine two profiles into a mesh
-    :param WW_x: abscissas of profile along width
-    :param WW: profile along width
-    :param SF_x: abscissas of profile along length
-    :param SF: profile along length
-    :return: the combined mesh s(index_length,index_width)
+    Parameters
+    ----------
+    WW_x : numpy array
+        abscissas of profile along width.
+    WW : numpy array
+        profile along width.
+    SF_x : numpy array
+        abscissas of profile along length.
+    SF : numpy array
+        profile along length.
+
+    Returns
+    -------
+    tuple
+        the combined mesh s(index_length,index_width).
+
+    Note
+    ----
+    the returned array las LENGTH in zeroth order and WIDTH in first order, so shadow coordinates (Y,X).
+
     """
     npoL = SF.size
     npoW = WW.size
@@ -582,34 +672,38 @@ def combine_two_transversal_profiles(WW_x, WW, SF_x, SF):
 #copied from ShadowTools,py
 def slopes(z,x,y,silent=1, return_only_rms=0):
     """
-    ;+
-    ; NAME:
-    ;	slopes
-    ; PURPOSE:
-    ;       This function calculates the slope errors of a surface along the mirror
-    ;       length y and mirror width x.
-    ; CATEGORY:
-    ;	SHADOW tools
-    ; CALLING SEQUENCE:
-    ;	(slope,slopesrms) = slopes(z,x,y)
-    ; INPUTS:
-    ;	x: the width array of dimensions (Nx)
-    ;	y: the length array of dimensions (Ny)
-    ;	z: the surface array of dimensions (Nx,Ny)
-    ; OUTPUTS:
-    ;   slope: an array of dimension (2,Nx,Ny) with the slopes errors in rad
-    ;            along X in out[0,:,:] and along Y in out[1,:,:]
-    ;	slopesrms: a 2-dim array with (in rad): [slopeErrorRMS_X,slopeErrorRMS_Y]
-    ;
-    ; MODIFICATION HISTORY:
-    ;       MSR 1994 written
-    ;       2016-02-17 luca.rebuffi@elettra.eu modified calculation of nx,ny
-    ;       2015-04-08 srio@esrf.eu makes calculations in double precision.
-    ;       2014-09-11 documented
-    ;       2012-02-10 srio@esrf.eu python version
-    ;-
-    ;
+    This function calculates the slope errors of a surface along the mirror length y and mirror width x.
+
+    Parameters
+    ----------
+    z : numpy array
+        the width array of dimensions (Nx).
+    x : numpy array
+        the length array of dimensions (Ny).
+    y : numpy array
+        the surface array of dimensions (Nx,Ny).
+    silent : int, optional
+        1 for silent output.
+    return_only_rms : int, optional
+        1 for returning only the rms value.
+
+    Returns
+    -------
+    tuple
+        if return_only_rms=0 return slopesrms: a 2-dim array with (in rad): [slopeErrorRMS_X,slopeErrorRMS_Y]
+        if return_only_rms=1 return (slope,slopesrms), with slope an array of dimension (2,Nx,Ny) with the slopes
+        errors in rad along X in slope[0,:,:] and along Y in slope[1,:,:]
+
     """
+
+    # ;
+    # ; MODIFICATION HISTORY:
+    # ;       MSR 1994 written
+    # ;       2016-02-17 luca.rebuffi@elettra.eu modified calculation of nx,ny
+    # ;       2015-04-08 srio@esrf.eu makes calculations in double precision.
+    # ;       2014-09-11 documented
+    # ;       2012-02-10 srio@esrf.eu python version
+    # ;
 
     nx = x.size
     ny = y.size
