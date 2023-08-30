@@ -1,7 +1,7 @@
 """
- Classes for creating random points following a given numeric distribution
- using the inverse method. Covers 1D, 2D and 3D sampling.
- See tests for usage!
+ Classes for creating random points following a given numeric distribution using the inverse method. Covers 1D, 2D and 3D sampling.
+
+ See tests for examples of use.
 """
 
 __authors__ = ["M Sanchez del Rio - ESRF ISDD Advanced Analysis and Modelling"]
@@ -12,8 +12,20 @@ import numpy
 
 class Sampler1D(object):
 
-    def __init__(self,pdf,pdf_x=None,cdf_interpolation_factor=1):
+    """
+    Constructor.
 
+    Parameters
+    ----------
+    pdf : numpy array
+        1D input probability distrubution function.
+    pdf_x : numpy array
+        the abscissas of the odf.
+    cdf_interpolation_factor : float, optional
+        interpolation factor for calculating the cdf (1 makes no interpolation)/
+
+    """
+    def __init__(self, pdf, pdf_x=None, cdf_interpolation_factor=1):
         self._pdf = pdf
         if pdf_x is None:
             self._set_default_pdf_x()
@@ -25,18 +37,66 @@ class Sampler1D(object):
         self._cdf_calculate()  # defines self._cdf and self._cdf_x
 
     def pdf(self):
+        """
+        Gets the array with probability distribution function (pdf).
+
+        Returns
+        -------
+        numpy array
+            The pdf array (referenced, not copied).
+        """
         return self._pdf
 
     def abscissas(self):
+        """
+        Gets the abscissas array.
+
+        Returns
+        -------
+        numpy array
+            The abscissas array (referenced, not copied).
+        """
         return self._pdf_x
 
     def cdf(self):
+        """
+        Gets the cumulative distribution function (cdf).
+
+        Returns
+        -------
+        numpy array
+            The cdf (referenced, not copied).
+
+        """
         return self._cdf
 
     def cdf_abscissas(self):
+        """
+        Gets the abscissas of the cumulative distribution function (cdf).
+
+        Returns
+        -------
+        numpy array
+            The cdf abscissas (referenced, not copied).
+
+        """
         return self._cdf_x
 
-    def get_sampled(self,random_in_0_1):
+    def get_sampled(self, random_in_0_1):
+        """
+        Return an array with sampled points.
+
+        Parameters
+        ----------
+        random_in_0_1  : float or numpy array
+            Points sampled in a uniform interval.
+
+        Returns
+        -------
+        numpy array
+            the points sampled with the current pdf. The number of points is equal to the dimension of random_in_0_1.
+
+        """
         y = numpy.array(random_in_0_1)
 
         if y.size > 1:
@@ -50,16 +110,53 @@ class Sampler1D(object):
             return self._pdf_x[ival] + idelta*(self._pdf_x[1]-self._pdf_x[0])
 
     def get_sampled_and_histogram(self, random_in_0_1, bins=51, range=None):
+        """
+        Return an array with sampled points and the histogram.
+
+        Parameters
+        ----------
+        random_in_0_1  : float or numpy array
+            Points sampled in a uniform interval.
+            bins : int, optional
+                Number of bins
+            range : list or tuple
+                [min, max] the histogram limits.
+
+        Returns
+        -------
+        tuple
+            (s1, h, bin_edges)
+            s1: the points sampled with the current pdf. The number of points is equal to the dimension of random_in_0_1,
+            h: the array with the histogram values at the bin edges,
+            bin_edges: the bin edges.
+
+        """
         s1 = self.get_sampled(random_in_0_1)
         if range is None:
             range = [self._pdf_x.min(),self._pdf_x.max()]
         #
         # histogram
         #
-        h,bin_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
-        return s1,h,bin_edges
+        h, bin_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
+        return s1, h, bin_edges
 
     def get_n_sampled_points(self, npoints, seed=None):
+        """
+        Returns a given number points sampled points sampled with the pdf.
+
+        Parameters
+        ----------
+        npoints : int
+            The number of points.
+        seed : int, optional
+            The seed (numpy generator is initialized with numpy.random.default_rng(seed))
+
+        Returns
+        -------
+        numpy array
+            The sampled points.
+
+        """
         if not seed is None:
             rng = numpy.random.default_rng(seed)
             cdf_rand_array = rng.random(npoints)
@@ -69,6 +166,29 @@ class Sampler1D(object):
         return self.get_sampled(cdf_rand_array)
 
     def get_n_sampled_points_and_histogram(self, npoints, bins=51, range=None, seed=None):
+        """
+        Returns a given number points sampled points sampled with the pdf and the histogram.
+
+        Parameters
+        ----------
+        npoints : int
+            The number of points.
+        seed : int, optional
+            The seed (numpy generator is initialized with numpy.random.default_rng(seed))
+        bins : int, optional
+            Number of bins
+        range : list or tuple
+            [min, max] the histogram limits.
+
+        Returns
+        -------
+        tuple
+            (s1, h, bin_edges)
+            s1: the points sampled with the current pdf. The number of points is equal to the dimension of random_in_0_1,
+            h: the array with the histogram values at the bin edges,
+            bin_edges: the bin edges.
+
+        """
         if not seed is None:
             rng = numpy.random.default_rng(seed)
             cdf_rand_array = rng.random(npoints)
@@ -112,9 +232,20 @@ class Sampler1D(object):
 
 
 class Sampler2D(object):
+    """
+    Constructor.
 
-    def __init__(self,pdf,pdf_x0=None,pdf_x1=None):
+    Parameters
+    ----------
+    pdf : numpy array
+        the 2D pdf.
+    pdf_x0 : numpy array
+        A 1D array with the abscissas for axis 0.
+    pdf_x1 : numpy array
+        A 1D array with the abscissas for axis 1.
+    """
 
+    def __init__(self, pdf, pdf_x0=None, pdf_x1=None):
         self._pdf = pdf
         if pdf_x0 is None:
             self._pdf_x0 = numpy.arange(self._pdf.shape[0])
@@ -129,15 +260,55 @@ class Sampler2D(object):
         self._cdf2,self._cdf1 = self._cdf_calculate()
 
     def pdf(self):
+        """
+        Gets the array with probability distribution function (pdf).
+
+        Returns
+        -------
+        numpy array
+            The pdf array (referenced, not copied).
+        """
         return self._pdf
 
     def cdf(self):
+        """
+        Gets the array with cumulated distribution function (cdf).
+
+        Returns
+        -------
+        numpy array
+            The cdf array (referenced, not copied).
+        """
         return self._cdf2,self._cdf1
 
     def abscissas(self):
+        """
+        Gets the abscisas arrays.
+
+        Returns
+        -------
+        tuple
+            (x0, x1) The arrays for axes 0 and 1.
+        """
         return self._pdf_x0,self._pdf_x1
 
-    def get_sampled(self,random0,random1):
+    def get_sampled(self, random0, random1):
+        """
+        Samples a point or multiple points in 2D (two coordinates) following the given pdf.
+
+        Parameters
+        ----------
+        random0 : float or numpy array
+            The 1D array with values unifiormly samples in [0,1]
+        random1 : float or numpy array
+            The 1D array with values unifiormly samples in [0,1]
+
+        Returns
+        -------
+        tuple
+            (x,y) the coordinates x (float or array) and y (float or array) of the sampled point(s).
+
+        """
         y0 = numpy.array(random0)
         y1 = numpy.array(random1)
 
@@ -150,11 +321,28 @@ class Sampler2D(object):
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
                 ival1,idelta1,pendent1 = self._get_index1(y1[i],ival+1)  # <==================== changed to ival+1
                 x1_rand_array[i] = self._pdf_x1[ival1] + idelta1*(self._pdf_x1[1]-self._pdf_x1[0])
-            return x0_rand_array,x1_rand_array
+            return x0_rand_array, x1_rand_array
         else:
             pass # TODO make scalar case
 
-    def get_n_sampled_points(self,npoints, seed=None):
+    def get_n_sampled_points(self, npoints, seed=None):
+        """
+        Samples n points (two coordinates) following the given pdf.
+
+        Parameters
+        ----------
+        npoints : int
+            The number of points.
+        seed : int, optional
+            The seed (numpy generator is initialized with numpy.random.default_rng(seed))
+
+
+        Returns
+        -------
+        tuple
+            (x,y) the coordinates x (float or array) and y (float or array) of the sampled point(s).
+
+        """
         if not seed is None:
             rng = numpy.random.default_rng(seed)
             cdf_rand_array0 = rng.random(npoints)
@@ -220,9 +408,22 @@ class Sampler2D(object):
 
 
 class Sampler3D(object):
+    """
+    Constructor.
 
-    def __init__(self,pdf,pdf_x0=None,pdf_x1=None,pdf_x2=None):
+    Parameters
+    ----------
+    pdf : numpy array
+        The 3D pdf.
+    pdf_x0 : numpy array
+        The abscissas for axis 0.
+    pdf_x1 : numpy array
+        The abscissas for axis 1.
+    pdf_x2 : numpy array
+        The abscissas for axis 2.
 
+    """
+    def __init__(self, pdf, pdf_x0=None, pdf_x1=None, pdf_x2=None):
         self._pdf = pdf
         if pdf_x0 is None:
             self._pdf_x0 = numpy.arange(self._pdf.shape[0])
@@ -242,15 +443,58 @@ class Sampler3D(object):
         self._cdf3,self._cdf2,self._cdf1 = self._cdf_calculate()
 
     def pdf(self):
+        """
+        Gets the array with probability distribution function (pdf).
+
+        Returns
+        -------
+        numpy array
+            The pdf array (referenced, not copied).
+        """
         return self._pdf
 
     def cdf(self):
+        """
+        Gets the array with cumulative distribution function (cdf).
+
+        Returns
+        -------
+        numpy array
+            The cdf array (referenced, not copied).
+        """
         return self._cdf3,self._cdf2,self._cdf1
 
     def abscissas(self):
+        """
+        Gets the arrays with the abscissas.
+
+        Returns
+        -------
+        tuple
+            (x0, x1, x2) The arrays with the abscissas for axes 1, 2, and 3.
+
+        """
         return self._pdf_x0,self._pdf_x1,self._pdf_x2
 
-    def get_sampled(self,random0,random1,random2):
+    def get_sampled(self, random0, random1, random2):
+        """
+        Get sampled 3D points.
+
+        Parameters
+        ----------
+        random0 : float or numpy array
+            The points or points sampled uniformly in a [0,1] interval.
+        random1 : float or numpy array
+            The points or points sampled uniformly in a [0,1] interval.
+        random2 : float or numpy array
+            The points or points sampled uniformly in a [0,1] interval.
+
+        Returns
+        -------
+        tuple
+            (x0,x1,x2) the coordinates (float or array) of the sampled points.
+
+        """
         y0 = numpy.array(random0)
         y1 = numpy.array(random1)
         y2 = numpy.array(random2)
@@ -274,7 +518,24 @@ class Sampler3D(object):
             pass #TODO do the scalar case
 
 
-    def get_n_sampled_points(self,npoints, seed=None):
+    def get_n_sampled_points(self, npoints, seed=None):
+        """
+        Get a given number of sampled 3D points.
+
+        Parameters
+        ----------
+        npoints : int
+            The number of points.
+        seed : int, optional
+            The seed (numpy generator is initialized with numpy.random.default_rng(seed))
+
+
+        Returns
+        -------
+        tuple
+            (x,y,z) the coordinates x (float or array), y (float or array) and z (float or array) of the sampled point(s).
+
+        """
         if not seed is None:
             rng = numpy.random.default_rng(seed)
             cdf_rand_array0 = rng.random(npoints)

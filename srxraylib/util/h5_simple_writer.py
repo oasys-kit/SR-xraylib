@@ -1,28 +1,33 @@
+"""
+This class is intended to be used for writing data of the form y=f(x) (1D dataset or simply "dataset")
+or z=f(x,y) (2D dataset or "image") in an HDF5 file. It includes the NX attributes necessary for automatic
+plotting using "silx view".
 
+Note:
+    The image arrays we use here have: x=horizontal=axis0 and  y=vertical=axis1.
+    However, the hdf5 file uses the C / python convention so: x=horizontal=axis1 and  y=vertical=axis0.
+    To allow display graphics correctly, the array with the image stored in the hdf5 file is transposed.
+    This has no effect for the user that use "silx view" for display, but must be taken into account when retrieving the data from the file.
+
+srio@esrf.eu 2018-03-23
+
+"""
 import h5py,sys,time, os
 
 
 class H5SimpleWriter(object):
     """
+    Constructor.
 
-    This class is intended to be used for writing data of the form y=f(x) (1D dataset or simply "dataset")
-    or z=f(x,y) (2D dataset or "image") in an HDF5 file. It includes the NX attributes necessary for automatic
-    plotting using "silx view".
-
-    Note:
-        The image arrays we use here have: x=horizontal=axis0 and  y=vertical=axis1
-
-        However, the hdf5 file uses the C / python convension so: x=horizontal=axis1 and  y=vertical=axis0
-
-        To allow display graphics correctly, the array with the image stored in the hdf5 file is transposed.
-
-        This has no effect for the user that use "silx view" for display, but must be taken into account when
-        retrieving the data from the file.
-
-    srio@esrf.eu 2018-03-23
+    Parameters
+    ----------
+    filename : str
+        File name to be written.
+    creator : str
+        A name to indicate the creator or author (for info purposes).
 
     """
-    def __init__(self,filename,creator):
+    def __init__(self, filename, creator):
         self.creator = creator
         self.filename = filename
 
@@ -41,32 +46,99 @@ class H5SimpleWriter(object):
 
     @classmethod
     def initialize_file(cls, filename, creator="H5BasicWriter", overwrite=True):
+        """
+        Creates an h5 file and initializes it.
+
+        Parameters
+        ----------
+        filename : str
+            Fine name.
+        creator : str, optional
+            a name of the creator or author.
+        overwrite : boolean, optional
+            If True, overwrites the file if exists. If False, if the file exists it will raise an error.
+
+        """
         if overwrite:
             try:
                 os.remove(filename)
             except:
                 pass
-        tmp = H5SimpleWriter(filename,creator)
+        tmp = H5SimpleWriter(filename, creator)
         tmp.create_new_file()
         tmp.add_file_header()
         return tmp
 
     def set_label_image(self, str_data, str_x, str_y):
+        """
+        Sets the labels for 2D data.
+
+        Parameters
+        ----------
+        str_data : str
+            The label for the data.
+        str_x : str
+            The label for the X (horizontal).
+        str_y : str
+            The label for the Y (vertical).
+
+        """
         self.label_image_data   = str_data
         self.label_image_axis_x = str_x
         self.label_image_axis_y = str_y
 
     def set_label_dataset(self, str_x, str_y):
+        """
+        Sets the labels for 1D data.
+
+        Parameters
+        ----------
+        str_x : str
+            The label for the X (horizontal).
+        str_y : str
+            The label for the Y (vertical).
+
+        Returns
+        -------
+
+        """
         self.label_dataset_x = str_x
         self.label_dataset_y = str_y
 
     def set_label_stack(self, str_data, str_0, str_1, str_2):
+        """
+        Sets the labels for 3D data.
+
+        Parameters
+        ----------
+        str_data : str
+            The label for data.
+        str_0 : str
+            The label for X.
+        str_1 : str
+            The label for Y.
+        str_2 : str
+            The label for Z.
+
+        Returns
+        -------
+
+        """
         self.label_stack_data   = str_data
         self.label_stack_axis0 = str_0
         self.label_stack_axis1 = str_1
         self.label_stack_axis2 = str_2
 
     def create_new_file(self):
+        """
+        Creates a new (empty) file.
+
+        Returns
+        -------
+        boolean
+            success (True) or error (False)
+
+        """
         try:
             f = h5py.File(self.filename, 'w')
             f.close()
@@ -76,6 +148,15 @@ class H5SimpleWriter(object):
 
 
     def add_file_header(self):
+        """
+        Adds a "standard" file header.
+
+        Returns
+        -------
+        boolean
+            success (True) or error (False)
+
+        """
         try:
             sys.stdout.flush()
             f = h5py.File(self.filename, 'a')
@@ -92,16 +173,20 @@ class H5SimpleWriter(object):
         except:
             return False
 
-    def create_entry(self,entry_name,root_entry=None,nx_default=None):
+    def create_entry(self, entry_name, root_entry=None, nx_default=None):
         """
-        Creates a HDF5 group (or NX "entry") which is in fact the "folder" in the file that will contain
-         the datasets
+        Creates a HDF5 group (or NX "entry") which is in fact the "folder" in the file that will contain the datasets.
 
-        :param entry_name: string with the name of the entry
-        :param root_entry: the root entry name (default: None)
-        :param nx_default: the name of the dataset to inside this entry (to be added later) with the default plot (i.e.,
-        when clicking the entry name).
-        :return: None
+        Parameters
+        ----------
+        entry_name : str
+            string with the name of the entry.
+        root_entry : str, optional
+            the root entry name (default: None)
+        nx_default : str, optional
+            the name of the dataset to inside this entry (to be added later) with the default plot
+            (i.e.,when clicking the entry name).
+
         """
         f = h5py.File(self.filename, 'a')
 
@@ -118,7 +203,20 @@ class H5SimpleWriter(object):
             f1.attrs['default'] = nx_default
         f.close()
 
-    def add_key(self,key,value,entry_name=None):
+    def add_key(self, key, value, entry_name=None):
+        """
+        Adds a pair (key, value).
+
+        Parameters
+        ----------
+        key : str
+            The key name.
+        value : int, float or numpy array.
+            The value.
+        entry_name : str, optional
+            The entry_name to which the pair (key, value) will be added. Default: at main level.
+
+        """
         f = h5py.File(self.filename, 'a')
 
         if entry_name is None:
@@ -129,7 +227,26 @@ class H5SimpleWriter(object):
 
         f.close()
 
-    def add_dataset(self,x,y,dataset_name="tmp",entry_name=None,title_x="",title_y=""):
+    def add_dataset(self, x, y, dataset_name="tmp", entry_name=None, title_x="", title_y=""):
+        """
+        Adds a dataset (1D data) to the file.
+
+        Parameters
+        ----------
+        x : numpy array
+            The dataset abscissas.
+        y : numpy array
+            The dataset ordinates.
+        dataset_name : str, optional
+            A name for the data set.
+        entry_name : str, optional
+            The entry name where the dataset is added.
+        title_x : str, optional
+            The dataset X title.
+        title_y : str, optional
+            The dataset Y title.
+
+        """
         f = h5py.File(self.filename, 'a')
 
         if entry_name is None:
@@ -155,7 +272,27 @@ class H5SimpleWriter(object):
         f.close()
 
     def add_image(self,image,image_x=None,image_y=None,image_name="myimage",entry_name=None,title_x="",title_y=""):
+        """
+        Adds an image (2D data) to the file.
 
+        Parameters
+        ----------
+        image : numpy array
+            The 2D array with the data (image) values.
+        image_x : numpy array, optional
+            The 1D array with the values of the X axis.
+        image_y : numpy array, optional
+            The 1D array with the values of the Y axis.
+        image_name : str, optional
+            A name for the added image data.
+        entry_name : str, optional
+            The name of the entry name where the data is added.
+        title_x : str, optional
+            A title for the X axis.
+        title_y : str, optional
+            A title for the Y axis.
+
+        """
 
         if image_x is None:
             image_x = numpy.arange(image.shape[0])
@@ -194,6 +331,31 @@ class H5SimpleWriter(object):
 
     def add_stack(self,e,h,v,p,stack_name="Radiation",entry_name=None,
                      title_0="",title_1="",title_2=""):
+        """
+        Adds a stack (3D data) to the file.
+
+        Parameters
+        ----------
+        e : numpy array
+            An array with values for axis 0.
+        h : numpy array
+            An array with values for axis 1.
+        v : numpy array
+            An array with values for axis 2.
+        p : numpy array
+            A 3D array with the stack values.
+        stack_name : str, optional
+            A name for the stack added.
+        entry_name : str, optional
+            The name of the entry where the data are added.
+        title_0 : str, optional
+            A title for axis 0.
+        title_1 : str, optional
+            A title for axis 1.
+        title_2 : str, optional
+            A title for axis 2.
+
+        """
 
         f = h5py.File(self.filename, 'a')
 
@@ -229,6 +391,25 @@ class H5SimpleWriter(object):
     def add_deepstack(self,list_of_axes_arrays,stack_array,stack_name="mydeepstack",entry_name=None,
                      list_of_axes_labels=None, list_of_axes_titles=None):
 
+        """
+        Adds a stack (3D data) to the file, like add_stack, but with a different way to enter the data.
+
+        Parameters
+        ----------
+        list_of_axes_arrays : list
+            [x,y,z] the values of axes 0, 1 and 2.
+        stack_array : numpy array
+            A 3D array with the stack values.
+        stack_name : str, optional
+            A name for the stack added.
+        entry_name : str, optional
+            The name of the entry where the data are added.
+        list_of_axes_labels : list
+            ['label0','label1','label2]
+        list_of_axes_titles : list
+            ['title0','title1','title2]
+
+        """
         f = h5py.File(self.filename, 'a')
 
         if entry_name is None:

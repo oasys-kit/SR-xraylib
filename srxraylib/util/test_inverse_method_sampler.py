@@ -157,31 +157,31 @@ class TestSamplers(unittest.TestCase):
             plot_scatter(X,Y)
         # assert(False)
 
-    @unittest.skipUnless(RUN_2D, "Running 2D Test")
-    def test2d_shadow_undulator(self):
-        import h5py
-        from srxraylib.plot.gol import plot_image
-        import Shadow
-        f = h5py.File("/home/manuel/Downloads/manolone.hdf5","r")
-        X = f["surface_file/X"][:]
-        Y = f["surface_file/Y"][:]
-        Z = f["surface_file/Z"][:].T
-        f.close()
-        # plot_image(Z,X,Y)
-        X = numpy.linspace(0,10,X.size)
-        Y = numpy.linspace(0, 10, Y.size)
-
-        s2d = Sampler2D(Z, X , Y)
-        sampled_points_x, sampled_points_y = s2d.get_n_sampled_points(100000)
-        S = Shadow.Beam(sampled_points_x.size)
-        S.rays[:,0] = sampled_points_x
-        S.rays[:,2] = sampled_points_y
-        S.rays[:,16] = 1
-        S.rays[:, 9] = 1
-        if do_plots:
-            Shadow.ShadowTools.plotxy(S,1,3,nbins_h=101,nbins_v=101)
-            # S.write("/Users/srio/Oasys/tmp.dat")
-            plot_scatter(sampled_points_x,sampled_points_y)
+    # @unittest.skipUnless(RUN_2D, "Running 2D Test")
+    # def test2d_shadow_undulator(self):
+    #     import h5py
+    #     from srxraylib.plot.gol import plot_image
+    #     import Shadow
+    #     f = h5py.File("/home/manuel/Downloads/manolone.hdf5","r")
+    #     X = f["surface_file/X"][:]
+    #     Y = f["surface_file/Y"][:]
+    #     Z = f["surface_file/Z"][:].T
+    #     f.close()
+    #     # plot_image(Z,X,Y)
+    #     X = numpy.linspace(0,10,X.size)
+    #     Y = numpy.linspace(0, 10, Y.size)
+    #
+    #     s2d = Sampler2D(Z, X , Y)
+    #     sampled_points_x, sampled_points_y = s2d.get_n_sampled_points(100000)
+    #     S = Shadow.Beam(sampled_points_x.size)
+    #     S.rays[:,0] = sampled_points_x
+    #     S.rays[:,2] = sampled_points_y
+    #     S.rays[:,16] = 1
+    #     S.rays[:, 9] = 1
+    #     if do_plots:
+    #         Shadow.ShadowTools.plotxy(S,1,3,nbins_h=101,nbins_v=101)
+    #         # S.write("/Users/srio/Oasys/tmp.dat")
+    #         plot_scatter(sampled_points_x,sampled_points_y)
 
     @unittest.skipUnless(RUN_2D,"Running 2D Test")
     def test_2d(self):
