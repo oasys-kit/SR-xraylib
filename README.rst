@@ -19,7 +19,7 @@ The classes and functions here can be used in a standalone more. They include:
 
 Documentation
 -------------
-https://https://sr-xraylib.readthedocs.io/
+https://srxraylib.readthedocs.io/
 
 
 Source repository

@@ -25,7 +25,7 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/oasys-kit/sr-xraylib
+    $ git clone https://github.com/oasys-kit/sr-xraylib
 
 
 Once you have a copy of the source, you can install it with:
