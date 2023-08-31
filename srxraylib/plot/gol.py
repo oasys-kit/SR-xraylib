@@ -3,7 +3,7 @@ GOL: Graphics in One Line
 
 A collection of functions to create matplotlib plots in a single command line.
 
-(I am tired of polluting my code with matplotlib instructions).
+(This has been written after getting tired of polluting code with matplotlib instructions).
 """
 
 __author__ = "Manuel Sanchez del Rio"
@@ -269,7 +269,7 @@ def plot(*positional_parameters, title="", xtitle="", ytitle="",
          xrange=None, yrange=None, show=1, legend=None, legend_position=None, color=None, marker=None, linestyle=None,
          xlog=False, ylog=False, figsize=None):
     """
-    makes a plot.
+    Makes a plot of a dataset (XY plot).
 
     Parameters
     ----------
@@ -380,7 +380,7 @@ def plot_table(*positional_parameters, errorbars=None, xrange=None, yrange=None,
                legend=None, legend_position=None, color=None,
                xlog=False, ylog=False, figsize=None):
     """
-    makes a plot with data in tabular arrays using one array with abscissas X (Nx values), and another array
+    Makes a plot with data in tabular arrays using one array with abscissas X (Nx values), and another array
     (N, Nx) with ordinates Y for N datasets.
 
     Parameters

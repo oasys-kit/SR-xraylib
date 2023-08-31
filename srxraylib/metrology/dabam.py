@@ -3,31 +3,21 @@ dabam: (dataBase for metrology)
        python module for processing remote files containing the results of metrology measurements on X-ray mirrors
 
        classes:
-
-             dabam
+             * dabam
 
        main functions:
-
-             cdf (calculate antiderivative function)
-
-             psd (calculate power spectral density)
-
-             write_shadowSurface (writes file with a mesh for SHADOW)
-
-             func_ellipse_slopes evaluates the ellipse slopes profile equation
+             * cdf (calculate antiderivative function)
+             * psd (calculate power spectral density)
+             * write_shadowSurface (writes file with a mesh for SHADOW)
+             * func_ellipse_slopes evaluates the ellipse slopes profile equation
 
 
        MODIFICATION HISTORY:
-
-           20130902 srio@esrf.eu, written
-
-           20131109 srio@esrf.eu, added command line arguments, access metadata
-
-           20151103 srio@esrf.eu, restructured to OO
-
-           20151118 srio@esrf.eu, cleaned and tested
-
-           20190731 srio@lbl.gov, updated version, allows reading external files, change server, etc.
+           * 20130902 srio@esrf.eu, written
+           * 20131109 srio@esrf.eu, added command line arguments, access metadata
+           * 20151103 srio@esrf.eu, restructured to OO
+           * 20151118 srio@esrf.eu, cleaned and tested
+           * 20190731 srio@lbl.gov, updated version, allows reading external files, change server, etc.
 
 """
 
@@ -2599,7 +2589,7 @@ def dabam_summary_dictionary(surface=None,
                             server=None,
                             force_from_scratch=False):
     """
-    this is kept for back compatibility. Use dabam.dabam_summary_dictionary_from_scratch() instead.
+    Obsolete. This is kept for back compatibility. Use dabam.dabam_summary_dictionary_from_scratch() instead.
     """
     dm = dabam()
     if server is not None:
@@ -2634,7 +2624,7 @@ def dabam_summary_dictionary(surface=None,
 
 def make_json_summary(nmax=100000, force_from_scratch=False, server=None):
     """
-    this is kept for back compatibility.
+    Obsolete. This is kept for back compatibility. Use dabam methods instead.
     """
 
     out_list = dabam_summary_dictionary(force_from_scratch=force_from_scratch, server=server)

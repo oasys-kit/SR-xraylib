@@ -6,24 +6,24 @@ srfunc: calculates synchrotron radiation emission (radiation and angle distribut
 
              basic:
 
-             fintk53: integral of the Bessel function K5/3(x).
-             sync_g1: energy spectrum integrated over the full vertical angle.
-             sync_f:  angular dependence of synchrotron radiation.
-             sync_hi: function Hi(x) = x^i * BeselK(x/2,2/3).
+             * fintk53: integral of the Bessel function K5/3(x).
+             * sync_g1: energy spectrum integrated over the full vertical angle.
+             * sync_f:  angular dependence of synchrotron radiation.
+             * sync_hi: function Hi(x) = x^i * BeselK(x/2,2/3).
 
              bending magnet radiation:
 
-             sync_ang: angular distributions.
-             sync_ene: energy distributions.
+             * sync_ang: angular distributions.
+             * sync_ene: energy distributions.
 
 
              wiggler radiation:
 
-             wiggler_trajectory: computes the electron trajectroy in a magnetic field (sinusoidal or from a file with B[T] or its harmonic decomposition).
-             wiggler_spectrum: computes the wiggler spectrum (full emission) given the trajectory.
-             wiggler_nphoton: computes the number of photons emtted versus bending radius per (1mA 1mrad (horizontal) 0.1% bandwidth).
-             wiggler_harmonics: computes the harmonic decomposition of the  magnetic field B(s).
-             wiggler_cdf: computes the cumulative distribution function from radiation.
+             * wiggler_trajectory: computes the electron trajectroy in a magnetic field (sinusoidal or from a file with B[T] or its harmonic decomposition).
+             * wiggler_spectrum: computes the wiggler spectrum (full emission) given the trajectory.
+             * wiggler_nphoton: computes the number of photons emtted versus bending radius per (1mA 1mrad (horizontal) 0.1% bandwidth).
+             * wiggler_harmonics: computes the harmonic decomposition of the  magnetic field B(s).
+             * wiggler_cdf: computes the cumulative distribution function from radiation.
 
 """
 
@@ -61,37 +61,39 @@ def fintk53(xd):
     Notes
     -----
         Translated from a Fortran program, original from Umstatter.
-        C
-        C Routines taken from
-        C
-        C http://www.slac.stanford.edu/grp/arb/tn/arbvol2/ARDB162.pdf
-        C The reference  1981 CERN/PS/SM/81-13  is cited in
-        C 'Synchrotron Radiation Spectra' by G.Brown and W.
-        C Lavender pp.37-61 Handbook on Synchrotron Radiation,
-        C vol. 3 edited by G.S. Brown and D.E. Moncton (Elsevier
-        C Science Publishers B.V. 1991 North-Holland, Amsterdam)
-        C
+        ::
+            C
+            C
+            C Routines taken from
+            C
+            C http://www.slac.stanford.edu/grp/arb/tn/arbvol2/ARDB162.pdf
+            C The reference  1981 CERN/PS/SM/81-13  is cited in
+            C 'Synchrotron Radiation Spectra' by G.Brown and W.
+            C Lavender pp.37-61 Handbook on Synchrotron Radiation,
+            C vol. 3 edited by G.S. Brown and D.E. Moncton (Elsevier
+            C Science Publishers B.V. 1991 North-Holland, Amsterdam)
+            C
 
         I have performed a comparison of the result with Mathematica
         with very good agreement (note that Mathematica values diverge
         for x> 20. I do not know why):
         (Mathematica evaluation N[g_one[0.001],20])
-        (x = 5.0 & print,fintk53(x),x*fintk53(x),format='(2G32.18)')
-
-          x      mathematica         idl (x*fintk53(x))       python x*fintk3(x)
-        0.001 0.2131390650914501     0.213139096577768417     2.13139066e-01
-        0.01  0.4449725041142102     0.444972550630643671     4.44972505e-01
-        0.1   0.818185534872854      0.818185588215680770     8.18185536e-01
-        1.0   0.6514228153553639697  0.651422821506926542     6.51422815e-01
-        5.0   0.021248129774982      0.0212481300729910755    2.12481298e-02
-        10.0  0.00019223826428       0.000192238266987909711  1.92238264e-04
-        20.0  5.960464477539063E-7   1.19686346217633044E-08  1.19686345e-08
-        50.0  6.881280000000002E7    1.73478522828932108E-21  1.73478520e-21
-        100.0 4.642275147320176E29   4.69759373162073832E-43  4.69759367e-43
-        1000.0 -1.7E424              Floating underflow (<620 OK) 0.00000000e+00
+        (x = 5.0 & print,fintk53(x),x*fintk53(x),format='(2G32.18)').
+        ::
+            x      mathematica           idl (x*fintk53(x))       python x*fintk3(x)
+            0.001 0.2131390650914501     0.213139096577768417     2.13139066e-01
+            0.01  0.4449725041142102     0.444972550630643671     4.44972505e-01
+            0.1   0.818185534872854      0.818185588215680770     8.18185536e-01
+            1.0   0.6514228153553639697  0.651422821506926542     6.51422815e-01
+            5.0   0.021248129774982      0.0212481300729910755    2.12481298e-02
+            10.0  0.00019223826428       0.000192238266987909711  1.92238264e-04
+            20.0  5.960464477539063E-7   1.19686346217633044E-08  1.19686345e-08
+            50.0  6.881280000000002E7    1.73478522828932108E-21  1.73478520e-21
+            100.0 4.642275147320176E29   4.69759373162073832E-43  4.69759367e-43
+            1000.0 -1.7E424              Floating underflow (<620 OK) 0.00000000e+00
 
     Written by:     M. Sanchez del Rio, srio@esrf.fr, 2002-04-22
-        20120208 srio@esrf.eu: python version
+        * 20120208 srio@esrf.eu: python version
 
     """
     #
@@ -182,10 +184,9 @@ def fintk53(xd):
 
 def sync_g1(x, polarization=0):
     """
-    calculates the synchrotron radiation g1 function.
+    Calculates the synchrotron radiation g1 function.
 
-    Calculates the functions used for calculating synchrotron radiation energy spectrum integrated over
-    the full vertical angle.
+    Calculates the functions used for calculating synchrotron radiation energy spectrum integrated over the full vertical angle.
 
     Parameters
     ----------
@@ -209,16 +210,16 @@ def sync_g1(x, polarization=0):
     E is the photon energy;
     Ec is the critical energy;
     The value Sync_G1 returned by this function is:
-        sync_g1(x) (total polarization): x* Integrate[BeselK[x,5/3],{x,y,Infinity}]
-        sync_g1(x,Pol=1) (parallel polarization): (1/2)* [x* Integrate[BesselK[x,5/3],{x,y,Infinity}] + x*BesselK(x,2/3)]
-        sync_g1(x,Pol=2) (perpendicular polarization): (1/2)* [x* Integrate[BesselK[x,5/3],{x,y,Infinity}] - x*BesselK(x,2/3)]
+        * sync_g1(x) (total polarization): x* Integrate[BeselK[x,5/3],{x,y,Infinity}]
+        * sync_g1(x,Pol=1) (parallel polarization): (1/2)* [x* Integrate[BesselK[x,5/3],{x,y,Infinity}] + x*BesselK(x,2/3)]
+        * sync_g1(x,Pol=2) (perpendicular polarization): (1/2)* [x* Integrate[BesselK[x,5/3],{x,y,Infinity}] - x*BesselK(x,2/3)]
 
     For calculating the Integrate[BeselK[x,5/3],{x,y,Infinity}] function, the function fintk53 is used.
 
     Reference: A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968, Formula 5.19, pag 32.
 
     Written by:     M. Sanchez del Rio, srio@esrf.fr, 2002-05-24
-        20120208 srio@esrf.eu: python version
+        * 20120208 srio@esrf.eu: python version
 
     """
 
@@ -242,7 +243,7 @@ def sync_g1(x, polarization=0):
 
 def sync_f(rAngle, rEnergy=None, polarization=0, gauss=0, l2=1, l3=0 ):
     """
-    angular dependency of synchrotron radiation emission.
+    Angular dependency of synchrotron radiation emission.
 
     Calculates the function used for calculating the angular dependence of synchrotron radiation.
 
@@ -254,7 +255,7 @@ def sync_f(rAngle, rEnergy=None, polarization=0, gauss=0, l2=1, l3=0 ):
         a value for the reduced photon energy, i.e., energy/critical_energy. If this input is present, the calculation
         is done for this energy. Otherwise, the calculation results is the integration over all photon energies.
     polarization : int, optional
-        0 Total ,
+        0 Total,
         1 Parallel (l2=1, l3=0, in Sokolov&Ternov notation),
         2 Perpendicular (l2=0, l3=1),
         3 Any (define l2 and l3).
@@ -280,19 +281,18 @@ def sync_f(rAngle, rEnergy=None, polarization=0, gauss=0, l2=1, l3=0 ):
     The number of emitted photons versus vertical angle Psi is proportional to sync_f, which value is given by the
     formulas in the references.
 
-    For angular distribution integrated over full photon energies (rEnergy optional input not present) we use the
-    Formula 9, pag 4 in Green.
+    For angular distribution integrated over full photon energies (rEnergy optional input not present) we use the Formula 9, pag 4 in Green.
     For its gaussian approximation (in this case the polarization keyword has no effect) we use for 87 in pag 32 in Green.
     For angular distribution at a given photon energy (rEnergy optional input not present) we use the Formula 11, pag 6 in Green.
 
     References:
-        G K Green, "Spectra and optics of synchrotron radiation" BNL 50522 report (1976).
-        A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968.
+        * G K Green, "Spectra and optics of synchrotron radiation" BNL 50522 report (1976).
+        * A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968.
 
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-05-23
-        2002-07-12 srio@esrf.fr adds circular polarization term for wavelength integrated spectrum (S&T formula 5.25)
-        2012-02-08 srio@esrf.eu: python version
+        * 2002-07-12 srio@esrf.fr adds circular polarization term for wavelength integrated spectrum (S&T formula 5.25)
+        * 2012-02-08 srio@esrf.eu: python version
 
     """
     # auto-call for total polarization
@@ -380,7 +380,7 @@ def sync_hi(x, i=2, polarization=0):
     Uses the relation ship Hi(x) =  x^i * sync_f(0,x).
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-05-23
-        20120208 srio@esrf.eu: python version
+        * 20120208 srio@esrf.eu: python version
 
     """
     x=numpy.array(x)
@@ -425,12 +425,12 @@ def sync_ang(flag, angle_mrad, polarization=0, e_gev=1.0, i_a=0.001, hdiv_mrad=1
     Notes
     -----
     References:
-         G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976)
-         A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968
+         * G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976)
+         * A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968
 
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-06-03
-        20120208 srio@esrf.eu: python version
+        * 20120208 srio@esrf.eu: python version
 
 
     """
@@ -466,11 +466,11 @@ def sync_ene(f_psi, energy_ev, ec_ev=1.0, polarization=0, e_gev=1.0, i_a=0.001, 
     ----------
     f_psi : int
         flag with the type of calculation:
-        0: Flux fully integrated in angle (Psi),
-        1: Flux at Psi=0,
-        2: Flux integrated in the angular interval [Psi_Min,Psi_Max],
-        3: Flux at Psi=Psi_Min,
-        4: Flux versus angle in [Psi_Min,Psi_Max] and energy.
+        * 0: Flux fully integrated in angle (Psi),
+        * 1: Flux at Psi=0,
+        * 2: Flux integrated in the angular interval [Psi_Min,Psi_Max],
+        * 3: Flux at Psi=Psi_Min,
+        * 4: Flux versus angle in [Psi_Min,Psi_Max] and energy.
 
     energy_ev : float or numpy array
         the energy array [in eV].
@@ -499,79 +499,80 @@ def sync_ene(f_psi, energy_ev, ec_ev=1.0, polarization=0, e_gev=1.0, i_a=0.001, 
     Notes
     -----
     References:
-        G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976)
-        A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968
+        * G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976).
+        * A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968.
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-06-03
-        2007-05-14 srio@esrf.fr debug with FLAG=2. The bandwith in angle depends on the number of points. Now it is 1mrad. Bug reported by flori@n-nolz.de Added default values.
-        2007-12-13  srio@esrf.eu fixes bug reported by Gernot.Buth@iss.fzk.de concerning the normalization of the angular integral.
-        20120208 srio@esrf.eu: python version
+        * 2007-05-14 srio@esrf.fr debug with FLAG=2. The bandwith in angle depends on the number of points. Now it is 1mrad. Bug reported by flori@n-nolz.de Added default values.
+        * 2007-12-13  srio@esrf.eu fixes bug reported by Gernot.Buth@iss.fzk.de concerning the normalization of the angular integral.
+        * 20120208 srio@esrf.eu: python version
 
-     Example
-     -------
+    Example
+    -------
+    This is an example code:
+    ::
+        #create 10-points energy array in [20,30] keV
+        e=numpy.linspace(20000.0,30000.0,10)
 
-    #create 10-points energy array in [20,30] keV
-    e=numpy.linspace(20000.0,30000.0,10)
+        #
+        # test of spectra at Psi=0
+        #
+        # at psi=0 (i.e., flag=1)
+        In [274]: srfunc.sync_ene(1,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1)
+        Out[274]:
+        array([[  6.89307648e+13,   6.81126315e+13,   6.71581119e+13,
+          6.60866137e+13,   6.49155481e+13,   6.36605395e+13,
+          6.23356084e+13,   6.09533305e+13,   5.95249788e+13,
+          5.80606485e+13]])
 
-    #
-    # test of spectra at Psi=0
-    #
-    # at psi=0 (i.e., flag=1)
-    In [274]: srfunc.sync_ene(1,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1)
-    Out[274]:
-    array([[  6.89307648e+13,   6.81126315e+13,   6.71581119e+13,
-      6.60866137e+13,   6.49155481e+13,   6.36605395e+13,
-      6.23356084e+13,   6.09533305e+13,   5.95249788e+13,
-      5.80606485e+13]])
+        # at psi_min (FLAG=3)
+        In [279]: srfunc.sync_ene(3,e,ec_ev=19166.0,e_gev=6,i_a=0.1, \
+                  hdiv_mrad=1,psi_min=0.0)
+        Out[279]:
+        array([[  6.89307648e+13,   6.81126315e+13,   6.71581119e+13,
+          6.60866137e+13,   6.49155481e+13,   6.36605395e+13,
+          6.23356084e+13,   6.09533305e+13,   5.95249788e+13,
+          5.80606485e+13]])
 
-    # at psi_min (FLAG=3)
-    In [279]: srfunc.sync_ene(3,e,ec_ev=19166.0,e_gev=6,i_a=0.1, \
-              hdiv_mrad=1,psi_min=0.0)
-    Out[279]:
-    array([[  6.89307648e+13,   6.81126315e+13,   6.71581119e+13,
-      6.60866137e+13,   6.49155481e+13,   6.36605395e+13,
-      6.23356084e+13,   6.09533305e+13,   5.95249788e+13,
-      5.80606485e+13]])
+        #
+        # test of integrated spectra
+        #
 
-    #
-    # test of integrated spectra
-    #
+        # Integrating (by hand) using flag=3
+        # a is large enough to cover the full radiation fan
+        a = numpy.linspace(-0.2,0.2,50)
+        # create 10-points energy array in [20,30] keV
+        e=numpy.linspace(20000.0,30000.0,10)
 
-    # Integrating (by hand) using flag=3
-    # a is large enough to cover the full radiation fan
-    a = numpy.linspace(-0.2,0.2,50)
-    # create 10-points energy array in [20,30] keV
-    e=numpy.linspace(20000.0,30000.0,10)
+        y3=e*0.0
+        for i in range(a.size):
+            y2=srfunc.sync_ene(3,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1,psi_min=a[i])
+            y3[i] = y3[i] + y2
+            y3=y3*(a[1]-a[0])
 
-    y3=e*0.0
-    for i in range(a.size):
-        y2=srfunc.sync_ene(3,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1,psi_min=a[i])
-        y3[i] = y3[i] + y2
-        y3=y3*(a[1]-a[0])
+        # Integrating (automatically) using FLAG=2
+        y4 = srfunc.sync_ene(2,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1,psi_min=-0.2,psi_max=0.2,psi_npoints=50)
 
-    # Integrating (automatically) using FLAG=2
-    y4 = srfunc.sync_ene(2,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1,psi_min=-0.2,psi_max=0.2,psi_npoints=50)
+        # Integrated (over all angles) using FLAG=0
+        y5 = srfunc.sync_ene(0,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1)
 
-    # Integrated (over all angles) using FLAG=0
-    y5 = srfunc.sync_ene(0,e,ec_ev=19166.0,e_gev=6,i_a=0.1,hdiv_mrad=1)
+        In [475]: for i in range(y3.size):
+            print e[i],y3[i],y4[i],y5[i]
+           .....:
+           .....:
 
-    In [475]: for i in range(y3.size):
-        print e[i],y3[i],y4[i],y5[i]
-       .....:
-       .....:
-
-    # The results obtained are:
-    # energy        int_by_hand       int_num           int
-    # 20000.0       9.32554203564e+12 9.32554203564e+12 9.33199803948e+12
-    # 21111.1111111 8.95286605221e+12 8.95286605221e+12 8.9590640148e+12
-    # 22222.2222222 8.58856640727e+12 8.58856640727e+12 8.59451215453e+12
-    # 23333.3333333 8.2334342483e+12 8.2334342483e+12 8.2391341364e+12
-    # 24444.4444444 7.88805461639e+12 7.88805461639e+12 7.89351540031e+12
-    # 25555.5555556 7.55284456882e+12 7.55284456882e+12 7.55807329003e+12
-    # 26666.6666667 7.22808379127e+12 7.22808379127e+12 7.23308768405e+12
-    # 27777.7777778 6.91393939677e+12 6.91393939677e+12 6.91872581084e+12
-    # 28888.8888889 6.61048616971e+12 6.61048616971e+12 6.61506250643e+12
-    # 30000.0       6.31772320182e+12 6.31772320182e+12 6.32209686189e+12
+        # The results obtained are:
+        # energy        int_by_hand       int_num           int
+        # 20000.0       9.32554203564e+12 9.32554203564e+12 9.33199803948e+12
+        # 21111.1111111 8.95286605221e+12 8.95286605221e+12 8.9590640148e+12
+        # 22222.2222222 8.58856640727e+12 8.58856640727e+12 8.59451215453e+12
+        # 23333.3333333 8.2334342483e+12 8.2334342483e+12 8.2391341364e+12
+        # 24444.4444444 7.88805461639e+12 7.88805461639e+12 7.89351540031e+12
+        # 25555.5555556 7.55284456882e+12 7.55284456882e+12 7.55807329003e+12
+        # 26666.6666667 7.22808379127e+12 7.22808379127e+12 7.23308768405e+12
+        # 27777.7777778 6.91393939677e+12 6.91393939677e+12 6.91872581084e+12
+        # 28888.8888889 6.61048616971e+12 6.61048616971e+12 6.61506250643e+12
+        # 30000.0       6.31772320182e+12 6.31772320182e+12 6.32209686189e+12
 
     """
     energy_ev = numpy.array(energy_ev)
@@ -680,9 +681,9 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
     It is based on SHADOW's wiggler_spectrum. It uses wiggler_nphoton.
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-07-15.
-        2002-07-18 srio@esrf.fr adds doc. Use "current" value .
-        2006-06-18 srio@esrf.fr uses hc from Physical_Constants().
-        2012-10-08 srio@esrf.eu python version.
+        * 2002-07-18 srio@esrf.fr adds doc. Use "current" value.
+        * 2006-06-18 srio@esrf.fr uses hc from Physical_Constants().
+        * 2012-10-08 srio@esrf.eu python version.
     """
     x = traj[0,:]
     y = traj[1,:]
@@ -1017,9 +1018,9 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     ----------
     b_from : int, optional
         A Flag for the type of inpyt magnetic field,
-        0: kValue (deflecting parameters) is given,
-        1: A file with the magnetic field (y[m] B[T]) is given,
-        2: A file with the magnetic field harmonics (n Bn[T]) is given.
+        * 0: kValue (deflecting parameters) is given,
+        * 1: A file with the magnetic field (y[m] B[T]) is given,
+        * 2: A file with the magnetic field harmonics (n Bn[T]) is given.
     inData : str, optional
         A string with the file with the file name containing the field information (for b_from:1,2), or a [npoint,2] numpy array with the field information.
     nPer : int, optional
@@ -1064,11 +1065,11 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
         traj: a numpy array with the output data (8 colums with: x[m]  y[m]  z[m]  BetaX  BetaY  BetaZ  Curvature  B[T]),
         pars: a variable with text info.
 
-    Note
-    ----
+    Notes
+    -----
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-07-17.
-        2002-07-17 srio@esrf.fr.
-        2012-10-08 srio@esrf.eu python version.
+        * 2002-07-17 srio@esrf.fr.
+        * 2012-10-08 srio@esrf.eu python version.
 
     """
     if b_from == 0:
@@ -1334,11 +1335,11 @@ def wiggler_nphoton(r_m, electronEnergy=1.0, photonEnergy=1000.0, polarization=0
     It uses sync_ene
 
     References:
-        G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976).
-        A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968.
+        * G K Green, "Spectra and optics of synchrotron radiation", BNL 50522 report (1976).
+        * A A Sokolov and I M Ternov, Synchrotron Radiation, Akademik-Verlag, Berlin, 1968.
 
     Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-06-24.
-        2012-10-08 srio@esrf.eu python version.
+        * 2012-10-08 srio@esrf.eu python version.
 
 
     """

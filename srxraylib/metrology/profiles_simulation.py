@@ -1,21 +1,18 @@
 """
 This is a collection of functions to simulate profiles that can be used for describing surface errors in optical surfaces
 
-
-Note that all the functions are dimensionless: therefore use always the same unit in horizontal, vertical, and RMS inputs.
-    Angles are in rad.
+Note that all the functions are dimensionless: therefore use always the same unit in horizontal, vertical, and RMS inputs. Angles are in rad.
 
 Functions:
-    combine_two_transversal_profiles(): combine two profiles into a mesh
-    simulate_gaussian_profile_1D():
-    simulate_fractal_profile_1D():
-    simulate_profile_2D
-    simulate_profile_2D_from_1D
-    create_random_rough_surface_1D(): binding to simulate_gaussian_profile_1D and simulate_fractal_profile_1D
-
-    create_simulated_1D_file_APS
-    create_simulated_2D_profile_APS
-    create_2D_profile_from_1D
+    * combine_two_transversal_profiles(): combine two profiles into a mesh
+    * simulate_gaussian_profile_1D():
+    * simulate_fractal_profile_1D():
+    * simulate_profile_2D
+    * simulate_profile_2D_from_1D
+    * create_random_rough_surface_1D(): binding to simulate_gaussian_profile_1D and simulate_fractal_profile_1D
+    * create_simulated_1D_file_APS
+    * create_simulated_2D_profile_APS
+    * create_2D_profile_from_1D
 
 Authors and main contributors:
     Luca Rebuffi, Ruben Reininger, Manuel Sanchez del Rio, Xianbo Shi
@@ -52,18 +49,30 @@ def simulate_profile_1D(step=1.0,
                         power_law_exponent_beta=0.9,   # specific inputs for profile_type=FRACTAL,
                         ):
     """
+    Create a simulated 1D profile.
 
     Parameters
     ----------
-    step
-    mirror_length
-    random_seed
-    error_type
-    rms
-    profile_type
-    rms_heights
-    correlation_length
-    power_law_exponent_beta
+    step : float, optional
+        The abscissas step/
+    mirror_length : float, optional
+        The profile length.
+    random_seed : int, optional
+        A seed to initialize the numpy random generator.
+    error_type : float, optional
+        FIGURE_ERROR = 0,
+        SLOPE_ERROR = 1.
+    rms : float, optional
+        the RMS of the height profile.
+    profile_type : float, optional
+        GAUSSIAN = 0,
+        FRACTAL = 1.
+    rms_heights : float, optional
+        The rms height. Specific inputs for profile_type=GAUSSIAN.
+    correlation_length : float, optional
+        The value for the correlation length. Specific inputs for profile_type=GAUSSIAN.
+    power_law_exponent_beta : float, optional
+        The value for the exponent of the power law (beta). Specific inputs for profile_type=FRACTAL.
 
     Returns
     -------
@@ -107,7 +116,7 @@ def simulate_profile_1D(step=1.0,
 def simulate_profile_1D_gaussian(step=1.0, npoints=None, mirror_length=200.0, rms_heights=3e-9, correlation_length=30.0,
                                  random_seed=8787,renormalize_to_heights_sd=None,renormalize_to_slopes_sd=None):
     """
-    generates a 1-dimensional random rough surface f(x) with N surface points.
+    Generates a 1-dimensional random rough surface f(x) with 'npoint' surface points.
     The surface has a Gaussian height distribution function and a Gaussian autocovariance function, where rL is the
     length of the surface, h is the RMS height and cl is the correlation length.
 
@@ -214,6 +223,8 @@ def simulate_profile_1D_fractal(step=1.0, npoints=None, mirror_length=200.0,
                                 renormalize_to_heights_sd=None,renormalize_to_slopes_sd=None,
                                 frequency_max=None,frequency_min=None):
     """
+    Generates a 1-dimensional random rough surface f(x) with 'npoint' surface points.
+    The surface has a Fractal profile.
 
     Parameters
     ----------
@@ -461,11 +472,11 @@ def create_simulated_1D_file_APS(mirror_length=200.0, step=1.0, random_seed=8787
                                  power_law_exponent_beta=1.5, power_law_exponent_beta_two=1.5,
                                  frequency_power_law_match=0.001):
     """
-    generates a 1-dimensional random rough surface z(x) with n_surface_points surface points.
+    Generates a 1-dimensional random rough surface z(x) with n_surface_points surface points.
     The surface has a power law PSD |f|**(-beta) where:
-    beta=power_law_exponent_beta for frequencies < frequency_power_law_match
-    beta=power_law_exponent_beta for frequencies > frequency_power_law_match.
-    It is a fractal profile if 1<beta<3
+     * beta=power_law_exponent_beta for frequencies < frequency_power_law_match
+     * beta=power_law_exponent_beta for frequencies > frequency_power_law_match.
+    It is a fractal profile if 1<beta<3.
 
     Parameters
     ----------
@@ -605,18 +616,27 @@ def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, ste
 
     Parameters
     ----------
-    profile_1D_x
-    profile_1D_y
-    mirror_width
-    step_w
-    random_seed_w
-    error_type_w
-    rms_w
+    profile_1D_x : numpy array
+        The array with abscissas.
+    profile_1D_y : numpy array
+        The array with heights.
+    mirror_width : float, optional
+        The mesh width.
+    step_w : float, optional
+        The step along the width dorection.
+    random_seed_w : int, optional
+        A seed to initialize the numpy random generator.
+    error_type_w : int, optional
+        FIGURE_ERROR = 0,
+        SLOPE_ERROR = 1.
+    rms_w : float, optional
+        The RMS value for the heights aling the width direction.
+
 
     Returns
     -------
     tuple
-        (abscissas of transversal profile, profile_1D_x, profile_2D)
+        (abscissas of transversal profile, profile_1D_x, profile_2D).
 
     """
 
@@ -637,7 +657,8 @@ def create_2D_profile_from_1D(profile_1D_x, profile_1D_y, mirror_width=20.0, ste
 #TODO: note that the returned array las LENGTH in zeroth order and WIDTH in first order, so shadow coordinates (Y,X)
 def combine_two_transversal_profiles(WW_x, WW, SF_x, SF):
     """
-    combine two profiles into a mesh
+    Combine two profiles into a mesh.
+
     Parameters
     ----------
     WW_x : numpy array

@@ -1,4 +1,10 @@
-# this scrips make a summary file pf the dabam contents to accelerate the search
+"""
+This program makes a summary file pf the dabam contents to accelerate the search.
+
+Example
+-------
+>>> python -m srxraylib.metrology.make_json_summary
+"""
 if __name__ == '__main__':
     """
     Main program to make a summary of dabam profiles.

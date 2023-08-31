@@ -9,13 +9,13 @@ Miscellaneous utilities and tools for synchrotron radiation and x-ray optics.
 
 The classes and functions here can be used in a standalone more. They include:
 
-* metrology: tools for x-ray optics metrology, including dabam (DAtaBAse for Metrology profiles) [1,2]
-* plot: plotting tools. gol (Graphics in One Line) contain functions to make easily simple plots using matplotlib
-* synchrotron sources: srfunc contains functions to calculate synchrotron emission of bending magnets and wigglers
+* metrology: tools for x-ray optics metrology, including dabam (DAtaBAse for Metrology profiles) [1,2].
+* plot: plotting tools. GOL (Graphics in One Line) contain functions to make easily simple plots using matplotlib.
+* synchrotron sources: srfunc contains functions to calculate synchrotron emission of bending magnets and wigglers.
 * util:
-    * data_structors: igor-like data structures
-    * h5_simple_writer: simple writer for hdf5 files
-    * inverse_method_sampler: classes for generating random numbers following given 1D, 2D and 3D probability dostribution functopns
+    * data_structors: igor-like data structures.
+    * h5_simple_writer: simple writer for hdf5 files.
+    * inverse_method_sampler: classes for generating random numbers following given 1D, 2D and 3D probability distribution functons
 
 Documentation
 -------------
