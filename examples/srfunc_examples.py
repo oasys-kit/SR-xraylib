@@ -601,7 +601,7 @@ if __name__ == '__main__':
     check_esrf_bm_2d(pltOk=pltOk)
     check_wiggler_flux_vs_r(pltOk=pltOk)
     check_wiggler_external_b(pltOk=pltOk)
-    # check_wiggler_polarization(pltOk=pltOk) # slow
+    check_wiggler_polarization(pltOk=pltOk) # slow
 
     if pltOk: plt.show()
 
