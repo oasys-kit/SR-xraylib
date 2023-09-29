@@ -41,6 +41,8 @@ import numpy
 import scipy.special
 import scipy.constants as codata
 
+m2ev = codata.c * codata.h / codata.e  # lambda(m)  = m2eV / energy(eV)
+
 def fintk53(xd):
     """
     Calculates the integral from x to infinity of the Bessel function K5/3(x).
