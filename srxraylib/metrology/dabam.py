@@ -23,6 +23,9 @@ dabam: (dataBase for metrology)
 
 __author__ = "Manuel Sanchez del Rio"
 __contact__ = "srio@esrf.eu"
+
+import traceback
+
 __copyright = "ESRF, 2013-2015; LBNL, 2019"
 
 
@@ -1470,8 +1473,8 @@ class dabam(object):
             myfileurl = self.server+self.file_metadata()
             try:
                 u = urlopen(myfileurl)
-            except:
-                raise Exception("Failed to access url: %s" % myfileurl )
+            except Exception as e:
+                raise Exception("Failed to access url: %s" % myfileurl + "\n" + str(e))
             ur = u.read()
             ur1 = ur.decode(encoding='UTF-8')
             h = json.loads(ur1) # dictionnary with metadata
