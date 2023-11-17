@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 
-import imp
 import os
-import subprocess
 
 try:
     from setuptools import find_packages, setup
@@ -11,11 +9,11 @@ except AttributeError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.41'
+VERSION = '1.0.42'
 ISRELEASED = True
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
-README_FILE = os.path.join(os.path.dirname(__file__), 'README.md')
+README_FILE = os.path.join(os.path.dirname(__file__), 'README.rst')
 LONG_DESCRIPTION = open(README_FILE).read()
 AUTHOR = 'Luca Rebuffi, Manuel Sanchez del Rio and Mark Glass'
 AUTHOR_EMAIL = 'lrebuffi@anl.gov'
