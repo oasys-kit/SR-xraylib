@@ -4,16 +4,16 @@
 # Under development!!
 #
 
-
+from srxraylib import deprecated, DeprecatedClassMeta
 import numpy as np
 
 from srxraylib.plot.gol import plot,plot_image,plot_show,plot_scatter
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 from srxraylib.waveoptics.propagator2D import propagate_2D_fraunhofer,propagate_2D_fresnel,propagate_2D_fresnel_srw
 
-
-
-class CompactAFReader(object):
+class CompactAFReader(object, metaclass=DeprecatedClassMeta):
+    _DeprecatedClassMeta__message="use wofry and wofrylib instead"
+    
     def __init__(self, filename):
         file = np.load(filename+".npz")
 
@@ -74,6 +74,7 @@ class CompactAFReader(object):
 # tools
 #
 
+@deprecated
 def line_fwhm(line):
     #
     #CALCULATE fwhm in number of abscissas bins (supposed on a regular grid)
@@ -86,6 +87,7 @@ def line_fwhm(line):
     else:
         return -1
 
+@deprecated
 def sample_1d(x,cdf,number_of_points=10000):
     rdm = np.random.rand(number_of_points)
 
@@ -93,6 +95,7 @@ def sample_1d(x,cdf,number_of_points=10000):
 
     return sampled_points
 
+@deprecated
 def sample_rays(x1,y1,mymode,number_of_points=10000):
     II0 = np.abs(mymode.T)
     II0_max = II0.max()
@@ -110,6 +113,7 @@ def sample_rays(x1,y1,mymode,number_of_points=10000):
     return x,y
 
 
+@deprecated
 def wavefront_intensity_fwhm(wf,prefix="",units="um",verbose=1,shapes=0):
     x = wf.get_coordinate_x()
     y = wf.get_coordinate_y()

@@ -1,54 +1,10 @@
+import numpy
 from oasys_srw.srwlib import *
 import numpy as np
+from srxraylib import deprecated
 
-#
-# Tested but uses Wavefront class
-#
-# def SRWWavefrontFromWavefront(self, wavefront, Rx, dRx, Ry, dRy, resample_x=1.0, resample_y=1.0):
-#     wavefront = wavefront.asEvenGridpointsGrid(resample_x=resample_x, resample_y=resample_y)
-#     s = wavefront.E_field_as_numpy()[0,:,:,0].size
-#
-#     r_horizontal_field = wavefront.E_field_as_numpy()[0, :, :, 0].real.transpose().flatten().astype(np.float)
-#     i_horizontal_field = wavefront.E_field_as_numpy()[0, :, :, 0].imag.transpose().flatten().astype(np.float)
-#
-#     tmp = np.zeros(s * 2, dtype=np.float32)
-#     for i in range(s):
-#         tmp[2*i] = r_horizontal_field[i]
-#         tmp[2*i+1] = i_horizontal_field[i]
-#
-#     horizontal_field = array('f', tmp)
-#
-#     r_vertical_field = wavefront.E_field_as_numpy()[0, :, :, 1].real.transpose().flatten().astype(np.float)
-#     i_vertical_field = wavefront.E_field_as_numpy()[0, :, :, 1].imag.transpose().flatten().astype(np.float)
-#
-#     tmp = np.zeros(s * 2, dtype=np.float32)
-#     for i in range(s):
-#         tmp[2*i] = r_vertical_field[i]
-#         tmp[2*i+1] = i_vertical_field[i]
-#
-#     vertical_field = array('f', tmp)
-#
-#     srw_wavefront = SRWLWfr(_arEx=horizontal_field,
-#                             _arEy=vertical_field,
-#                             _typeE='f',
-#                             _eStart=float(wavefront.energies().min()),
-#                             _eFin=float(wavefront.energies().max()),
-#                             _ne=wavefront.numberEnergies(),
-#                             _xStart=float(wavefront.x_start()),
-#                             _xFin=float(wavefront.x_end()),
-#                             _nx=wavefront.dim_x(),
-#                             _yStart=float(wavefront.y_start()),
-#                             _yFin=float(wavefront.y_end()),
-#                             _ny=wavefront.dim_y(),
-#                             _zStart=float(wavefront.z()))
-#
-#     srw_wavefront.Rx = Rx
-#     srw_wavefront.Ry = Ry
-#     srw_wavefront.dRx = dRx
-#     srw_wavefront.dRy = dRy
-#
-#     return srw_wavefront
 
+@deprecated("use wofrysrw, instead")
 def numpyArrayToSRWArray(numpy_array):
     """
     Converts a numpy.array to an array usable by SRW.
@@ -67,7 +23,7 @@ def numpyArrayToSRWArray(numpy_array):
 
     return array('f', tmp)
 
-
+@deprecated("use wofrysrw, instead")
 def SRWWavefrontFromElectricField(horizontal_start, horizontal_end, horizontal_efield,
                                   vertical_start, vertical_end, vertical_efield,
                                   energy, z, Rx, dRx, Ry, dRy):
@@ -120,41 +76,7 @@ def SRWWavefrontFromElectricField(horizontal_start, horizontal_end, horizontal_e
 
     return srw_wavefront
 
-#
-# Tested but uses Wavefront class
-#
-# def _srw_array_to_numpy(self, srw_array):
-#     re=np.array(srw_array[::2], dtype=np.float)
-#     im=np.array(srw_array[1::2], dtype=np.float)
-#
-#     e = re + 1j * im
-#     e=e.reshape((self.dim_y(),
-#                  self.dim_x(),
-#                  self.numberEnergies(),
-#                  1)
-#                 )
-#
-#     e = e.swapaxes(0,2)
-#
-#     return e
-#
-# def E_field_as_numpy(self):
-#     x_polarization = self._srw_array_to_numpy(self._srw_wavefront.arEx)
-#     y_polarization = self._srw_array_to_numpy(self._srw_wavefront.arEy)
-#
-#     e_field = np.concatenate((x_polarization,y_polarization),3)
-#
-#     return e_field
-#
-# def dim_x(self):
-#     return self._srw_wavefront.mesh.nx
-#
-# def dim_y(self):
-#     return self._srw_wavefront.mesh.ny
-#
-# def dim_energy(self):
-#     return self._srw_wavefront.mesh.ne
-
+@deprecated("use wofrysrw, instead")
 def SRWArrayToNumpy(srw_array, dim_x, dim_y, number_energies):
     """
     Converts a SRW array to a numpy.array.
@@ -178,6 +100,7 @@ def SRWArrayToNumpy(srw_array, dim_x, dim_y, number_energies):
 
     return e.copy()
 
+@deprecated("use wofrysrw, instead")
 def SRWEFieldAsNumpy(srw_wavefront):
     """
     Extracts electrical field from a SRWWavefront
@@ -195,3 +118,6 @@ def SRWEFieldAsNumpy(srw_wavefront):
     e_field = np.concatenate((x_polarization,y_polarization), 3)
 
     return e_field
+
+if __name__=="__main__":
+    a = numpyArrayToSRWArray(numpy.zeros((10, 2)))

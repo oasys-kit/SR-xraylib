@@ -9,7 +9,7 @@ except AttributeError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.44'
+VERSION = '1.0.45'
 ISRELEASED = True
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
@@ -67,9 +67,6 @@ PACKAGES = [
     "srxraylib.profiles",
     "srxraylib.profiles.benders",
     "srxraylib.profiles.diaboloid",
-    "srxraylib.raytracing",
-    "srxraylib.raytracing.hybrid_method",
-    "srxraylib.raytracing.hybrid_source",
     "srxraylib.plot",
 ]
 

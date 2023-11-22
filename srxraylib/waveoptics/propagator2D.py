@@ -32,7 +32,7 @@ import numpy
 #
 #
 
-from srxraylib.util.data_structures import ScaledMatrix
+from srxraylib import deprecated
 from srxraylib.waveoptics.wavefront2D import Wavefront2D
 
 
@@ -43,19 +43,8 @@ except:
     SRWLIB_AVAILABLE = False
     print("SRW is not available")
 
-# TODO: check resulting amplitude normalization (fft and srw likely agree, convolution gives too high amplitudes, so needs normalization)
 
-#TODO: add these elements (like in Timm's application)
-#   -slit with absorption
-#   -two slits
-#   -lens with absorption
-#   -gold grid
-#   -cubelets
-#   -boron fiber with tungsten core
-#   -zone plate
-#   -siements star
-
-
+@deprecated("use wofry and wofrylib, instead")
 def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0,shift_half_pixel=0): #todo: modificato da giovanni
     """
     2D Fraunhofer propagator using convolution via Fourier transform
@@ -123,6 +112,7 @@ def propagate_2D_fraunhofer(wavefront, propagation_distance=1.0,shift_half_pixel
     return  wf_propagated
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_2D_fresnel(wavefront, propagation_distance,shift_half_pixel=1):
     """
     2D Fresnel propagator using convolution via Fourier transform
@@ -172,6 +162,7 @@ def propagate_2D_fresnel(wavefront, propagation_distance,shift_half_pixel=1):
     return wf_propagated
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_2D_fresnel_convolution(wavefront, propagation_distance,shift_half_pixel=1):
     """
     2D Fresnel propagator using convolution via Fourier transform
@@ -229,6 +220,7 @@ def propagate_2D_fresnel_convolution(wavefront, propagation_distance,shift_half_
     return wf_propagated
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagator2d_fourier_rescaling(wf,propagation_distance,shift_half_pixel=1,m=1):
 
     wavefront=wf.duplicate()
@@ -288,6 +280,7 @@ def propagator2d_fourier_rescaling(wf,propagation_distance,shift_half_pixel=1,m=
     return wf_propagated
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagator2d_fourier_rescaling_xy(wf,propagation_distance,shift_half_pixel=1, m_x=1, m_y=1):
 
     wavefront=wf.duplicate()
@@ -346,6 +339,7 @@ def propagator2d_fourier_rescaling_xy(wf,propagation_distance,shift_half_pixel=1
     return wf_propagated
 
 
+@deprecated("use wofrysrw, instead")
 def propagate_2D_fresnel_srw(wavefront, propagation_distance,
                              srw_autosetting=0):
     """
@@ -415,6 +409,7 @@ def propagate_2D_fresnel_srw(wavefront, propagation_distance,
 
     return wavefront2
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_2D_integral(wavefront, propagation_distance,
                           shuffle_interval=0,calculate_grid_only=1):
 

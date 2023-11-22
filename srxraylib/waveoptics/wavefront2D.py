@@ -1,19 +1,13 @@
 
 import numpy
+from srxraylib import DeprecatedClassMeta
 from srxraylib.util.data_structures import ScaledMatrix
 import scipy.constants as codata
 from srxraylib.waveoptics.polarization import Polarization
 
+class Wavefront2D(metaclass=DeprecatedClassMeta):
+    _DeprecatedClassMeta__message="use wofry and wofrylib instead"
 
-#------------------------------------------------
-#
-# Implements Wavefront2D object
-#
-#------------------------------------------------
-#
-#TODO: Add duplicate method
-
-class Wavefront2D(object):
     wavelength = 0.0
     electric_field_array = None
 
@@ -420,9 +414,6 @@ class Wavefront2D(object):
         new_wf = Wavefront2D.initialize_wavefront_from_arrays(x1,y1,z1,z1pi,wavelength=self.get_wavelength())
 
         return new_wf
-
-
-
 
 #
 # TESTS AND EXAMPLES

@@ -2,20 +2,13 @@
 import numpy
 import warnings
 
+from srxraylib import DeprecatedClassMeta
 from srxraylib.util.data_structures import ScaledArray
 import scipy.constants as codata
 
+class Wavefront1D(object, metaclass=DeprecatedClassMeta):
+    _DeprecatedClassMeta__message="use wofry and wofrylib instead"
 
-# TODO: add polarization (like for 2D)
-
-#------------------------------------------------
-#
-#
-#
-#
-#------------------------------------------------
-
-class Wavefront1D(object):
     wavelength = 0.0
     electric_field_array = None
 

@@ -1,11 +1,10 @@
 import numpy
 
-import matplotlib.pylab as plt
+from srxraylib import deprecated
 from srxraylib.util.data_structures import ScaledArray
 from srxraylib.waveoptics.wavefront import Wavefront1D
 
-# TODO: check resulting amplitude normalization
-
+@deprecated("use wofry and wofrylib, instead")
 def propagate_1D_fraunhofer(wavefront, propagation_distance=0.0, shift_half_pixel=0):  # todo: modificato da giovanni
     """
     1D Fraunhofer propagator using convolution via Fourier transform
@@ -48,6 +47,7 @@ def propagate_1D_fraunhofer(wavefront, propagation_distance=0.0, shift_half_pixe
     return Wavefront1D.initialize_wavefront_from_arrays(x2, fft2, wavelength=wavefront.get_wavelength())
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_1D_fresnel(wavefront, propagation_distance):
     """
     1D Fresnel propagator using convolution via Fourier transform
@@ -64,6 +64,7 @@ def propagate_1D_fresnel(wavefront, propagation_distance):
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_1D_fresnel_radius(wavefront, propagation_distance, eta):
     """
     1D Fresnel propagator using convolution via Fourier transform
@@ -83,6 +84,7 @@ def propagate_1D_fresnel_radius(wavefront, propagation_distance, eta):
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(ifft, wavefront.offset(), wavefront.delta()))
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
     """
     1D Fresnel propagator using direct convolution
@@ -102,6 +104,7 @@ def propagate_1D_fresnel_convolution(wavefront, propagation_distance):
     return Wavefront1D(wavefront.get_wavelength(), ScaledArray.initialize_from_steps(tmp, wavefront.offset(), wavefront.delta()))
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[None],
                           method=0,magnification=1.0,npoints_exit=None):
     """
@@ -149,6 +152,7 @@ def propagate_1D_integral(wavefront, propagation_distance, detector_abscissas=[N
                             detector_abscissas[0], detector_abscissas[1]-detector_abscissas[0] ))
 
 
+@deprecated("use wofry and wofrylib, instead")
 def propagator1d_fourier_rescaling(wavefront, propagation_distance, m=1):
 
     wf = wavefront.duplicate() # todo: cambiato da giovanni, controllare
