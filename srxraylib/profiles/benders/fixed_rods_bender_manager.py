@@ -143,19 +143,19 @@ class FixedRodsBenderStructuralParameters(BenderStructuralParameters):
                  workspace_units_to_m=None,
                  workspace_units_to_mm=None):
         super(FixedRodsBenderStructuralParameters, self).__init__(dim_x_minus=dim_x_minus,
-                                                                      dim_x_plus=dim_x_plus ,
-                                                                      bender_bin_x=bender_bin_x ,
-                                                                      dim_y_minus=dim_y_minus,
-                                                                      dim_y_plus=dim_y_plus,
-                                                                      bender_bin_y=bender_bin_y,
-                                                                      p=p,
-                                                                      q=q,
-                                                                      grazing_angle=grazing_angle,
-                                                                      E=E,
-                                                                      h=h,
-                                                                      figure_error_mesh=figure_error_mesh,
-                                                                      workspace_units_to_m=workspace_units_to_m,
-                                                                      workspace_units_to_mm=workspace_units_to_mm)
+                                                                  dim_x_plus=dim_x_plus ,
+                                                                  bender_bin_x=bender_bin_x ,
+                                                                  dim_y_minus=dim_y_minus,
+                                                                  dim_y_plus=dim_y_plus,
+                                                                  bender_bin_y=bender_bin_y,
+                                                                  p=p,
+                                                                  q=q,
+                                                                  grazing_angle=grazing_angle,
+                                                                  E=E,
+                                                                  h=h,
+                                                                  figure_error_mesh=figure_error_mesh,
+                                                                  workspace_units_to_m=workspace_units_to_m,
+                                                                  workspace_units_to_mm=workspace_units_to_mm)
         self.r     = r
         self.l     = l
         self.R0    = R0
@@ -280,20 +280,20 @@ class _FixedRodsBenderCalculator():
         return self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
 
     def __get_fit_parameters_for_movement(self):
-        bender_fit_parameters = FixedRodsBenderFitParameters(optimized_length=None,
-                                                             n_fit_steps=5,
-                                                             W2=self.__bender_manager.bender_structural_parameters.W2,
-                                                             W2_min=0.0,
-                                                             W2_max=0.0,
-                                                             W2_fixed=True,
-                                                             eta=self.__bender_manager.bender_structural_parameters.eta,
-                                                             eta_min=0.0,
-                                                             eta_max=0.0,
-                                                             eta_fixed=True,
-                                                             R0=self.__bender_manager.bender_structural_parameters.R0,
-                                                             R0_min=self.__bender_manager.bender_structural_parameters.R0/5,
-                                                             R0_max=self.__bender_manager.bender_structural_parameters.R0*5,
-                                                             R0_fixed=False)
+        return  FixedRodsBenderFitParameters(optimized_length=None,
+                                             n_fit_steps=5,
+                                             W2=self.__bender_manager.bender_structural_parameters.W2,
+                                             W2_min=0.0,
+                                             W2_max=0.0,
+                                             W2_fixed=True,
+                                             eta=self.__bender_manager.bender_structural_parameters.eta,
+                                             eta_min=0.0,
+                                             eta_max=0.0,
+                                             eta_fixed=True,
+                                             R0=self.__bender_manager.bender_structural_parameters.R0,
+                                             R0_min=self.__bender_manager.bender_structural_parameters.R0/5,
+                                             R0_max=self.__bender_manager.bender_structural_parameters.R0*5,
+                                             R0_fixed=False)
 
     def __fit_bender_parameters(self, bender_fit_parameters, ideal_surface_coords, q_fit=None):
         x, y = ideal_surface_coords
@@ -407,8 +407,6 @@ class FixedRodsCalibratedBenderManager(CalibratedBenderManager):
 
     def get_bender_shape_from_movement(self, bender_movement: BenderMovement) -> FixedRodsBenderOuputData:
         return self.__calculator.get_bender_shape_from_movement(bender_movement)
-
-
 
 
 def focal_distance(p, q):

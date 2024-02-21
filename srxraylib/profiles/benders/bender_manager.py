@@ -163,13 +163,11 @@ class CalibratedBenderManager(AbstractBenderManager):
 
     def get_q_upstream(self, bender_movement : BenderMovement):
         if bender_movement.position_upstream is None: return None
-        return CalibratedBenderManager.__get_q_from_calibration(bender_movement.position_upstream,
-                                                                self._calibration_parameters.upstream)
+        return CalibratedBenderManager.__get_q_from_calibration(bender_movement.position_upstream, self._calibration_parameters.upstream)
 
     def get_q_downstream(self, bender_movement : BenderMovement):
         if bender_movement.position_downstream is None: return None
-        return CalibratedBenderManager.__get_q_from_calibration(bender_movement.position_downstream,
-                                                                self._calibration_parameters.downstream)
+        return CalibratedBenderManager.__get_q_from_calibration(bender_movement.position_downstream, self._calibration_parameters.downstream)
 
     @classmethod # 1/q = p0*pos + p1
     def __get_q_from_calibration(cls, position, parameters):  return 1 / (parameters[0] * position + parameters[1])
