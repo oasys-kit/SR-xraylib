@@ -66,6 +66,8 @@ class AbstractBenderManager:
 
     def get_q_upstream(self, bender_movement : BenderMovement):   raise NotImplementedError
     def get_q_downstream(self, bender_movement : BenderMovement): raise NotImplementedError
+    def get_q_ideal_surface(self, bender_movement : BenderMovement):
+        return 0.5*(self.get_q_upstream(bender_movement)+self.get_q_downstream(bender_movement))
 
     def calculate_ideal_surface(self, q=None, sign=-1):
         c1, c2, c3, c4, c5, c6, c7, c8, c9, c10 = self.get_conic_coefficients(q)

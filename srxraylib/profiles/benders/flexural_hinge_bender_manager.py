@@ -109,7 +109,6 @@ class FlexuralHingeBenderOuputData(BenderOuputData):
         self.e_out     = e_out
         self.ratio_out = ratio_out
 
-
 class FlexuralHingeBenderStructuralParameters(BenderStructuralParameters):
     def __init__(self,
                  dim_x_minus=None,
