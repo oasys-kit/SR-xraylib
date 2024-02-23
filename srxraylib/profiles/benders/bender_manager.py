@@ -161,7 +161,7 @@ class StandardBenderManager(AbstractBenderManager):
 
 class CalibratedBenderManager(AbstractBenderManager):
     def __init__(self, bender_structural_parameters : BenderStructuralParameters, calibration_parameters : CalibrationParameters):
-        super(CalibrationParameters, self).__init__(bender_structural_parameters=bender_structural_parameters)
+        super(CalibratedBenderManager, self).__init__(bender_structural_parameters=bender_structural_parameters)
         self._calibration_parameters       = calibration_parameters
 
 
