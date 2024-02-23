@@ -47,6 +47,7 @@
 
 import numpy
 import decimal
+from scipy.optimize import root
 
 from srxraylib.profiles.benders.bender_io import BenderOuputData, BenderFitParameters, BenderStructuralParameters, BenderMovement
 
@@ -75,14 +76,15 @@ class AbstractBenderManager:
         x = numpy.linspace(-self.bender_structural_parameters.dim_x_minus, self.bender_structural_parameters.dim_x_plus, self.bender_structural_parameters.bender_bin_x + 1)
         y = numpy.linspace(-self.bender_structural_parameters.dim_y_minus, self.bender_structural_parameters.dim_y_plus, self.bender_structural_parameters.bender_bin_y + 1)
 
-        xx, yy = numpy.meshgrid(x, y)
+        X, Y = numpy.meshgrid(x, y)
 
-        c = c1 * (xx ** 2) + c2 * (yy ** 2) + c4 * xx * yy + c7 * xx + c8 * yy + c10
-        b = c5 * yy + c6 * xx + c9
-        a = c3
+        def equation_to_solve(Z):
+            return c1 * (X ** 2) + c2 * (Y ** 2) + c3 * (Z ** 2) + c4 * X * Y + c5 * Y * Z + c6 * X * Z + c7 * X + c8 * Y + c9 * Z + c10
 
-        z = (-b + sign * numpy.sqrt(b ** 2 - 4 * a * c)) / (2 * a)
-        z[b ** 2 - 4 * a * c < 0] = numpy.nan
+        z_start = numpy.zeros(X.shape)
+        result = root(equation_to_solve, z_start, method='df-sane', tol=None)
+
+        z = result.x if result.success else z_start
 
         return x, y, z.T
 

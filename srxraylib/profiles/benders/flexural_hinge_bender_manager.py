@@ -44,8 +44,10 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE         #
 # POSSIBILITY OF SUCH DAMAGE.                                             #
 # ----------------------------------------------------------------------- #
+import copy
+
 import numpy
-from scipy.interpolate import interp2d
+from scipy.interpolate import interp2d, make_interp_spline
 from scipy.optimize import curve_fit
 
 from srxraylib.profiles.benders.bender_io import BenderMovement, BenderFitParameters, BenderStructuralParameters, BenderOuputData
@@ -174,16 +176,8 @@ class _FlexuralHingeBenderCalculator():
         optimized_length      = bender_fit_parameters.optimized_length
 
         ideal_surface_coords = self.__bender_manager.calculate_ideal_surface()
-        _, y, _ = ideal_surface_coords
 
-        bender_function, parameters, ideal_profile, cursor = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords)
-
-        if len(parameters) == 1:
-            bender_profile = bender_function(y, parameters[0])
-        elif len(parameters) == 2:
-            bender_profile = bender_function(y, parameters[0], parameters[1])
-        else:
-            bender_profile = bender_function(y, parameters[0], parameters[1], parameters[2])
+        bender_profile, parameters, ideal_profile, cursor = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords)
 
         # rotate back to Shadow system
         bender_data = self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
@@ -207,9 +201,9 @@ class _FlexuralHingeBenderCalculator():
             if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = round(parameters[1], 5)
 
         # set the structure of the mirror at focus
-        self.__bender_manager.bender_structural_parameters.M1    = bender_data.M1_out
-        self.__bender_manager.bender_structural_parameters.e     = bender_data.e_out
-        self.__bender_manager.bender_structural_parameters.ratio = bender_data.ratio_out
+        self.__bender_manager.bender_structural_parameters.M1 = bender_data.M1_out
+        if shape == MirrorShape.TRAPEZIUM:            self.__bender_manager.bender_structural_parameters.e     = bender_data.e_out
+        if bender_type == BenderType.DOUBLE_MOMENTUM: self.__bender_manager.bender_structural_parameters.ratio = bender_data.ratio_out
 
         return bender_data
 
@@ -218,52 +212,72 @@ class _FlexuralHingeBenderCalculator():
         h                     = self.__bender_manager.bender_structural_parameters.h
         shape                 = self.__bender_manager.bender_structural_parameters.shape
         bender_type           = self.__bender_manager.bender_structural_parameters.bender_type
+        workspace_units_to_mm = self.__bender_manager.bender_structural_parameters.workspace_units_to_mm
+        workspace_units_to_m  = self.__bender_manager.bender_structural_parameters.workspace_units_to_m
 
-        b0 = self.__bender_manager.bender_structural_parameters.dim_x_plus + self.__bender_manager.bender_structural_parameters.dim_x_minus
         L  = self.__bender_manager.bender_structural_parameters.dim_y_plus + self.__bender_manager.bender_structural_parameters.dim_y_minus
 
         q_upstream   = self.__bender_manager.get_q_upstream(bender_movement)
         q_downstream = self.__bender_manager.get_q_downstream(bender_movement)
-        
+
         bender_fit_parameters = self.__get_fit_parameters_for_movement()
-        
+
         if bender_type == BenderType.SINGLE_MOMENTUM:
             if not q_downstream is None: raise ValueError("Specify q_upstream only on a Single Momentum Bender")
 
             ideal_surface_coords = self.__bender_manager.calculate_ideal_surface(q=q_upstream)
             _, y, _ = ideal_surface_coords
 
-            _, parameters, ideal_profile, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords)
+            bender_profile, parameters, ideal_profile, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords)
 
             M1 = parameters[0]
-            if shape == MirrorShape.TRAPEZIUM:   bender_profile = self.__general_bender_function(y, M1, bender_fit_parameters.e, 1.0, E, h, b0, L)
-            elif shape == MirrorShape.RECTANGLE: bender_profile = self.__general_bender_function(y, M1, 0.0, 1.0, E, h, b0, L)
         else:
             ideal_surface_coords            = self.__bender_manager.calculate_ideal_surface(q=0.5 * (q_upstream + q_downstream))
             ideal_surface_coords_upstream   = self.__bender_manager.calculate_ideal_surface(q=q_upstream)
             ideal_surface_coords_downstream = self.__bender_manager.calculate_ideal_surface(q=q_downstream)
             _, y, _ = ideal_surface_coords
+            ideal_profile =  self.__get_ideal_profile(L, ideal_surface_coords)
 
-            _, parameters_upstream, _, _   = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords_upstream)
-            _, parameters_downstream, _, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords_downstream)
+            bender_profile_upstream,   parameters_upstream, _, _   = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords_upstream)
+            bender_profile_downstream, parameters_downstream, _, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords_downstream)
 
-            ideal_profile = self.__get_ideal_profile(L, ideal_surface_coords)
+            bender_profile: numpy.ndarray = copy.deepcopy(bender_profile_upstream)
+
+            mid_index = int(0.5 * bender_profile.shape[0])
+            gap = abs(bender_profile_upstream[mid_index-1] - bender_profile_downstream[mid_index])
+            if bender_profile_upstream[mid_index-1] < bender_profile_downstream[mid_index]:
+                bender_profile[mid_index:] = bender_profile_downstream[mid_index:] - gap
+            else:
+                bender_profile[mid_index:] = bender_profile_downstream[mid_index:] + gap
+            bender_profile = make_interp_spline(y, bender_profile, k=3)(y)
+
+
+            if shape == MirrorShape.TRAPEZIUM:   ratio = parameters_upstream[2]
+            elif shape == MirrorShape.RECTANGLE: ratio = parameters_upstream[1]
 
             M1 = parameters_downstream[0]
-            if shape == MirrorShape.TRAPEZIUM:
-                M2 = parameters_upstream[0] * parameters_upstream[2]
-                bender_profile = self.__general_bender_function(y, M1, bender_fit_parameters.e, M1/M2, E, h, b0, L)
-            elif shape == MirrorShape.RECTANGLE:
-                M2 = parameters_upstream[0] * parameters_upstream[1]
-                bender_profile = self.__general_bender_function(y, M1, 0.0, M1 / M2, E, h, b0, L)
+            M2 = parameters_upstream[0] * ratio
 
-        return self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
+        bender_data = self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
+
+        bender_data.M1_out = round(M1, int(3 + get_significant_digits(workspace_units_to_mm)))
+        if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = M2/M1
+
+        correction_profile = bender_data.correction_profile
+
+        r_squared = 1 - (numpy.sum(correction_profile ** 2) / numpy.sum((ideal_profile - numpy.mean(ideal_profile)) ** 2))
+        rms       = round(correction_profile.std() * 1e9 * workspace_units_to_m, 6)
+
+        bender_data.titles = ["Bender vs. Ideal Profiles" + "\n" + r'$R^2$ = ' + str(r_squared),
+                              "Correction Profile 1D, r.m.s. = " + str(rms) + " nm"]
+
+        return bender_data
 
     def __generate_bender_output_data(self, ideal_profile, bender_profile, ideal_surface_coords):
         x, y, z = ideal_surface_coords
 
         bender_profile = bender_profile[::-1]
-        ideal_profile = ideal_profile[::-1]
+        ideal_profile  = ideal_profile[::-1]
 
         # from here it's Shadow Axis system
         correction_profile = ideal_profile - bender_profile
@@ -297,11 +311,14 @@ class _FlexuralHingeBenderCalculator():
                                             z_bender_correction_no_figure_error=z_bender_correction_no_figure_error)
 
     def __get_fit_parameters_for_movement(self):
+        workspace_units_to_mm = self.__bender_manager.bender_structural_parameters.workspace_units_to_mm
+        M1 = self.__bender_manager.bender_structural_parameters.M1*workspace_units_to_mm
+
         bender_fit_parameters = FlexuralHingeBenderFitParameters(optimized_length=None,
                                                                  n_fit_steps=5,
-                                                                 M1=self.__bender_manager.bender_structural_parameters.M1,
+                                                                 M1=M1,
                                                                  M1_min=0,
-                                                                 M1_max=self.__bender_manager.bender_structural_parameters.M1*5,
+                                                                 M1_max=M1*5,
                                                                  M1_fixed=False,
                                                                  e=self.__bender_manager.bender_structural_parameters.e,
                                                                  e_min=0.0,
@@ -309,20 +326,21 @@ class _FlexuralHingeBenderCalculator():
                                                                  e_fixed=True,
                                                                  ratio=self.__bender_manager.bender_structural_parameters.ratio,
                                                                  ratio_min=0.0,
-                                                                 ratio_max=1.0,
+                                                                 ratio_max=10.0,
                                                                  ratio_fixed=False)
 
         return bender_fit_parameters
 
     def __fit_bender_parameters(self, bender_fit_parameters, ideal_surface_coords):
-        x, y, z = ideal_surface_coords
-        
+        _, y, z = ideal_surface_coords
+
         E                     = self.__bender_manager.bender_structural_parameters.E
         h                     = self.__bender_manager.bender_structural_parameters.h
         shape                 = self.__bender_manager.bender_structural_parameters.shape
         bender_type           = self.__bender_manager.bender_structural_parameters.bender_type
         optimized_length      = bender_fit_parameters.optimized_length
         n_fit_steps           = bender_fit_parameters.n_fit_steps
+        workspace_units_to_mm = self.__bender_manager.bender_structural_parameters.workspace_units_to_mm
 
         b0 = self.__bender_manager.bender_structural_parameters.dim_x_plus + self.__bender_manager.bender_structural_parameters.dim_x_minus
         L  = self.__bender_manager.bender_structural_parameters.dim_y_plus + self.__bender_manager.bender_structural_parameters.dim_y_minus
@@ -331,19 +349,31 @@ class _FlexuralHingeBenderCalculator():
         ideal_profile = z[0, :][::-1]  # one row is the profile of the cylinder, enough for the minimizer
         ideal_profile += -ideal_profile[0] + ((L / 2 + y) * (ideal_profile[0] - ideal_profile[-1])) / L  # Rotation
 
+        # in units different from mm, there is problem of precision and the fitter struggles
+        E                            /= workspace_units_to_mm ** 2
+        h                            *= workspace_units_to_mm
+        b0                           *= workspace_units_to_mm
+        L                            *= workspace_units_to_mm
+        bender_fit_parameters.M1     *= workspace_units_to_mm
+        bender_fit_parameters.M1_min *= workspace_units_to_mm
+        bender_fit_parameters.M1_max *= workspace_units_to_mm
+
         if optimized_length is None:
             cursor            = None
-            y_fit             = y
-            ideal_profile_fit = ideal_profile
+            y_fit             = copy.deepcopy(y)
+            ideal_profile_fit = copy.deepcopy(ideal_profile)
         else:
             cursor            = numpy.where(numpy.logical_and(y >= -optimized_length / 2, y <= optimized_length / 2))
-            y_fit             = y[cursor]
-            ideal_profile_fit = ideal_profile[cursor]
+            y_fit             = copy.deepcopy(y[cursor])
+            ideal_profile_fit = copy.deepcopy(ideal_profile[cursor])
+
+        y_fit             *= workspace_units_to_mm
+        ideal_profile_fit *= workspace_units_to_mm
 
         initial_guess   = None
         constraints     = None
         bender_function = None
-        
+
         if shape == MirrorShape.TRAPEZIUM:
             def bender_function_2m(Y, M1, e, ratio):
                 return self.__general_bender_function(Y, M1, e, ratio, E, h, b0, L)
@@ -386,6 +416,7 @@ class _FlexuralHingeBenderCalculator():
                                 bender_fit_parameters.ratio_min if bender_fit_parameters.ratio_fixed == False else (bender_fit_parameters.ratio * epsilon_minus)],
                                [bender_fit_parameters.M1_max if bender_fit_parameters.M1_fixed == False else (bender_fit_parameters.M1 * epsilon_plus),
                                 bender_fit_parameters.ratio_max if bender_fit_parameters.ratio_fixed == False else (bender_fit_parameters.ratio * epsilon_plus)]]
+
         for i in range(n_fit_steps):
             parameters, _ = curve_fit(f=bender_function,
                                       xdata=y_fit,
@@ -394,11 +425,22 @@ class _FlexuralHingeBenderCalculator():
                                       bounds=constraints,
                                       method='trf')
             initial_guess = parameters
-            
-        return bender_function, parameters, ideal_profile, cursor
+
+        if len(parameters) == 1:   bender_profile = bender_function(y*workspace_units_to_mm, parameters[0])
+        elif len(parameters) == 2: bender_profile = bender_function(y*workspace_units_to_mm, parameters[0], parameters[1])
+        else:                      bender_profile = bender_function(y*workspace_units_to_mm, parameters[0], parameters[1], parameters[2])
+
+        # restore to user units
+        parameters[0]                /= workspace_units_to_mm
+        bender_profile               /= workspace_units_to_mm
+        bender_fit_parameters.M1     /= workspace_units_to_mm
+        bender_fit_parameters.M1_min /= workspace_units_to_mm
+        bender_fit_parameters.M1_max /= workspace_units_to_mm
+
+        return bender_profile, parameters, ideal_profile, cursor
 
     @classmethod
-    def __get_ideal_profile(cls, L, ideal_surface_coords):
+    def __get_ideal_profile(cls, L, ideal_surface_coords) -> numpy.ndarray:
         x, y, z = ideal_surface_coords
 
         ideal_profile = z[0, :][::-1]  # one row is the profile of the cylinder, enough for the minimizer
