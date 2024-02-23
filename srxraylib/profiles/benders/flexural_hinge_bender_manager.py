@@ -193,12 +193,12 @@ class _FlexuralHingeBenderCalculator():
                               "Correction Profile 1D, r.m.s. = " + str(rms) + " nm" +
                               ("" if optimized_length is None else (", " + str(rms_opt) + " nm (optimized)"))]
 
-        bender_data.M1_out = round(parameters[0], int(3 + get_significant_digits(workspace_units_to_mm)))
+        bender_data.M1_out = parameters[0]
         if shape == MirrorShape.TRAPEZIUM:
-            bender_data.e_out = round(parameters[1], 5)
-            if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = round(parameters[2], 5)
+            bender_data.e_out = parameters[1]
+            if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = parameters[2]
         elif shape == MirrorShape.RECTANGLE:
-            if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = round(parameters[1], 5)
+            if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = parameters[1]
 
         # set the structure of the mirror at focus
         self.__bender_manager.bender_structural_parameters.M1 = bender_data.M1_out
@@ -265,9 +265,8 @@ class _FlexuralHingeBenderCalculator():
 
         bender_data = self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
 
-        bender_data.M1_out = round(M1, int(3 + get_significant_digits(workspace_units_to_mm)))
+        bender_data.M1_out = M1
         if bender_type == BenderType.DOUBLE_MOMENTUM: bender_data.ratio_out = M2/M1
-
         correction_profile = bender_data.correction_profile
 
         r_squared = 1 - (numpy.sum(correction_profile ** 2) / numpy.sum((ideal_profile - numpy.mean(ideal_profile)) ** 2))
