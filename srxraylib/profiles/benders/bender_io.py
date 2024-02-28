@@ -121,3 +121,8 @@ class BenderMovement():
     def position_upstream(self): return self.__position_upstream
     @property
     def position_downstream(self): return self.__position_downstream
+
+    @position_upstream.setter
+    def position_upstream(self, value): self.__position_upstream = value
+    @position_downstream.setter
+    def position_downstream(self, value): self.__position_downstream = value
