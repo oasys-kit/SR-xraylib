@@ -209,6 +209,7 @@ def single_quartic(a0, b0, c0, d0, e0):
     if s == 0:
         t = z0*z0 + r
     else:
+        if cmath.abs(s) < 1e-6: print("**** single_quartic: s value too small, solution to the quartic eq is probably wrong!")
         t = -q / s
 
     # Compute roots by quadratic equations
@@ -395,6 +396,7 @@ def multi_quartic(a0, b0, c0, d0, e0):
     # Additional variables
     s = np.sqrt(2*p + 2*z0.real + 0j)
     t = np.zeros_like(s)
+    if np.abs(s).mean() < 1e-6: print("**** multi_quartic: s value too small, solution to the quartic eq is probably wrong!")
     mask = (s == 0)
     t[mask] = z0[mask]*z0[mask] + r[mask]
     t[~mask] = -q[~mask] / s[~mask]
