@@ -1,5 +1,72 @@
 """
 See: https://github.com/NKrvavica/fqs
+
+This version has been modified by srio@esrf.eu.
+For quartic equations, the original solution fails when "s" is small. This was
+discovered solving the toroid-ray intersection in ray tracing.
+
+Examples
+--------
+
+- With the original version:
+
+ABCDE = [ 1, -10.002177259318255, 149.91291022442874, -624.6460852022283, -8745.02188873291]
+
+roots = quartic_roots(ABCDE)
+print("roots: ", roots)
+z0 = roots[0][0] ; print("0 =? ", ABCDE[0] * z0 ** 4 + ABCDE[1] * z0 ** 3 + ABCDE[2] * z0 ** 2 + ABCDE[3] * z0 + ABCDE[4])
+z1 = roots[0][1] ; print("0 =? ", ABCDE[0] * z1 ** 4 + ABCDE[1] * z1 ** 3 + ABCDE[2] * z1 ** 2 + ABCDE[3] * z1 + ABCDE[4])
+z2 = roots[0][2] ; print("0 =? ", ABCDE[0] * z2 ** 4 + ABCDE[1] * z2 ** 3 + ABCDE[2] * z2 ** 2 + ABCDE[3] * z2 + ABCDE[4])
+z3 = roots[0][3] ; print("0 =? ", ABCDE[0] * z3 ** 4 + ABCDE[1] * z3 ** 3 + ABCDE[2] * z3 ** 2 + ABCDE[3] * z3 + ABCDE[4])
+
+output
+------
+roots:  [[2.39021078+7.49736365j 2.61087785-7.49736382j 2.39021078-7.49736365j
+  2.61087785+7.49736382j]]
+0 =?  (-12647.887818364972+9.094947017729282e-13j)
+0 =?  (-12647.887818364972+0j)
+0 =?  (-12647.887818364972-9.094947017729282e-13j)
+0 =?  (-12647.887818364972+0j)
+
+- With the modified version:
+
+ABCDE = [ 1, -10.002177259318255, 149.91291022442874, -624.6460852022283, -8745.02188873291]
+
+roots = quartic_roots(ABCDE, modified=1, zero_below=1e-6)
+print("roots: ", roots)
+z0 = roots[0][0] ; print("0 =? ", ABCDE[0] * z0 ** 4 + ABCDE[1] * z0 ** 3 + ABCDE[2] * z0 ** 2 + ABCDE[3] * z0 + ABCDE[4])
+z1 = roots[0][1] ; print("0 =? ", ABCDE[0] * z1 ** 4 + ABCDE[1] * z1 ** 3 + ABCDE[2] * z1 ** 2 + ABCDE[3] * z1 + ABCDE[4])
+z2 = roots[0][2] ; print("0 =? ", ABCDE[0] * z2 ** 4 + ABCDE[1] * z2 ** 3 + ABCDE[2] * z2 ** 2 + ABCDE[3] * z2 + ABCDE[4])
+z3 = roots[0][3] ; print("0 =? ", ABCDE[0] * z3 ** 4 + ABCDE[1] * z3 ** 3 + ABCDE[2] * z3 ** 2 + ABCDE[3] * z3 + ABCDE[4])
+
+output
+------
+roots:  [[10.00070228+1.03238273e-07j -4.99961365+1.03238273e-07j
+   2.50054431+1.29864909e+01j  2.50054431-1.29864911e+01j]]
+0 =?  (5.578676791628823e-06+0.00034828369084980424j)
+0 =?  (-2.7889363991562277e-06-0.00034828369073462565j)
+0 =?  (-0.0006016568240738707+7.244244443427306e-06j)
+0 =?  (0.0006044465753802797-7.244243533932604e-06j)
+
+- With numpy (much better result):
+
+import numpy
+h_output2 = numpy.polynomial.polynomial.polyroots([DCBA1[0], DCBA1[1], DCBA1[2], DCBA1[3], DCBA1[4]])
+print("roots: ", h_output2)
+z = h_output2[0] ; print("0 =? ", DCBA1[4] * z ** 4 + DCBA1[3] * z ** 3 + DCBA1[2] * z ** 2 + DCBA1[1] * z + DCBA1[0] )
+z = h_output2[1] ; print("0 =? ", DCBA1[4] * z ** 4 + DCBA1[3] * z ** 3 + DCBA1[2] * z ** 2 + DCBA1[1] * z + DCBA1[0] )
+z = h_output2[2] ; print("0 =? ", DCBA1[4] * z ** 4 + DCBA1[3] * z ** 3 + DCBA1[2] * z ** 2 + DCBA1[1] * z + DCBA1[0] )
+z = h_output2[3] ; print("0 =? ", DCBA1[4] * z ** 4 + DCBA1[3] * z ** 3 + DCBA1[2] * z ** 2 + DCBA1[1] * z + DCBA1[0] )
+
+output
+------
+roots:  [-4.99961365 +0.j        2.50054432-12.986491j  2.50054432+12.986491j
+ 10.00070228 +0.j      ]
+0 =?  0j
+0 =?  (5.093170329928398e-11+2.7284841053187847e-12j)
+0 =?  (5.093170329928398e-11-2.7284841053187847e-12j)
+0 =?  (-1.8189894035458565e-12+0j)
+
 """
 # -*- coding: utf-8 -*-
 """
@@ -209,7 +276,7 @@ def single_quartic(a0, b0, c0, d0, e0):
     if s == 0:
         t = z0*z0 + r
     else:
-        if cmath.abs(s) < 1e-6: print("**** single_quartic: s value too small, solution to the quartic eq is probably wrong!")
+        if np.abs(s) < 1e-6: print("**** single_quartic: s value too small, solution to the quartic eq is probably wrong!")
         t = -q / s
 
     # Compute roots by quadratic equations
@@ -217,6 +284,62 @@ def single_quartic(a0, b0, c0, d0, e0):
     r2, r3 = single_quadratic(1, -s, z0 - t)
 
     return r0 - a0, r1 - a0, r2 - a0, r3 - a0
+
+@jit(nopython=True)
+def single_quartic_modified(a0, b0, c0, d0, e0, zero_below=1e-6):
+    ''' Analytical closed-form solver for a single quartic equation
+    (4th order polynomial). Calls `single_cubic_one` and
+    `single quadratic`.
+
+    Parameters
+    ----------
+    a0, b0, c0, d0, e0: array_like
+        Input data are coefficients of the Quartic polynomial::
+
+        a0*x^4 + b0*x^3 + c0*x^2 + d0*x + e0 = 0
+
+    Returns
+    -------
+    r1, r2, r3, r4: tuple
+        Output data is a tuple of four roots of given polynomial.
+
+    References
+    ----------
+    Modified by srio@esrf.eu following recipe in https://mathworld.wolfram.com/QuarticFormula.html
+    (It gives better solution in some cases useful for ray tracinf toroids).
+    '''
+
+    ''' Reduce the quartic equation to to form:
+        x^4 + a*x^3 + b*x^2 + c*x + d = 0'''
+
+    a, b, c, d = b0/a0, c0/a0, d0/a0, e0/a0
+
+
+    #
+    # https://mathworld.wolfram.com/QuarticFormula.html
+    #
+
+    y1 = single_cubic_one(1, -b, c * a - 4 * d, 4 * b * d - c**2 - a**2 * d)
+    # print("subsidiary eq solution: ", z0, y1)
+    R =  np.sqrt(0.25 * a**2 - b + y1 + 0j)
+    D0 = np.sqrt(0.75 * a**2 - 2 * b + 2 * np.sqrt(y1**2 - 4 * d) + 0j)
+    E0 = np.sqrt(0.75 * a**2 - 2 * b - 2 * np.sqrt(y1**2 - 4 * d) + 0j)
+
+    D1 = np.sqrt(0.75 * a**2 - R**2 - 2 * b + 0.25 * (4 * a * b - 8 * c - a**3) / R + 0j)
+    E1 = np.sqrt(0.75 * a**2 - R**2 - 2 * b - 0.25 * (4 * a * b - 8 * c - a**3) / R + 0j)
+    if np.abs(R) < zero_below:
+        # print("R==0, R=", R)
+        E = E0
+        D = D0
+    else:
+        # print("R!=0, R=", R)
+        E = E1
+        D = D1
+    z1 = -0.25 * a + 0.5 * R + 0.5 * D
+    z2 = -0.25 * a + 0.5 * R - 0.5 * D
+    z3 = -0.25 * a - 0.5 * R + 0.5 * E
+    z4 = -0.25 * a - 0.5 * R - 0.5 * E
+    return z1, z2, z3, z4
 
 
 def multi_quadratic(a0, b0, c0):
@@ -407,6 +530,66 @@ def multi_quartic(a0, b0, c0, d0, e0):
 
     return r0, r1, r2, r3
 
+def multi_quartic_modified(a0, b0, c0, d0, e0, zero_below=1e-6):
+    ''' Analytical closed-form solver for multiple quartic equations
+    (4th order polynomial), based on `numpy` functions. Calls
+    `multi_cubic` and `multi_quadratic`.
+
+    Parameters
+    ----------
+    a0, b0, c0, d0, e0: array_like
+        Input data are coefficients of the Quartic polynomial::
+
+            a0*x^4 + b0*x^3 + c0*x^2 + d0*x + e0 = 0
+
+    Returns
+    -------
+    r1, r2, r3, r4: ndarray
+        Output data is an array of four roots of given polynomials.
+
+    References
+    ----------
+    Modified by srio@esrf.eu following recipe in https://mathworld.wolfram.com/QuarticFormula.html
+    (It gives better solution in some cases useful for ray tracinf toroids).
+    '''
+
+    ''' Reduce the quartic equation to to form:
+        x^4 ax^3 + bx^2 + cx + d = 0'''
+
+
+    a, b, c, d = b0/a0, c0/a0, d0/a0, e0/a0
+
+    #
+    # https://mathworld.wolfram.com/QuarticFormula.html
+    #
+
+    # One root of the cubic equation
+    y1 = multi_cubic(1, -b, c * a - 4 * d, 4 * b * d - c**2 - a**2 * d, all_roots=False)
+
+    # print("subsidiary eq solution: ", z0, y1)
+    R = np.sqrt(0.25 * a**2 - b + y1 + 0j)
+    D0 = np.sqrt(0.75 * a**2 - 2 * b + 2 * np.sqrt(y1**2 - 4 * d) + 0j)
+    E0 = np.sqrt(0.75 * a**2 - 2 * b - 2 * np.sqrt(y1**2 - 4 * d) + 0j)
+
+    D1 = np.sqrt(0.75 * a**2 - R**2 - 2 * b + 0.25 * (4 * a * b - 8 * c - a**3) / R + 0j)
+    E1 = np.sqrt(0.75 * a**2 - R**2 - 2 * b - 0.25 * (4 * a * b - 8 * c - a**3) / R + 0j)
+
+    mask = (R == 0)
+    E = np.zeros(a.size, dtype=complex)
+    D = np.zeros(a.size, dtype=complex)
+    Zero_below = np.ones(a.size) * zero_below
+    mask = (np.abs(R) < Zero_below)
+    E[mask]  = E0[mask]
+    E[~mask] = E1[~mask]
+    D[mask]  = D0[mask]
+    D[~mask] = D1[~mask]
+
+    z1 = -0.25 * a + 0.5 * R + 0.5 * D
+    z2 = -0.25 * a + 0.5 * R - 0.5 * D
+    z3 = -0.25 * a - 0.5 * R + 0.5 * E
+    z4 = -0.25 * a - 0.5 * R - 0.5 * E
+    return z1, z2, z3, z4
+
 
 def cubic_roots(p):
     '''
@@ -475,7 +658,7 @@ def cubic_roots(p):
         return np.array(roots).T
 
 
-def quartic_roots(p):
+def quartic_roots(p, modified=0, zero_below=1e-6):
     '''
     A caller function for a fast quartic root solver (4th order polynomial).
 
@@ -497,6 +680,8 @@ def quartic_roots(p):
         have size ``(5,)`` or ``(M, 5)``, where ``M>0`` is the
         number of polynomials. Note that the first axis should be used for
         stacking.
+    modified: int, optional
+        0=original, 1=using modified method (see Reference).
 
     Returns
     -------
@@ -523,7 +708,14 @@ def quartic_roots(p):
               0.28781548+1.41609308j,   0.28781548-1.41609308j],
            [-30.76994812-0.j        ,  -7.60101564+0.j        ,
               6.61999319+0.j        ,  24.75097057-0.j        ]])
+
+    References
+    ----------
+    Modified by srio@esrf.eu following recipe in https://mathworld.wolfram.com/QuarticFormula.html
+    (It gives better solution in some cases useful for ray tracinf toroids).
+
     '''
+
     # Convert input to an array (if input is a list or tuple)
     p = np.asarray(p)
 
@@ -537,8 +729,15 @@ def quartic_roots(p):
                          'coefficients, got {:d}.'.format(p.shape[1]))
 
     if p.shape[0] < 100:
-        roots = [single_quartic(*pi) for pi in p]
+        if modified == 0:
+            roots = [single_quartic(*pi) for pi in p]
+        else:
+            roots = [single_quartic_modified(*pi, zero_below=zero_below) for pi in p]
         return np.array(roots)
     else:
-        roots = multi_quartic(*p.T)
+        if modified == 0:
+            roots = multi_quartic(*p.T)
+        else:
+            roots = multi_quartic_modified(*p.T, zero_below=zero_below)
+            # roots = multi_quartic_modified(p.T[0], p.T[1], p.T[2], p.T[3], p.T[4], zero_below=zero_below)
         return np.array(roots).T
