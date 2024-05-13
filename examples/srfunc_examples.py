@@ -584,6 +584,66 @@ def check_wiggler_polarization(pltOk=False):
         for i in range(len(e)):
             print("  %f  %e"%(e[i],f0[i]))
 
+def check_shadow4(pltOk=False):
+    import time
+    from srxraylib.sources.srfunc import sync_f_sigma_and_pi, sync_f_sigma_and_pi_approx, kv_approx
+    from scipy.special import kv, gamma
+
+    if True:
+        # test speed
+        psi1 = 0.0
+        psi_interval_number_of_points = 1001
+        angle_array_reduced = numpy.linspace(-0.5 * psi1, 0.5 * psi1, psi_interval_number_of_points)
+
+        t0 = time.time()
+        for i in range(15000):
+            tmp = sync_f_sigma_and_pi(angle_array_reduced, 100.)
+        print("Time (accurate): ", time.time()-t0)
+
+        t0 = time.time()
+        for i in range(15000):
+            tmp = sync_f_sigma_and_pi_approx(angle_array_reduced, 100.)
+        print("Time (approximated): ", time.time()-t0)
+
+    if True:
+        # display/compare Kv approximated
+        ji_interval_number_of_points = 1001
+        ji_array = numpy.linspace(0, 5, ji_interval_number_of_points)
+
+        k13 = kv(1.0 / 3.0, ji_array)
+        k23 = kv(2.0 / 3.0, ji_array)
+        k53 = kv(5.0 / 3.0, ji_array)
+
+        k13approx = kv_approx(1.0 / 3.0, ji_array)
+        k23approx = kv_approx(2.0 / 3.0, ji_array)
+        k53approx = kv_approx(5.0 / 3.0, ji_array)
+
+        from srxraylib.plot.gol import plot
+
+        plot(ji_array, k13,
+             ji_array, k23,
+             ji_array, k53,
+             ji_array, k13approx,
+             ji_array, k23approx,
+             ji_array, k53approx,
+             legend=['k1/3','k2/3','k5/3', 'k1/3approx','k2/3approx','k5/3approx'],
+             marker=[None, None, None, '+', '+', '+'], linestyle=[None,None,None,'','',''], xlog=0, ylog=0, yrange=[1e-18,10],
+             show=pltOk)
+
+
+    if True:
+        # test flatness (wiggler interpolation error).
+        psi1 = 50.0
+        psi_interval_number_of_points = 1001
+        angle_array_reduced = numpy.linspace(-0.5 * psi1, 0.5 * psi1, psi_interval_number_of_points)
+
+        eene = numpy.linspace(1, 1e4, 100)
+        t0 = time.time()
+        for i in range(eene.size):
+            fm_s, fm_p = sync_f_sigma_and_pi(angle_array_reduced, eene[i])
+            print(eene[i], fm_s.min(), fm_s.max(), fm_s.max() - fm_s.min())
+
+
 #
 #------------------------- MAIN ------------------------------------------------
 #
@@ -601,7 +661,8 @@ if __name__ == '__main__':
     check_esrf_bm_2d(pltOk=pltOk)
     check_wiggler_flux_vs_r(pltOk=pltOk)
     check_wiggler_external_b(pltOk=pltOk)
-    check_wiggler_polarization(pltOk=pltOk) # slow
+    # check_wiggler_polarization(pltOk=pltOk) # slow
+    check_shadow4(pltOk=pltOk)
 
     if pltOk: plt.show()
 

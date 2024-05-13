@@ -764,8 +764,8 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
         phot_num = numpy.zeros(len(curv))
         # rad= numpy.abs(1.0/curv)
         # print(">>>>>> rad: ",rad)
-        ang_num = wiggler_nphoton(rad,electronEnergy=bener,photonEnergy=energy,polarization=polarization)
-        phot_num=ang_num*mul_fac
+        ang_num = wiggler_nphoton(rad, electronEnergy=bener, photonEnergy=energy, polarization=polarization)
+        phot_num = ang_num*mul_fac
         #;
         #; Computes CDF of the no. of photon along the trajectory S.
         #; In the elliptical case, the entire traversed path length (DS) is 
@@ -777,25 +777,25 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
         i_wig = 1 # 1=normalWiggler, 2=ellipticalWiggler (not implemented)
 
         if i_wig == 2:
-            dx = x-numpy.roll(x,1)
-            dy = y-numpy.roll(y,1)
-            dz = z-numpy.roll(z,1)
-            ds1 = numpy.sqrt(dx*dx+dy*dy+dz*dz) 
-            ds1[0]=0.0
+            dx = x - numpy.roll(x,1)
+            dy = y - numpy.roll(y,1)
+            dz = z - numpy.roll(z,1)
+            ds1 = numpy.sqrt( dx * dx + dy * dy + dz * dz)
+            ds1[0] = 0.0
             ds = numpy.zeros(np)
             for j in range(len(curv)): 
-                ds[j]=numpy.sum(ds1[0:j])
-            phot_cdf=(numpy.roll(phot_num,1)+phot_num)*0.5e0*(ds-numpy.roll(ds,1))
-            phot_cdf[0]=0.0
+                ds[j] = numpy.sum(ds1[0:j])
+            phot_cdf = (numpy.roll(phot_num, 1) + phot_num) * 0.5e0 * (ds - numpy.roll(ds, 1))
+            phot_cdf[0] = 0.0
             tot_num = numpy.sum(phot_cdf)
         else:
-            phot_cdf = (numpy.roll(phot_num,1)+phot_num)*0.5e0*(y-numpy.roll(y,1))
-            phot_cdf[0]=0.0
+            phot_cdf = (numpy.roll(phot_num, 1) + phot_num) * 0.5e0 * (y - numpy.roll(y, 1))
+            phot_cdf[0] = 0.0
             tot_num = numpy.sum(phot_cdf)
 
         out[0,i] = energy
-        out[1,i] = tot_num*(electronCurrent*1e3)
-        out[2,i] = tot_num*(electronCurrent*1e3)*codata.e*1e3
+        out[1,i] = tot_num * (electronCurrent * 1e3)
+        out[2,i] = tot_num * (electronCurrent * 1e3) * codata.e * 1e3
 
     if outFile != "":
         f = open(outFile,"w")
@@ -804,6 +804,206 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
         f.write("#N 3\n")
         f.write("#L PhotonEnergy[eV]  Flux[phot/s/0.1%bw]  PowerDensity[W/eV]\n")  
         for j in range(out.shape[1]): 
+            f.write(("%19.12e  "*out.shape[0]+"\n")%tuple(out[i,j] for i in range(out.shape[0])))
+        f.close()
+        print("File with wiggler spectrum written to file: "+outFile)
+
+    return out[0,:].copy(), out[1,:].copy(), out[2,:].copy()
+
+
+def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.2, electronCurrent=0.2,
+                     outFile="", elliptical=False, verbose=True, polarization=0,
+                     psi_min=-1e-3, psi_max=1e-3, psi_npoints=100,
+                     theta_min=-1e-3, theta_max=1e-3,):
+    """
+    Calculates the spectrum of a wiggler using an electron trajectory as input.
+
+    Parameters
+    ----------
+    traj : numpy array
+        The array with the electron trajectory (created by wiggler_trajectory).
+
+    enerMin : float, optional
+        Minimum photon energy [eV].
+    enerMax : float, optional
+        Maximum photon energy [eV].
+    nPoints : int, optional
+        Number of energy points.
+    electronCurrent : float, optional
+        The electron beam current in A.
+    per : float, optional
+        [not used!] The ID period in m.
+    outFile : str, optional
+        The file name with the output. If set to '' it does not write a file.
+    elliptical : boolean, optional
+        [not used!] Flag for elliptical wiggler [not yet implemented].
+    verbose : boolean, optional
+        flag for verbose output.
+    polarization : int, optional
+        0: Total, 1: Parallel (l2=1, l3=0, in Sokolov&Ternov notation), 2: Perpendicular (l2=0, l3=1).
+    psi_min : float, optional
+        Psi_Min the minimum integration angle [in mrad].
+    psi_max : float, optional
+        Psi_Max the maximum integration angle [in mrad].
+    psi_npoints : float, optional
+        the number of points in psi for integration.
+    theta_min : float, optional
+        Theta_Min the minimum horizontal angle [in mrad].
+    theta_max : float, optional
+        Theta_Max the maximum horizontal angle [in mrad].
+
+    Returns
+    -------
+    numpy array
+        An array with the resulting spectrum.
+
+    Notes
+    -----
+
+    It is based on SHADOW's wiggler_spectrum. It uses wiggler_nphoton.
+
+    Written by: M. Sanchez del Rio, srio@esrf.fr, 2002-07-15.
+        * 2002-07-18 srio@esrf.fr adds doc. Use "current" value.
+        * 2006-06-18 srio@esrf.fr uses hc from Physical_Constants().
+        * 2012-10-08 srio@esrf.eu python version.
+    """
+    x = traj[0,:]
+    y = traj[1,:]
+    z = traj[2,:]
+    betax = traj[3,:]
+    betay = traj[4,:]
+    betaz = traj[5,:]
+    curv =  traj[6,:]
+    b_t =  traj[7,:]
+
+    step = numpy.sqrt(numpy.power(y[2]-y[1],2) + numpy.power(x[2]-x[1],2) +  \
+           numpy.power(z[2]-z[1],2))
+    #;
+    #; Compute gamma and the beam energy
+    #;
+    gamma = 1.0/numpy.sqrt(1 - numpy.power(betay[1],2) - \
+                               numpy.power(betax[1],2) - \
+                               numpy.power(betaz[1],2))
+    # bener = gamma*(9.109e-31)*numpy.power(2.998e8,2)/(1.602e-19)*1.0e-9
+    bener = gamma * (codata.m_e) * numpy.power(codata.c, 2) / (codata.e) * 1.0e-9
+    if verbose:
+        print("\nElectron beam energy (from velocities) = %f GeV "%(bener))
+        print("\ngamma (from velocities) = %f "%(gamma))
+
+
+    #;
+    #; Figure out the limit of photon energy.
+    #;
+
+    curv_max = numpy.abs(curv).max()
+    curv_min = numpy.abs(curv).min()
+
+    if verbose:
+        print("curvature (max) = %g m "%(curv_max))
+        print("          (min) = %g m "%(curv_min))
+        print("Radius of curvature (max) = %g m "%(1.0/curv_min))
+        print("                    (min) = %g m "%(1.0/curv_max))
+
+    m2ev = codata.c * codata.h / codata.e  # lambda(m)  = m2eV / energy(eV)
+    TOANGS  =  m2ev*1e10
+    phot_min = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_min
+    phot_max = TOANGS*3.0*numpy.power(gamma,3)/4.0/numpy.pi/1.0e10*curv_max
+
+    if verbose:
+        print("Critical Energy (max.) = %g eV"%(phot_max))
+        print("                (min.) = %g eV"%(phot_min))
+
+    out = numpy.zeros((3,nPoints))
+    #;
+    #; starts the loop in energy
+    #;
+    energy_array = numpy.linspace(enerMin, enerMax, nPoints)
+
+    mul_fac = numpy.abs(curv) * numpy.sqrt(1 + numpy.power(betax / betay, 2)+ \
+                                         numpy.power(betaz / betay,2)) * 1.0e3
+
+    hit_slit_in_H_factor = numpy.ones_like(mul_fac)
+
+    # betax_average = (numpy.roll(betax, 1) + betax) * 0.5e0
+    # betax_average[0] = 0
+
+    msk1 = (betax * 1e3) < theta_min
+    msk2 = (betax * 1e3) > theta_max
+    # for i in range(mul_fac.size):
+    #     print(betax[i] * 1e3, msk1[i], theta_min, msk2[i], theta_max )
+
+    hit_slit_in_H_factor[msk1] = 0
+    hit_slit_in_H_factor[msk2] = 0
+
+    # print(msk1)
+
+    rad = numpy.abs(1.0 / curv)
+
+    # REMOVE INFINITIES
+    for i,irad in enumerate(rad):
+        if rad[i] == float("-inf"):
+            rad[i] = -1e20
+        if rad[i] == float("+inf"):
+            rad[i] = 1e20
+        # print(i,curv[i],rad[i],rad[i] == float("-inf"), rad[i] == float("+inf"))
+
+
+    for i in range(len(energy_array)):
+        energy = energy_array[i]
+
+        #
+        #;
+        #; wiggler_nphoton computes the no. of photons per mrad (ANG_NUM) at
+        #; each point. It is then used to generate the no. of photons per axial
+        #; length (PHOT_NUM) along the trajectory S.
+        phot_num = numpy.zeros(len(curv))
+        # rad= numpy.abs(1.0/curv)
+        # print(">>>>>> rad: ",rad, psi_min, psi_max, psi_npoints)
+        ang_num = wiggler_nphoton(rad, electronEnergy=bener, photonEnergy=energy, polarization=polarization,
+                                  f_psi=2, psi_min=psi_min, psi_max=psi_max, psi_npoints=psi_npoints)
+        phot_num = ang_num * mul_fac
+        #;
+        #; Computes CDF of the no. of photon along the trajectory S.
+        #; In the elliptical case, the entire traversed path length (DS) is
+        #; computed. In the normal case, only the component (Y) in the direction
+        #; of propagation computed.
+        #;
+        #
+
+        i_wig = 1 # 1=normalWiggler, 2=ellipticalWiggler (not implemented)
+
+        if i_wig == 2:
+            dx = x - numpy.roll(x, 1)
+            dy = y - numpy.roll(y, 1)
+            dz = z - numpy.roll(z, 1)
+            ds1 = numpy.sqrt(dx * dx + dy * dy + dz * dz)
+            ds1[0] = 0.0
+            ds = numpy.zeros(np)
+            for j in range(len(curv)):
+                ds[j] = numpy.sum(ds1[0:j])
+            phot_cdf=(numpy.roll(phot_num, 1) + phot_num) * 0.5e0 * (ds - numpy.roll(ds, 1))
+            phot_cdf[0] = 0.0
+            tot_num = numpy.sum(phot_cdf)
+        else:
+            phot_num_average = (numpy.roll(phot_num, 1) + phot_num) * 0.5e0
+            y_interval = (y - numpy.roll(y, 1))
+            # print(">>>>>>>>>>>>>>>>>>>>>>>", phot_num_average.shape)
+            # print(">>>>>>>>>>>>>>>>>>>>>>> betax", betax)
+            phot_cdf = phot_num_average * y_interval * hit_slit_in_H_factor
+            phot_cdf[0] = 0.0
+            tot_num = numpy.sum(phot_cdf)
+
+        out[0,i] = energy
+        out[1,i] = tot_num * (electronCurrent * 1e3)
+        out[2,i] = tot_num * (electronCurrent * 1e3) * codata.e * 1e3
+
+    if outFile != "":
+        f = open(outFile,"w")
+        f.write("#F "+outFile+"\n")
+        f.write("\n#S 1 Wiggler spectrum\n")
+        f.write("#N 3\n")
+        f.write("#L PhotonEnergy[eV]  Flux[phot/s/0.1%bw]  PowerDensity[W/eV]\n")
+        for j in range(out.shape[1]):
             f.write(("%19.12e  "*out.shape[0]+"\n")%tuple(out[i,j] for i in range(out.shape[0])))
         f.close()
         print("File with wiggler spectrum written to file: "+outFile)
@@ -916,7 +1116,7 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, outFile=
     # (basically the integrat of G1). May be it can be parametrized using
     # Mathematica? 
     phot_num = numpy.zeros(np) 
-    energy_array = numpy.linspace(enerMin,enerMax,enerPoints)
+    energy_array = numpy.linspace(enerMin, enerMax, enerPoints)
 
     if energy_array.size == 1: # scalar
         energy_step = enerMin * 1e-3 # 0.1%bw, by default
@@ -936,13 +1136,15 @@ def wiggler_cdf(traj, enerMin=10000.0, enerMax=10010.0, enerPoints=101, outFile=
     ang_num = numpy.zeros(len(curv))
 
     for j in range(len(energy_array)):
-        tmp = wiggler_nphoton(rad,electronEnergy=bener,\
-                      photonEnergy=energy_array[j],polarization=0)
+        tmp = wiggler_nphoton(rad,
+                              electronEnergy=bener,
+                              photonEnergy=energy_array[j],
+                              polarization=0)
         ang_num += tmp / (0.001 * energy_array[j]) * energy_step
 
-    phot_num = ang_num*numpy.abs(curv)*numpy.sqrt(1.0+\
-               numpy.power((betax/betay),2) + \
-               numpy.power((betaz/betay),2))*1.0e3
+    phot_num = ang_num * numpy.abs(curv) * numpy.sqrt(1.0 + \
+               numpy.power((betax / betay), 2) + \
+               numpy.power((betaz / betay), 2)) * 1.0e3
 
     #!C
     #!C Computes CDF of the no. of photon along the trajectory S.
@@ -1306,7 +1508,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
 
     return (traj,pars)
 
-def wiggler_nphoton(r_m, electronEnergy=1.0, photonEnergy=1000.0, polarization=0):
+def wiggler_nphoton(r_m, electronEnergy=1.0, photonEnergy=1000.0, polarization=0,
+                    f_psi=0, psi_min=0.0, psi_max=0.0, psi_npoints=1):
     """
     Calculates the synchrotron radiation spectrum versus bending radius.
 
@@ -1325,6 +1528,19 @@ def wiggler_nphoton(r_m, electronEnergy=1.0, photonEnergy=1000.0, polarization=0
         photon energy in eV.
     polarization : int, optional
         0: Total, 1: Parallel (l2=1, l3=0, in Sokolov&Ternov notation) ,2: Perpendicular (l2=0, l3=1).
+    f_psi : int, optional
+        flag with the type of calculation:
+        * 0: Flux fully integrated in angle (Psi),
+        * 1: Flux at Psi=0,
+        * 2: Flux integrated in the angular interval [Psi_Min,Psi_Max],
+        * 3: Flux at Psi=Psi_Min,
+        * 4: Flux versus angle in [Psi_Min,Psi_Max] and energy.
+    psi_min : float, optional
+        Psi_Min the minimum integration angle [in mrad] for f_psi=2 or the integration angle for f_psi=3.
+    psi_max : float, optional
+        Psi_Max the maximum integration angle [in mrad] (for f_psi=2).
+    psi_npoints : float, optional
+        the number of points in psi for integration (for f_psi=2).
 
     Returns
     -------
@@ -1354,7 +1570,8 @@ def wiggler_nphoton(r_m, electronEnergy=1.0, photonEnergy=1000.0, polarization=0
 
     ec_ev = cte * numpy.power(electronEnergy,3) / r_m
 
-    nn = sync_ene(0,photonEnergy,ec_ev=ec_ev,e_gev=electronEnergy,i_a=1e-3, hdiv_mrad=1.0, polarization=polarization)
+    nn = sync_ene(f_psi, photonEnergy, ec_ev=ec_ev, e_gev=electronEnergy, i_a=1e-3, hdiv_mrad=1.0,
+                  polarization=polarization, psi_min=psi_min, psi_max=psi_max, psi_npoints=psi_npoints)
 
     return nn 
 
@@ -1409,21 +1626,169 @@ def wiggler_harmonics(Bs, Nh=41, fileOutH=""):
     return hh
 
 #
+# speed-up functions for shadow4
+#
+def sync_f_sigma_and_pi(rAngle, rEnergy):
+    r""" angular dependency of synchrotron radiation emission
+
+      NAME:
+            sync_f_sigma_and_pi
+
+      PURPOSE:
+            Calculates the function used for calculating the angular
+         dependence of synchrotron radiation.
+
+      CATEGORY:
+            Mathematics.
+
+      CALLING SEQUENCE:
+            Result = sync_f_sigma_and_pi(rAngle,rEnergy)
+
+      INPUTS:
+            rAngle:  (array) the reduced angle, i.e., angle[rads]*Gamma. It can be a
+             scalar or a vector.
+            rEnergy:  (scalar) a value for the reduced photon energy, i.e.,
+             energy/critical_energy.
+
+      KEYWORD PARAMETERS:
+
+
+      OUTPUTS:
+            returns the value  of the sync_f for sigma and pi polarizations
+             The result is an array of the same dimension as rAngle.
+
+      PROCEDURE:
+            The number of emitted photons versus vertical angle Psi is
+         proportional to sync_f, which value is given by the formulas
+         in the references.
+
+
+         References:
+             G K Green, "Spectra and optics of synchrotron radiation"
+                 BNL 50522 report (1976)
+             A A Sokolov and I M Ternov, Synchrotron Radiation,
+                 Akademik-Verlag, Berlin, 1968
+
+      OUTPUTS:
+            returns the value  of the sync_f function
+
+      PROCEDURE:
+            Uses BeselK() function
+
+      MODIFICATION HISTORY:
+            Written by:     M. Sanchez del Rio, srio@esrf.fr, 2002-05-23
+         2002-07-12 srio@esrf.fr adds circular polarization term for
+             wavelength integrated spectrum (S&T formula 5.25)
+         2012-02-08 srio@esrf.eu: python version
+         2019-10-31 srio@lbl.gov  speed-up changes for shadow4
+
+    """
+
+    #
+    # ; Eq 11 in Pag 6 in Green 1975
+    #
+    ji = numpy.sqrt((1.0 + rAngle**2)**3) * rEnergy / 2.0
+    efe_sigma = scipy.special.kv(2.0 / 3.0, ji) * (1.0 + rAngle**2)
+    efe_pi = rAngle * scipy.special.kv(1.0 / 3.0, ji) / numpy.sqrt(1.0 + rAngle ** 2) * (1.0 + rAngle ** 2)
+    return efe_sigma**2, efe_pi**2
+
+def sync_f_sigma_and_pi_approx(rAngle, rEnergy):
+    r""" angular dependency of synchrotron radiation emission. Using approximated Modified Bessel functions.
+
+      NAME:
+            sync_f_sigma_and_pi
+
+      PURPOSE:
+            Calculates the function used for calculating the angular
+         dependence of synchrotron radiation.
+
+      CATEGORY:
+            Mathematics.
+
+      CALLING SEQUENCE:
+            Result = sync_f_sigma_and_pi(rAngle,rEnergy)
+
+      INPUTS:
+            rAngle:  (array) the reduced angle, i.e., angle[rads]*Gamma. It can be a
+             scalar or a vector.
+            rEnergy:  (scalar) a value for the reduced photon energy, i.e.,
+             energy/critical_energy.
+
+      KEYWORD PARAMETERS:
+
+
+      OUTPUTS:
+            returns the value  of the sync_f for sigma and pi polarizations
+             The result is an array of the same dimension as rAngle.
+
+      PROCEDURE:
+            The number of emitted photons versus vertical angle Psi is
+         proportional to sync_f, which value is given by the formulas
+         in the references.
+
+
+         References:
+             G K Green, "Spectra and optics of synchrotron radiation"
+                 BNL 50522 report (1976)
+             A A Sokolov and I M Ternov, Synchrotron Radiation,
+                 Akademik-Verlag, Berlin, 1968
+
+      OUTPUTS:
+            returns the value  of the sync_f function
+
+      PROCEDURE:
+            Uses BeselK() function
+
+      MODIFICATION HISTORY:
+            Written by:     M. Sanchez del Rio, srio@esrf.fr, 2002-05-23
+         2002-07-12 srio@esrf.fr adds circular polarization term for
+             wavelength integrated spectrum (S&T formula 5.25)
+         2012-02-08 srio@esrf.eu: python version
+         2019-10-31 srio@lbl.gov  speed-up changes for shadow4
+
+    """
+
+    #
+    # ; Eq 11 in Pag 6 in Green 1975
+    #
+    ji = numpy.sqrt((1.0 + rAngle**2)**3) * rEnergy / 2.0
+    efe_sigma = kv_approx(2.0 / 3.0, ji) * (1.0 + rAngle**2)
+    efe_pi = rAngle * kv_approx(1.0 / 3.0, ji) / numpy.sqrt(1.0 + rAngle ** 2) * (1.0 + rAngle ** 2)
+    return efe_sigma**2, efe_pi**2
+
+def kv_approx(nu, x):
+    # Approximated expressions for the modified Bessel functions K1/3, K2/3 and K5/3
+    # Coefficients have been fitted using the expression in:
+    # https://goi.org/10.1088/1674-4527/13/6/007
+    # See file shadow4-tests/shadow4tests/devel/fit_bessel_kv.py
+    if numpy.abs(nu - 1/3) < 1e-10:
+        coeffs = [-0.31902416, -0.81577317, -0.78202672,  0.30405889,  0.70028439, -1.16431336,
+  0.24015406, -0.0261485 ]
+    elif numpy.abs(nu - 2/3) < 1e-10:
+        coeffs = [-0.37896593, -0.34095854, -0.62947205,  0.05467015,  0.62890735, -1.07260337,
+  1.66367831, -1.78893917]
+    elif numpy.abs(nu - 5/3) < 1e-10:
+        coeffs = [-2.35033577e-01,  2.17241138e-02, -7.04622366e-03,  9.65554026e-04,
+  7.64819524e-01, -4.54068899e+00,  1.11791188e+01, -7.25096908e+00]
+    else:
+        raise Exception("Fit coefficients not available for nu=%f" % nu)
+
+    gammanu = scipy.special.gamma(nu)
+
+    H1 = coeffs[0] * x ** (1 / 1) + coeffs[1] * x ** (1 / 2) + coeffs[2] * x ** (1 / 3) + coeffs[3] * x ** (1 / 4)
+    H2 = coeffs[4] * x ** (1 / 1) + coeffs[5] * x ** (1 / 2) + coeffs[6] * x ** (1 / 3) + coeffs[7] * x ** (1 / 4)
+    delta1 = numpy.exp(H1)
+    delta2 = 1 - numpy.exp(H2)
+
+    A1 = 0.5 * gammanu * (x / 2)**(-nu)
+    A2 = numpy.sqrt(numpy.pi / (2 * x)) * numpy.exp(-x)
+    out =  A1 * delta1 + A2 * delta2
+    return out
+
+#
 #------------------------- MAIN ------------------------------------------------
 #
 if __name__ == '__main__':
-    if False:
-        from srfunc_examples import *
-        pltOk = True
-        check_xraybooklet_fig2_1(pltOk=pltOk)
-        check_xraybooklet_fig2_2(pltOk=pltOk)
-        check_esrf_bm_spectrum(pltOk=pltOk)
-        check_esrf_bm_angle_power(pltOk=pltOk)
-        check_esrf_bm_angle_flux(pltOk=pltOk)
-        check_clarke_43(pltOk=pltOk)
-        check_esrf_bm_2d(pltOk=pltOk)
-        check_wiggler_flux_vs_r(pltOk=pltOk)
-        check_wiggler_external_b(pltOk=pltOk)
-        # check_wiggler_polarization(pltOk=pltOk) # slow
-        if pltOk: plt.show()
+    pass
+    # see examples in sr-xraylib/examples/srfunc_examples
 
