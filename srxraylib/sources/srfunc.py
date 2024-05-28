@@ -960,15 +960,14 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     #     print(betax[i] * 1e3, msk1[i], theta_min, msk2[i], theta_max )
 
     # Now we have to reduce the resolution of the variables needed for the calculations,
-    # for now we can use a slit factor = 1 to be check for the magnetic fields with low sampling
-    # measurements steps
+    # can be useful for low sampling magnetic fields files and tiny apertures
 
     y_low_res = resample_array(y_hi_res, int(len(y_hi_res)/hi_res_fac * slit_points_factor), method='linear')
     rad = resample_array(rad_hi_res, int(len(rad_hi_res)/hi_res_fac * slit_points_factor), method='linear')
     mul_fac = resample_array(mul_fac, int(len(mul_fac)/hi_res_fac * slit_points_factor), method='linear')
         
     if verbose:
-        print('Attention: Considering a total of %g points for the calculations'%(len(rad)))
+        print('Attention: Considering %g points for the calculations from a total of %g'%(len(rad), len(curv)))
 
     # REMOVE INFINITIES
     for i,irad in enumerate(rad):
