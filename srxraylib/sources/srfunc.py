@@ -42,9 +42,6 @@ import scipy.special
 import scipy.constants as codata
 from scipy.interpolate import interp1d
 
-##test##
-from srxraylib.plot.gol import plot
-
 m2ev = codata.c * codata.h / codata.e  # lambda(m)  = m2eV / energy(eV)
 
 def fintk53(xd):
