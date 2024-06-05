@@ -815,7 +815,7 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
 def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.2, electronCurrent=0.2,
                      outFile="", elliptical=False, verbose=True, polarization=0,
                      psi_min=-1e-3, psi_max=1e-3, psi_npoints=100,
-                     theta_min=-1e-3, theta_max=1e-3, slit_points_factor=1):
+                     theta_min=-1e-3, theta_max=1e-3, traj_res_fac = 1e4, slit_points_factor=1):
     """
     Calculates the spectrum of a wiggler using an electron trajectory as input.
 
@@ -852,7 +852,9 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
         Theta_Min the minimum horizontal angle [in mrad].
     theta_max : float, optional
         Theta_Max the maximum horizontal angle [in mrad].
-    slit_points_factor : int, optional
+    traj_res_fac : float, optional
+        Factor to resample the original electron trajectory
+    slit_points_factor : float, optional
         Factor to increase the number of points in trajectory by pole on a given aperture
 
     Returns
@@ -922,12 +924,12 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
 
     #First, we need to resample the involved variables to increase the resolution:
 
-    hi_res_fac = int(1e4)
-    y_hi_res     = resample_array(y, len(y) * hi_res_fac, method='linear')
-    betax_hi_res = resample_array(betax, len(betax) * hi_res_fac, method='linear')
-    betay_hi_res = resample_array(betay, len(betay) * hi_res_fac, method='linear')
-    betaz_hi_res = resample_array(betaz, len(betaz) * hi_res_fac, method='linear')
-    curv_hi_res  = resample_array(curv, len(curv) * hi_res_fac, method='linear')    
+    #traj_res_fac = 1e4
+    y_hi_res     = resample_array(y, int(len(y) * traj_res_fac), method='linear')
+    betax_hi_res = resample_array(betax, int(len(betax) * traj_res_fac), method='linear')
+    betay_hi_res = resample_array(betay, int(len(betay) * traj_res_fac), method='linear')
+    betaz_hi_res = resample_array(betaz, int(len(betaz) * traj_res_fac), method='linear')
+    curv_hi_res  = resample_array(curv, int(len(curv) * traj_res_fac), method='linear')    
     
     #Then we create the hit_slit factor 
 
@@ -943,7 +945,7 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     hit_slit_in_H_factor[msk1] = 0
     hit_slit_in_H_factor[msk2] = 0    
 
-    #Then we calculate the mul_fac only for the aperture hit points
+    #Then we calculate the mul_fac only for the aperture hit points only
 
     mul_fac = numpy.abs(curv_hi_res[hit_slit_in_H_factor==1]) \
     * numpy.sqrt(1 + numpy.power(betax_hi_res[hit_slit_in_H_factor==1] /
@@ -959,9 +961,9 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     # Now we have to reduce the resolution of the variables needed for the calculations,
     # can be useful for low sampling magnetic fields files and tiny apertures
 
-    y_low_res = resample_array(y_hi_res, int(len(y_hi_res)/hi_res_fac * slit_points_factor), method='linear')
-    rad = resample_array(rad_hi_res, int(len(rad_hi_res)/hi_res_fac * slit_points_factor), method='linear')
-    mul_fac = resample_array(mul_fac, int(len(mul_fac)/hi_res_fac * slit_points_factor), method='linear')
+    y_low_res = resample_array(y_hi_res, int(len(y_hi_res)/traj_res_fac * slit_points_factor), method='linear')
+    rad = resample_array(rad_hi_res, int(len(rad_hi_res)/traj_res_fac * slit_points_factor), method='linear')
+    mul_fac = resample_array(mul_fac, int(len(mul_fac)/traj_res_fac * slit_points_factor), method='linear')
         
     if verbose:
         print('Attention: Considering %g points for the calculations from a total of %g'%(len(rad), len(curv)))
