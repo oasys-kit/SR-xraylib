@@ -853,9 +853,9 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     theta_max : float, optional
         Theta_Max the maximum horizontal angle [in mrad].
     traj_res_fac : float, optional
-        Factor to resample the original electron trajectory
+        Factor to resample the original electron trajectory.
     slit_points_factor : float, optional
-        Factor to increase the number of points in trajectory by pole on a given aperture
+        Factor to increase the number of points in trajectory on a given aperture.
 
     Returns
     -------
