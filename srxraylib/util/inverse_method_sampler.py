@@ -325,6 +325,47 @@ class Sampler2D(object):
         else:
             pass # TODO make scalar case
 
+    def get_sampled_x2(self, random0, random10, random11):
+        """
+        Samples a point or multiple points in 2D (two coordinates) following the given pdf.
+        It samples one point in axis 0 and two points on the axis 1.
+
+        Parameters
+        ----------
+        random0 : float or numpy array
+            The 1D array with values unifiormly samples in [0,1]
+        random10 : float or numpy array
+            The 1D array with values unifiormly samples in [0,1]
+        random11 : float or numpy array
+            The 1D array with values unifiormly samples in [0,1]
+
+        Returns
+        -------
+        tuple
+            (x, y0, y1) the coordinates x (float or array) on the axis 0 and and y0, y1 (float or array) of the sampled
+            point(s) in axis 1.
+
+        """
+        y0 = numpy.array(random0)
+        y10 = numpy.array(random10)
+        y11 = numpy.array(random11)
+
+        if y0.size > 1:
+            x0_rand_array = numpy.zeros_like(y0)
+            x10_rand_array = numpy.zeros_like(y10)
+            x11_rand_array = numpy.zeros_like(y11)
+
+            for i,cdf_rand0 in enumerate(y0):
+                ival, idelta, pendent = self._get_index0(cdf_rand0)
+                x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
+                ival10, idelta10, pendent10 = self._get_index1(y10[i], ival+1)  # <==================== changed to ival+1
+                x10_rand_array[i] = self._pdf_x1[ival10] + idelta10 * (self._pdf_x1[1] - self._pdf_x1[0])
+                ival11, idelta11, pendent11 = self._get_index1(y11[i], ival+1)  # <==================== changed to ival+1
+                x11_rand_array[i] = self._pdf_x1[ival11] + idelta11 * (self._pdf_x1[1] - self._pdf_x1[0])
+            return x0_rand_array, x10_rand_array, x11_rand_array
+        else:
+            pass # TODO make scalar case
+
     def get_n_sampled_points(self, npoints, seed=None):
         """
         Samples n points (two coordinates) following the given pdf.
@@ -353,6 +394,36 @@ class Sampler2D(object):
 
         return self.get_sampled(cdf_rand_array0, cdf_rand_array1)
 
+    def get_n_sampled_points_x2(self, npoints, seed=None):
+        """
+        Samples n points (two coordinates, two times the second axis) following the given pdf.
+
+        Parameters
+        ----------
+        npoints : int
+            The number of points.
+        seed : int, optional
+            The seed (numpy generator is initialized with numpy.random.default_rng(seed))
+
+
+        Returns
+        -------
+        tuple
+            (x, y0, y1) the coordinates x (float or array) on the axis 0 and and y0, y1 (float or array) of the sampled
+            point(s) on axis 1.
+
+        """
+        if not seed is None:
+            rng = numpy.random.default_rng(seed)
+            cdf_rand_array0 = rng.random(npoints)
+            cdf_rand_array1 = rng.random(npoints)
+            cdf_rand_array2 = rng.random(npoints)
+        else:
+            cdf_rand_array0 = numpy.random.random(npoints)
+            cdf_rand_array1 = numpy.random.random(npoints)
+            cdf_rand_array2 = numpy.random.random(npoints)
+
+        return self.get_sampled_x2(cdf_rand_array0, cdf_rand_array1, cdf_rand_array2)
 
     def _cdf_calculate(self):
         pdf2 = self._pdf
