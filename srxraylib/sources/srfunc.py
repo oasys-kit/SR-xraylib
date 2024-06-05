@@ -34,12 +34,13 @@ srfunc: calculates synchrotron radiation emission (radiation and angle distribut
 
 __author__ = "Manuel Sanchez del Rio"
 __contact__ = "srio@esrf.eu"
-__copyright = "ESRF, 2002-2014-2023"
+__copyright__ = "ESRF, 2002-2014-2023"
 
 
 import numpy
 import scipy.special
 import scipy.constants as codata
+from scipy.interpolate import interp1d
 
 m2ev = codata.c * codata.h / codata.e  # lambda(m)  = m2eV / energy(eV)
 
@@ -814,7 +815,7 @@ def wiggler_spectrum(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.
 def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints=100, per=0.2, electronCurrent=0.2,
                      outFile="", elliptical=False, verbose=True, polarization=0,
                      psi_min=-1e-3, psi_max=1e-3, psi_npoints=100,
-                     theta_min=-1e-3, theta_max=1e-3,):
+                     theta_min=-1e-3, theta_max=1e-3, traj_res_fac = 1e4, slit_points_factor=1):
     """
     Calculates the spectrum of a wiggler using an electron trajectory as input.
 
@@ -851,6 +852,10 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
         Theta_Min the minimum horizontal angle [in mrad].
     theta_max : float, optional
         Theta_Max the maximum horizontal angle [in mrad].
+    traj_res_fac : float, optional
+        Factor to resample the original electron trajectory.
+    slit_points_factor : float, optional
+        Factor to increase the number of points in trajectory on a given aperture.
 
     Returns
     -------
@@ -874,10 +879,11 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     betay = traj[4,:]
     betaz = traj[5,:]
     curv =  traj[6,:]
-    b_t =  traj[7,:]
+    b_t =  traj[7,:]   
 
-    step = numpy.sqrt(numpy.power(y[2]-y[1],2) + numpy.power(x[2]-x[1],2) +  \
-           numpy.power(z[2]-z[1],2))
+    # step is not used to be removed
+    #step = numpy.sqrt(numpy.power(y[2]-y[1],2) + numpy.power(x[2]-x[1],2) +  \
+    #       numpy.power(z[2]-z[1],2))
     #;
     #; Compute gamma and the beam energy
     #;
@@ -889,12 +895,9 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     if verbose:
         print("\nElectron beam energy (from velocities) = %f GeV "%(bener))
         print("\ngamma (from velocities) = %f "%(gamma))
-
-
     #;
     #; Figure out the limit of photon energy.
     #;
-
     curv_max = numpy.abs(curv).max()
     curv_min = numpy.abs(curv).min()
 
@@ -919,25 +922,51 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
     #;
     energy_array = numpy.linspace(enerMin, enerMax, nPoints)
 
-    mul_fac = numpy.abs(curv) * numpy.sqrt(1 + numpy.power(betax / betay, 2)+ \
-                                         numpy.power(betaz / betay,2)) * 1.0e3
+    #First, we need to resample the involved variables to increase the resolution:
 
-    hit_slit_in_H_factor = numpy.ones_like(mul_fac)
+    #traj_res_fac = 1e4
+    y_hi_res     = resample_array(y, int(len(y) * traj_res_fac), method='linear')
+    betax_hi_res = resample_array(betax, int(len(betax) * traj_res_fac), method='linear')
+    betay_hi_res = resample_array(betay, int(len(betay) * traj_res_fac), method='linear')
+    betaz_hi_res = resample_array(betaz, int(len(betaz) * traj_res_fac), method='linear')
+    curv_hi_res  = resample_array(curv, int(len(curv) * traj_res_fac), method='linear')    
+    
+    #Then we create the hit_slit factor 
 
-    # betax_average = (numpy.roll(betax, 1) + betax) * 0.5e0
-    # betax_average[0] = 0
+    hit_slit_in_H_factor = numpy.ones_like(curv_hi_res)
 
-    msk1 = (betax * 1e3) < theta_min
-    msk2 = (betax * 1e3) > theta_max
+    #Now we apply the conditions to get the betax that will pass through the slit
+    msk1 = (betax_hi_res * 1e3) < theta_min
+    msk2 = (betax_hi_res * 1e3) > theta_max
+
+    #betax_average = (numpy.roll(betax, 1) + betax) * 0.5e0
+    #betax_average[0] = 0   
+    # here we applied the masks on the hit_slit factor
+    hit_slit_in_H_factor[msk1] = 0
+    hit_slit_in_H_factor[msk2] = 0    
+
+    #Then we calculate the mul_fac only for the aperture hit points only
+
+    mul_fac = numpy.abs(curv_hi_res[hit_slit_in_H_factor==1]) \
+    * numpy.sqrt(1 + numpy.power(betax_hi_res[hit_slit_in_H_factor==1] /
+    betay_hi_res[hit_slit_in_H_factor==1], 2) \
+    + numpy.power(betaz_hi_res[hit_slit_in_H_factor==1] / betay_hi_res[hit_slit_in_H_factor==1],2)) * 1.0e3    
+
+    #Get the rad as well to have everything in the same sampling steps
+    rad_hi_res = numpy.abs(1.0 / curv_hi_res[hit_slit_in_H_factor==1])
+
     # for i in range(mul_fac.size):
     #     print(betax[i] * 1e3, msk1[i], theta_min, msk2[i], theta_max )
 
-    hit_slit_in_H_factor[msk1] = 0
-    hit_slit_in_H_factor[msk2] = 0
+    # Now we have to reduce the resolution of the variables needed for the calculations,
+    # can be useful for low sampling magnetic fields files and tiny apertures
 
-    # print(msk1)
-
-    rad = numpy.abs(1.0 / curv)
+    y_low_res = resample_array(y_hi_res, int(len(y_hi_res)/traj_res_fac * slit_points_factor), method='linear')
+    rad = resample_array(rad_hi_res, int(len(rad_hi_res)/traj_res_fac * slit_points_factor), method='linear')
+    mul_fac = resample_array(mul_fac, int(len(mul_fac)/traj_res_fac * slit_points_factor), method='linear')
+        
+    if verbose:
+        print('Attention: Considering %g points for the calculations from a total of %g'%(len(rad), len(curv)))
 
     # REMOVE INFINITIES
     for i,irad in enumerate(rad):
@@ -946,19 +975,20 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
         if rad[i] == float("+inf"):
             rad[i] = 1e20
         # print(i,curv[i],rad[i],rad[i] == float("-inf"), rad[i] == float("+inf"))
-
-
+    
     for i in range(len(energy_array)):
         energy = energy_array[i]
-
         #
         #;
         #; wiggler_nphoton computes the no. of photons per mrad (ANG_NUM) at
         #; each point. It is then used to generate the no. of photons per axial
         #; length (PHOT_NUM) along the trajectory S.
-        phot_num = numpy.zeros(len(curv))
+        #phot_num = numpy.zeros(len(curv))
+        phot_num = numpy.zeros(len(rad))
+        
         # rad= numpy.abs(1.0/curv)
-        # print(">>>>>> rad: ",rad, psi_min, psi_max, psi_npoints)
+        #print(">>>>>> rad: ",rad, psi_min, psi_max, psi_npoints)        
+        
         ang_num = wiggler_nphoton(rad, electronEnergy=bener, photonEnergy=energy, polarization=polarization,
                                   f_psi=2, psi_min=psi_min, psi_max=psi_max, psi_npoints=psi_npoints)
         phot_num = ang_num * mul_fac
@@ -969,7 +999,6 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
         #; of propagation computed.
         #;
         #
-
         i_wig = 1 # 1=normalWiggler, 2=ellipticalWiggler (not implemented)
 
         if i_wig == 2:
@@ -985,12 +1014,14 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
             phot_cdf[0] = 0.0
             tot_num = numpy.sum(phot_cdf)
         else:
-            phot_num_average = (numpy.roll(phot_num, 1) + phot_num) * 0.5e0
-            y_interval = (y - numpy.roll(y, 1))
+            #phot_num_average = (numpy.roll(phot_num, 1) + phot_num) * 0.5e0
+            #y_interval = (y - numpy.roll(y, 1))
+            y_interval = y_low_res[1] - y_low_res[0] #assuming the interval is always constant
             # print(">>>>>>>>>>>>>>>>>>>>>>>", phot_num_average.shape)
-            # print(">>>>>>>>>>>>>>>>>>>>>>> betax", betax)
-            phot_cdf = phot_num_average * y_interval * hit_slit_in_H_factor
-            phot_cdf[0] = 0.0
+            # print(">>>>>>>>>>>>>>>>>>>>>>> betax", betax)            
+            #phot_cdf = phot_num_average * y_interval #* hit_slit_in_H_factor
+            phot_cdf = phot_num * y_interval
+            #phot_cdf[0] = 0.0
             tot_num = numpy.sum(phot_cdf)
 
         out[0,i] = energy
@@ -1007,7 +1038,7 @@ def wiggler_spectrum_on_aperture(traj, enerMin=1000.0, enerMax=100000.0, nPoints
             f.write(("%19.12e  "*out.shape[0]+"\n")%tuple(out[i,j] for i in range(out.shape[0])))
         f.close()
         print("File with wiggler spectrum written to file: "+outFile)
-
+   
     return out[0,:].copy(), out[1,:].copy(), out[2,:].copy()
 
 
@@ -1785,9 +1816,33 @@ def kv_approx(nu, x):
     out =  A1 * delta1 + A2 * delta2
     return out
 
+
+def resample_array(array, new_size, method='linear'):
+    """
+    Resample a 1D array to a new size using the specified interpolation method.
+
+    Parameters:
+    array (numpy.ndarray): The input array to resample.
+    new_size (int): The desired size of the resampled array.
+    method (str): The interpolation method to use. Options are 'linear', 'nearest', 'cubic'.
+
+    Returns:
+    numpy.ndarray: The resampled array.
+    """
+    if len(array) < 2:
+        raise ValueError("Array length must be at least 2 to interpolate.")
+    
+    original_indices = numpy.linspace(0, len(array) - 1, num=len(array))
+    new_indices = numpy.linspace(0, len(array) - 1, num=new_size)
+    
+    interpolator = interp1d(original_indices, array, kind=method)
+    resampled_array = interpolator(new_indices)
+    
+    return resampled_array
 #
 #------------------------- MAIN ------------------------------------------------
 #
+
 if __name__ == '__main__':
     pass
     # see examples in sr-xraylib/examples/srfunc_examples
