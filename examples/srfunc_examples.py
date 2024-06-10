@@ -17,12 +17,20 @@ def check_xraybooklet_fig2_1(pltOk=False):
     # TODO: check transpose
     h2 = h2.T
 
-    toptitle = "Synchrotron Universal Functions $G_1$ and $H_2$"
+    toptitle = "" # "Synchrotron Universal Functions $G_1$ and $H_2$"
     xtitle = "$y=E/E_c$"
     ytitle = "$G_1(y)$ and $H_2(y)$"
 
     #pltOk = 0
     if pltOk:
+        import matplotlib
+        font = {
+            # 'family': 'normal',
+            # 'weight': 'bold',
+            'size': 12}
+
+        matplotlib.rc('font', **font)
+
         plt.figure(1)
         plt.loglog(y,g1,'b',label="$G_1(y)$")
         plt.loglog(y,h2,'r',label="$H_2(y)$")
@@ -32,6 +40,7 @@ def check_xraybooklet_fig2_1(pltOk=False):
         plt.ylim((1e-3,10))
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(1.1, 1.05))
+        plt.savefig('fig_universal_functions.pdf')
     else:
         print("\n\n\n\n\n#########  %s ######### "%(toptitle))
         print("\n  %s  %s "%(xtitle,ytitle))
@@ -45,54 +54,69 @@ def check_xraybooklet_fig2_2(pltOk=False):
     print("# ")
 
     y = numpy.linspace(0,8,100)  #  from 0.001 to 10, 100 points
-    f3   = sync_f(y,3.0,polarization=1)
-    f3pi = sync_f(y,3.0,polarization=2)
-    f1   = sync_f(y,1.0,polarization=1)
-    f1pi = sync_f(y,1.0,polarization=2)
-    fp1   = sync_f(y,0.1,polarization=1)
-    fp1pi = sync_f(y,0.1,polarization=2)
-    fp01   = sync_f(y,0.01,polarization=1)
-    fp01pi = sync_f(y,0.01,polarization=2)
+    f3   = sync_f(y, 3.0, polarization=1)
+    f3pi = sync_f(y, 3.0, polarization=2)
+
+    f1   = sync_f(y, 1.0, polarization=1)
+    f1pi = sync_f(y, 1.0, polarization=2)
+
+    fp1   = sync_f(y, 0.1, polarization=1)
+    fp1pi = sync_f(y, 0.1, polarization=2)
+
+    fp01   = sync_f(y, 0.01, polarization=1)
+    fp01pi = sync_f(y, 0.01, polarization=2)
 
     toptitle = "Synchrotron Angular Emission"
     xtitle = "$\gamma \Psi$"
-    ytitle = "$N(\%)$"
+    ytitle = "$F(\gamma\psi, E/E_c)$ / $F_\sigma(0, E/E_c)$"
 
     f3.shape = -1
     f3pi.shape = -1
-    f3max = f3.max()*1e-2 # to get %
+    f3max = f3.max()
 
     f1.shape = -1
     f1pi.shape = -1
-    f1max = f1.max()*1e-2 # to get %
+    f1max = f1.max()
 
     fp01.shape = -1
     fp01pi.shape = -1
-    fp01max = fp01.max()*1e-2 # to get %
+    fp01max = fp01.max()
 
     fp1.shape = -1
     fp1pi.shape = -1
-    fp1max = fp1.max()*1e-2 # to get %
+    fp1max = fp1.max()
 
+    plt_total = 1
     if pltOk:
-        plt.figure(2)
-        plt.plot(y,f3/f3max,'b',label="E/Ec=3 $\sigma$-pol")
-        plt.plot(y,f3pi/f3max,'b--',label="E/Ec=3 $\pi$-pol")
+        import matplotlib
+        font = {
+            # 'family': 'normal',
+            # 'weight': 'bold',
+            'size': 14}
 
-        plt.plot(y,f1/f1max,'g',label="E/Ec=1 $\sigma$-pol")
-        plt.plot(y,f1pi/f1max,'g--',label="E/Ec=1 $\pi$-pol")
+        plt.figure(2, figsize=(10,6.66))
+        if plt_total: plt.plot(y, (f3+f3pi) / f3max, color='b', linestyle='solid',  label="E/Ec=3 tot-pol")
+        plt.plot(y, f3/f3max,           color='b', linestyle='dotted', label="E/Ec=3 $\sigma$-pol")
+        plt.plot(y, f3pi/f3max,         color='b', linestyle='dashed', label="E/Ec=3 $\pi$-pol")
 
-        plt.plot(y,fp1/fp1max,'k',label="E/Ec=0.1 $\sigma$-pol")
-        plt.plot(y,fp1pi/fp1max,'k--',label="E/Ec=0.1 $\pi$-pol")
+        if plt_total: plt.plot(y, (f1 + f1pi) / f1max, color='g', linestyle='solid',  label="E/Ec=1 tot-pol")
+        plt.plot(y, f1/f1max,             color='g', linestyle='dotted', label="E/Ec=1 $\sigma$-pol")
+        plt.plot(y, f1pi/f1max,           color='g', linestyle='dashed', label="E/Ec=1 $\pi$-pol")
+        #
+        if plt_total: plt.plot(y, (fp1 + fp1pi) / fp1max, color='k', linestyle='solid',  label="E/Ec=0.1 tot-pol")
+        plt.plot(y, fp1/fp1max,              color='k', linestyle='dotted', label="E/Ec=0.1 $\sigma$-pol")
+        plt.plot(y, fp1pi/fp1max,            color='k', linestyle='dashed', label="E/Ec=0.1 $\pi$-pol")
+        #
+        if plt_total: plt.plot(y, (fp01 + fp01pi) / fp01max, color='r', linestyle='solid',  label="E/Ec=0.01 tot-pol")
+        plt.plot(y, fp01/fp01max,               color='r', linestyle='dotted', label="E/Ec=0.01 $\sigma$-pol")
+        plt.plot(y, fp01pi/fp01max,             color='r', linestyle='dashed', label="E/Ec=0.01 $\pi$-pol")
 
-        plt.plot(y,fp01/fp01max,'r',label="E/Ec=0.01 $\sigma$-pol")
-        plt.plot(y,fp01pi/fp01max,'r--',label="E/Ec=0.01 $\pi$-pol")
-
-        plt.title(toptitle)
+        # plt.title(toptitle)
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
         ax = plt.subplot(111)
         ax.legend(bbox_to_anchor=(1.1, 1.05))
+        plt.savefig('fig_angular_emission_integrated.pdf')
     else:
         print("\n\n\n\n\n#########  %s ######### "%(toptitle))
         print("\n  %s  %s "%(xtitle,ytitle))
@@ -168,8 +192,8 @@ def check_esrf_bm_angle_power(pltOk=False):
         for i in range(len(flux)):
             print("  %f  %f"%(angle_mrad[i],flux[i]))
 
-def check_esrf_bm_angle_flux(pltOk=False):
-    from srxraylib.sources.srfunc import sync_ang
+def check_esrf_bm_angle_flux(pltOk=False, method=1):
+    from srxraylib.sources.srfunc import sync_ang, sync_ene, sync_f
     print("#")
     print("# example 5: ESRF1 BM angular emission of flux")
     print("#")
@@ -185,28 +209,53 @@ def check_esrf_bm_angle_flux(pltOk=False):
     ec_m = 4.0*numpy.pi*r_m/3.0/numpy.power(gamma,3) # wavelength in m
     ec_ev = m2ev/ec_m
 
-    angle_mrad = numpy.linspace(-1.0,1.0,201) # angle grid
+    npoints = 501
+    angle_mrad = numpy.linspace(-1.0, 1.0, npoints) # angle grid
     flag = 1 # at at given energy
-    fluxEc = sync_ang(flag,angle_mrad,polarization=0, \
-           e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=ec_ev, ec_ev=ec_ev)
-    flux10Ec = sync_ang(flag,angle_mrad,polarization=0, \
-           e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=10*ec_ev, ec_ev=ec_ev)
-    fluxp1Ec = sync_ang(flag,angle_mrad,polarization=0, \
-           e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=0.1*ec_ev, ec_ev=ec_ev)
+    polarization = 0
+    if method ==0:
+        fluxEc = sync_ang(flag,angle_mrad,polarization=polarization, \
+               e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=ec_ev, ec_ev=ec_ev)
+        flux10Ec = sync_ang(flag,angle_mrad,polarization=polarization, \
+               e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=10*ec_ev, ec_ev=ec_ev)
+        fluxp1Ec = sync_ang(flag,angle_mrad,polarization=polarization, \
+               e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=0.1*ec_ev, ec_ev=ec_ev)
+    elif method == 1: # using eq in shadow4 paper
+        factor = 1
+        N0 = sync_ene(1, factor * ec_ev, ec_ev=ec_ev, polarization=0, e_gev=e_gev, i_a=i_a, hdiv_mrad=1.0,
+                 psi_min=0.0, psi_max=0.0, psi_npoints=1)
+        F0 = sync_f(0, factor * numpy.ones_like(ec_ev), polarization=1)
+        fluxEc = N0 / F0 * (
+            sync_f(angle_mrad * 1e-3 * gamma, factor * numpy.ones_like(ec_ev), polarization=0) )
 
-    toptitle = "ESRF1 Bending Magnet angular emission (all energies)"
+        factor = 10.0
+        N0 = sync_ene(1, factor * ec_ev, ec_ev=ec_ev, polarization=0, e_gev=e_gev, i_a=i_a, hdiv_mrad=1.0,
+                 psi_min=0.0, psi_max=0.0, psi_npoints=1)
+        F0 = sync_f(0, factor * numpy.ones_like(ec_ev), polarization=1)
+        flux10Ec = N0 / F0 * (
+            sync_f(angle_mrad * 1e-3 * gamma, factor * numpy.ones_like(ec_ev), polarization=0) )
+
+        factor = 0.1
+        N0 = sync_ene(1, factor * ec_ev, ec_ev=ec_ev, polarization=0, e_gev=e_gev, i_a=i_a, hdiv_mrad=1.0,
+                 psi_min=0.0, psi_max=0.0, psi_npoints=1)
+        F0 = sync_f(0, factor * numpy.ones_like(ec_ev), polarization=1)
+        fluxp1Ec = N0 / F0 * (
+            sync_f(angle_mrad * 1e-3 * gamma, factor * numpy.ones_like(ec_ev), polarization=0) )
+
+    toptitle = "ESRF1 Bending Magnet angular emission"
     xtitle   = "Psi[mrad]"
     ytitle   = "Flux [phot/s/0.1%bw/mrad(Psi)]"
     if pltOk:
-        plt.figure(5)
+        plt.figure(5 * 10 + method)
+        factor = 500
         plt.plot(angle_mrad,fluxp1Ec,'g',label="E=0.1Ec=%.3f keV"%(ec_ev*.1*1e-3))
         plt.plot(angle_mrad,fluxEc,'r',label="E=Ec=%.3f keV"%(ec_ev*1e-3))
-        plt.plot(angle_mrad,flux10Ec,'b',label="E=10 Ec=%.3f keV"%(ec_ev*10*1e-3))
+        plt.plot(angle_mrad, factor * flux10Ec,'b',label="Flux x %d; E=10 Ec=%.3f keV"%(factor, ec_ev*10*1e-3))
         plt.title(toptitle)
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
         ax = plt.subplot(111)
-        ax.legend(bbox_to_anchor=(1.1, 1.05))
+        ax.legend(bbox_to_anchor=None, loc='upper left')
     else:
         print("\n\n\n\n\n#########  %s ######### "%(toptitle))
         print("\n  %s  %s "%(xtitle,ytitle))
@@ -274,29 +323,31 @@ def check_clarke_43(pltOk=False):
 
     if pltOk:
         plt.figure(61)
-        plt.plot(a,fm[:,0],'b',label="0.1*$\omega_c$")
+        ax = plt.subplot(111)
+
+        plt.plot(a,fm[:,0],'b', label="0.1*$\omega_c$")
         plt.plot(a,fmPar[:,0],"b--")
         plt.plot(a,fmPer[:,0],"b-.")
-        plt.title(toptitle+"E=0.1Ec")
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
 
         plt.figure(61)
-        plt.plot(a,fm[:,1],'red',label="$\omega_c$")
+        plt.plot(a,fm[:,1],'red', label="$\omega_c$")
         plt.plot(a,fmPar[:,1],"r--")
         plt.plot(a,fmPer[:,1],"r-.")
-        plt.title(toptitle+"E=Ec")
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
 
-        plt.figure(62)
-        plt.plot(a,fm[:,2],'green',label="10*$\omega_c$")
-        plt.plot(a,fmPar[:,2],"g--")
-        plt.plot(a,fmPer[:,2],"g-.")
-        plt.title(toptitle+"E=10Ec")
+        factor = 500
+        plt.figure(61)
+        plt.plot(a, factor * fm[:,2],'green', label="Flux x %d; 10*$\omega_c$" % factor)
+        plt.plot(a, factor * fmPar[:,2],"g--")
+        plt.plot(a, factor * fmPer[:,2],"g-.")
         plt.xlabel(xtitle)
         plt.ylabel(ytitle)
 
+        legend_position = None
+        ax.legend(bbox_to_anchor=legend_position)
     else:
         print("\n\n\n\n\n#########  %s ######### "%(toptitle))
         print("\n  %s  %s %s "%(ytitle,xtitle,"Flux"))
@@ -644,6 +695,21 @@ def check_shadow4(pltOk=False):
             print(eene[i], fm_s.min(), fm_s.max(), fm_s.max() - fm_s.min())
 
 
+def check_constants():
+    from srxraylib.sources.srfunc import sync_ene, sync_hi, sync_g1, sync_ang, sync_ene
+
+    cte0 = sync_ene(1, 1000.0, ec_ev=1000.0, polarization=0, e_gev=1.0, i_a=1.0, hdiv_mrad=1.0,
+             psi_min=0.0, psi_max=0.0, psi_npoints=1)
+    h2 = sync_hi(1.0, i=2, polarization=1)
+    print("cte0 (for flux on axis): %g cte0*h2: %g " % (cte0 / h2, cte0))
+
+
+    cte1 = sync_ene(0, 10000.0, ec_ev=10000.0, polarization=0, e_gev=1.0, i_a=1.0, hdiv_mrad=1.0,
+             psi_min=0.0, psi_max=0.0, psi_npoints=1)
+    g1 = sync_g1(1.0)
+    cte1 = cte1 / g1
+    print("cte1 (for flux integrated in psi): %g" % cte1)
+
 #
 #------------------------- MAIN ------------------------------------------------
 #
@@ -656,13 +722,15 @@ if __name__ == '__main__':
     check_xraybooklet_fig2_2(pltOk=pltOk)
     check_esrf_bm_spectrum(pltOk=pltOk)
     check_esrf_bm_angle_power(pltOk=pltOk)
-    check_esrf_bm_angle_flux(pltOk=pltOk)
+    check_esrf_bm_angle_flux(pltOk=pltOk, method=0)
+    check_esrf_bm_angle_flux(pltOk=pltOk, method=1)
     check_clarke_43(pltOk=pltOk)
     check_esrf_bm_2d(pltOk=pltOk)
     check_wiggler_flux_vs_r(pltOk=pltOk)
     check_wiggler_external_b(pltOk=pltOk)
-    # check_wiggler_polarization(pltOk=pltOk) # slow
+    # # check_wiggler_polarization(pltOk=pltOk) # slow
     check_shadow4(pltOk=pltOk)
+    check_constants()
 
     if pltOk: plt.show()
 
