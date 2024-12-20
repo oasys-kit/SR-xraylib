@@ -137,8 +137,8 @@ class Sampler1D(object):
         #
         # histogram
         #
-        h, bin_edges = numpy.array(numpy.histogram(s1,bins=bins,range=range))
-        return s1, h, bin_edges
+        h, bin_edges = numpy.histogram(s1,bins=bins,range=range)
+        return s1, numpy.array(h), numpy.array(bin_edges)
 
     def get_n_sampled_points(self, npoints, seed=None):
         """

@@ -262,6 +262,53 @@ def check_esrf_bm_angle_flux(pltOk=False, method=1):
         for i in range(len(fluxEc)):
             print("  %f  %f"%(angle_mrad[i],fluxEc[i]))
 
+def check_esrf_bm_angle_flux_8keV(pltOk=False, method=1):
+    from srxraylib.sources.srfunc import sync_ang, sync_ene, sync_f
+    print("#")
+    print("# example 5: ESRF1 BM angular emission of flux")
+    print("#")
+
+    # input for ESRF1
+    energy = 8000.0
+    e_gev = 6.04    # electron energy in GeV
+    r_m = 25.0      # magnetic radius in m
+    i_a = 0.2       # electron current in A
+    # calculate critical energy in eV
+    codata_mee = 1e-6 * codata.m_e * codata.c ** 2 / codata.e
+    m2ev = codata.c * codata.h / codata.e  # lambda(m)  = m2eV / energy(eV)
+    gamma = e_gev*1e3/codata_mee
+    ec_m = 4.0*numpy.pi*r_m/3.0/numpy.power(gamma,3) # wavelength in m
+    ec_ev = m2ev/ec_m
+
+    npoints = 501
+    angle_mrad = numpy.linspace(-1.0, 1.0, npoints) # angle grid
+    flag = 1 # at at given energy
+    polarization = 0
+    if method ==0:
+        fluxEc = sync_ang(flag,angle_mrad,polarization=polarization, \
+               e_gev=e_gev,i_a=i_a,hdiv_mrad=1.0,energy=energy, ec_ev=ec_ev)
+    elif method == 1: # using eq in shadow4 paper
+        N0 = sync_ene(1, energy, ec_ev=ec_ev, polarization=0, e_gev=e_gev, i_a=i_a, hdiv_mrad=1.0,
+                 psi_min=0.0, psi_max=0.0, psi_npoints=1)
+        F0 = sync_f(0, energy / ec_ev, polarization=1)
+        fluxEc = N0 / F0 * (
+            sync_f(angle_mrad * 1e-3 * gamma, energy / ec_ev, polarization=0) )
+
+    toptitle = "ESRF1 Bending Magnet angular emission 8 keV"
+    xtitle   = "Psi[mrad]"
+    ytitle   = "Flux [phot/s/0.1%bw/mrad(Psi)]"
+    if pltOk:
+        from srxraylib.plot.gol import plot
+        plot(angle_mrad, fluxEc, title="E=%.3f keV"%(energy*1e-3), xrange=[-0.3, 0.3], xtitle="Psi[mrad]", ytitle="Flux [phot/s/0.1%bw/mrad(Psi)]",
+             show=0)
+        plot(angle_mrad, fluxEc / (0.001 * energy), title="E=%.3f keV" % (energy * 1e-3), xrange=[-0.3, 0.3],
+             xtitle="Psi[mrad]", ytitle="Flux [phot/s/eV/mrad(Psi)]", show=0)
+    else:
+        print("\n\n\n\n\n#########  %s ######### "%(toptitle))
+        print("\n  %s  %s "%(xtitle,ytitle))
+        for i in range(len(fluxEc)):
+            print("  %f  %f"%(angle_mrad[i],fluxEc[i]))
+
 def check_clarke_43(pltOk=False):
     from srxraylib.sources.srfunc import sync_ene
     from mpl_toolkits.mplot3d import Axes3D  # need for example 6
@@ -723,6 +770,7 @@ if __name__ == '__main__':
     check_esrf_bm_spectrum(pltOk=pltOk)
     check_esrf_bm_angle_power(pltOk=pltOk)
     check_esrf_bm_angle_flux(pltOk=pltOk, method=0)
+    check_esrf_bm_angle_flux_8keV(pltOk=pltOk, method=0)
     check_esrf_bm_angle_flux(pltOk=pltOk, method=1)
     check_clarke_43(pltOk=pltOk)
     check_esrf_bm_2d(pltOk=pltOk)
