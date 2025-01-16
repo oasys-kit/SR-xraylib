@@ -46,7 +46,7 @@
 # ----------------------------------------------------------------------- #
 
 import numpy
-from scipy.interpolate import interp2d, interp1d
+from scipy.interpolate import interp1d, RectBivariateSpline
 from scipy.optimize import curve_fit
 from scipy import integrate
 
@@ -361,8 +361,9 @@ class _FixedRodsBenderCalculator():
                     y[0] == y_e[0] and y[-1] == y_e[-1]:
                 z_figure_error = z_e
             else:
-                z_figure_error = interp2d(y_e, x_e, z_e, kind='cubic')(y, x)
-
+                # interp2d disappears in scipy 1.14
+                #z_figure_error = interp2d(y_e, x_e, z_e, kind='cubic')(y, x)
+                z_figure_error = RectBivariateSpline(x_e, y_e, z_e, kx=3, ky=3)(x, y)
             z_bender_correction = z_bender_correction_no_figure_error + z_figure_error
         else:
             z_bender_correction = z_bender_correction_no_figure_error
