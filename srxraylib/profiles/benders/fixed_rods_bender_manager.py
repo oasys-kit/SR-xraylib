@@ -58,17 +58,17 @@ class FixedRodsBenderFitParameters(BenderFitParameters):
                  optimized_length=None,
                  n_fit_steps=None,
                  R0=None,
-                 R0_max=False,
+                 R0_max=None,
                  R0_min=None,
-                 R0_fixed=None,
+                 R0_fixed=False,
                  eta=None,
-                 eta_max=False,
+                 eta_max=None,
                  eta_min=None,
-                 eta_fixed=None,
+                 eta_fixed=False,
                  W2=None,
-                 W2_max=False,
+                 W2_max=None,
                  W2_min=None,
-                 W2_fixed=None):
+                 W2_fixed=False):
         super(FixedRodsBenderFitParameters, self).__init__(optimized_length=optimized_length,                                                     
                                                                n_fit_steps=n_fit_steps)
         self.R0 = R0
@@ -138,8 +138,6 @@ class FixedRodsBenderStructuralParameters(BenderStructuralParameters):
                  R0=None,
                  eta=None,
                  W2=None,
-                 alpha=None,
-                 W0=None,
                  workspace_units_to_m=None,
                  workspace_units_to_mm=None):
         super(FixedRodsBenderStructuralParameters, self).__init__(dim_x_minus=dim_x_minus,
@@ -161,8 +159,6 @@ class FixedRodsBenderStructuralParameters(BenderStructuralParameters):
         self.R0    = R0
         self.eta   = eta
         self.W2    = W2
-        self.alpha = alpha
-        self.W0    = W0
 
 epsilon_minus = 1 - 1e-8
 epsilon_plus  = 1 + 1e-8
@@ -239,45 +235,59 @@ class _FixedRodsBenderCalculator():
 
         x             = numpy.linspace(-self.__bender_manager.bender_structural_parameters.dim_x_minus, self.__bender_manager.bender_structural_parameters.dim_x_plus, self.__bender_manager.bender_structural_parameters.bender_bin_x + 1)
         y             = numpy.linspace(-self.__bender_manager.bender_structural_parameters.dim_y_minus, self.__bender_manager.bender_structural_parameters.dim_y_plus, self.__bender_manager.bender_structural_parameters.bender_bin_y + 1)
+
         W1            = self.__bender_manager.bender_structural_parameters.dim_x_plus + self.__bender_manager.bender_structural_parameters.dim_x_minus
         L             = self.__bender_manager.bender_structural_parameters.dim_y_plus + self.__bender_manager.bender_structural_parameters.dim_y_minus
         p             = self.__bender_manager.bender_structural_parameters.p
         q             = self.__bender_manager.bender_structural_parameters.q
         grazing_angle = self.__bender_manager.bender_structural_parameters.grazing_angle
-        eta           = self.__bender_manager.bender_structural_parameters.eta
         W2            = self.__bender_manager.bender_structural_parameters.W2
-        alpha         = self.__bender_manager.bender_structural_parameters.alpha
-        W0            = self.__bender_manager.bender_structural_parameters.W0
+        eta           = self.__bender_manager.bender_structural_parameters.eta
+        E             = self.__bender_manager.bender_structural_parameters.E
+        l             = self.__bender_manager.bender_structural_parameters.l
+        h             = self.__bender_manager.bender_structural_parameters.h
+        r             = self.__bender_manager.bender_structural_parameters.r
+
+        alpha = calculate_taper_factor(W1, W2, L, p, q, grazing_angle)
+        W0    = calculate_W0(W1, alpha, L, p, q, grazing_angle)  # W at the center
 
         ideal_surface_coords = x, y
 
         q_upstream    = self.__bender_manager.get_q_upstream(bender_movement)
         q_downstream  = self.__bender_manager.get_q_downstream(bender_movement)
 
-        ideal_profile = ideal_height_profile(y, p, q=0.5 * (q_upstream + q_downstream))
+        ideal_profile = ideal_height_profile(y, p=p, q=0.5 * (q_upstream + q_downstream), grazing_angle=grazing_angle)
 
         bender_fit_parameters = self.__get_fit_parameters_for_movement()
 
-        parameters_upstream, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords, q_fit=q_upstream)
-        parameters_downstream, = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords, q_fit=q_downstream)
+        parameters_upstream, _   = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords, q_fit=q_upstream)
+        parameters_downstream, _ = self.__fit_bender_parameters(bender_fit_parameters, ideal_surface_coords, q_fit=q_downstream)
 
         R0_upstream    = parameters_upstream[0] / workspace_units_to_m # here in workspace units for calculations: it is fitted in meters
         R0_downstream  = parameters_downstream[0] / workspace_units_to_m # here in workspace units for calculations: it is fitted in meters
+
+        F_upstream, _   = calculate_bender_forces(q, R0_upstream, eta, E, W0, l, h, r)
+        _, F_downstream = calculate_bender_forces(q, R0_downstream, eta, E, W0, l, h, r)
 
         bender_profile_upstream   = bender_height_profile(y, p, q_upstream, grazing_angle, R0_upstream, eta, alpha)
         bender_profile_downstream = bender_height_profile(y, p, q_downstream, grazing_angle, R0_downstream, eta, alpha)
 
         bender_profile = numpy.zeros(bender_profile_upstream.shape[0])
+        separator      = int(bender_profile_upstream.shape[0] / 2)
 
-        bender_profile_upstream = bender_profile_upstream[numpy.where(y<0)]
-        bender_profile_downstream = bender_profile_downstream[numpy.where(y>0)]
+        diff = bender_profile_upstream[separator] - bender_profile_downstream[separator]
 
-        bender_profile[0, bender_profile_upstream.shape[0]]    = bender_profile_upstream[0, :]
-        bender_profile[-bender_profile_downstream.shape[0], :] = bender_profile_downstream[0, :]
+        bender_profile[:separator] = bender_profile_upstream[:separator] - diff
+        bender_profile[separator:] = bender_profile_downstream[separator:]
 
         bender_profile = interp1d(y, bender_profile, kind="cubic", fill_value='extrapolate')(y) # spline the gap
 
-        return self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
+        bender_data = self.__generate_bender_output_data(ideal_profile, bender_profile, ideal_surface_coords)
+        bender_data.F_upstream   = F_upstream
+        bender_data.F_downstream = F_downstream
+        bender_data.titles = ["Bender vs. Ideal Profiles", "Correction Profile 1D"]
+
+        return bender_data
 
     def __get_fit_parameters_for_movement(self):
         return  FixedRodsBenderFitParameters(optimized_length=None,
