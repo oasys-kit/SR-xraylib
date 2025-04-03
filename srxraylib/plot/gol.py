@@ -267,7 +267,7 @@ def plot_image_with_histograms(*positional_parameters,
 
 def plot(*positional_parameters, title="", xtitle="", ytitle="",
          xrange=None, yrange=None, show=1, legend=None, legend_position=None, color=None, marker=None, linestyle=None,
-         xlog=False, ylog=False, figsize=None):
+         xlog=False, ylog=False, figsize=None, grid=False):
     """
     Makes a plot of a dataset (XY plot).
 
@@ -301,6 +301,8 @@ def plot(*positional_parameters, title="", xtitle="", ytitle="",
         Set to True for logarithmic plot axis.
     ylog : boolean, optional
         Set to True for logarithmic plot axis.
+    grid : boolean, optional
+        Set to True for displaying a grid.
     figsize : tuple
         The matplotlib figure size.
 
@@ -369,6 +371,7 @@ def plot(*positional_parameters, title="", xtitle="", ytitle="",
     plt.xlabel(xtitle)
     plt.ylabel(ytitle)
 
+    if grid: plt.grid()
 
     if show:
         plt.show()
