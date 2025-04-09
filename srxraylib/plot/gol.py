@@ -8,6 +8,9 @@ A collection of functions to create matplotlib plots in a single command line.
 
 __author__ = "Manuel Sanchez del Rio"
 __contact__ = "srio@esrf.eu"
+
+import numpy
+
 __copyright = "ESRF, 2016"
 
 import numpy as np
@@ -115,6 +118,7 @@ def plot_image_with_histograms(*positional_parameters,
                                cmap=None, aspect='auto', show=True,
                                add_colorbar=False, figsize=(8,8),
                                use_profiles_instead_histograms=False,
+                               histo_path_flag=0,
                                ):
     """
     Plots an image with an histogram.
@@ -145,6 +149,8 @@ def plot_image_with_histograms(*positional_parameters,
         The matplotlib figure size.
     use_profiles_instead_histograms : boolean, optional
         If True, display the profiles at (0,0) instead of the histograms.
+    histo_path_flag : boolean, optional
+        If True, display the histograms in with the conventional horizontal bins.
 
     Returns
     -------
@@ -228,20 +234,12 @@ def plot_image_with_histograms(*positional_parameters,
         hx = z.sum(axis=0)
         hy = z.sum(axis=1)
 
+        if histo_path_flag:
+            x, hx = histo_path(x, hx)
+            y, hy = histo_path(y, hy)
+
     axHistx.plot(x,hx)
     axHisty.plot(hy,y)
-
-
-    # tt = np.where(hx >= hx.max() * 0.5)
-    # if hx[tt].size > 1:
-    #     binSize = x[1] - x[0]
-    #     print("FWHM X: ",binSize * (tt[0][-1] - tt[0][0]))
-    #
-    #
-    # tt = np.where(hy >= hy.max() * 0.5)
-    # if hx[tt].size > 1:
-    #     binSize = y[1] - y[0]
-    #     print("FWHM Y: ",binSize * (tt[0][-1] - tt[0][0]))
 
     # supress ordinates labels ans ticks
     axHistx.get_yaxis().set_visible(False)
@@ -264,6 +262,50 @@ def plot_image_with_histograms(*positional_parameters,
     return figure, axScatter, axHistx, axHisty
 
 
+def histo_path(y, hy, bin_position=0):
+    """
+    Calculates the coordinates of the points following the histogram path (for easy histogram-like plots)
+
+    Parameters
+    ----------
+    y : numpy array
+        the abscissas array (with positions).
+    hy : numpy array
+        the ordinates array (with intensity).
+    bin_position : int, optional
+        THe position where y sits:
+            0: left of the bin.
+            1: center of the beam.
+            2: right of the beam.
+
+    Returns
+    -------
+    tuple
+        (y, hy) The "path" histogram abscissas and ordinates.
+
+    """
+
+    # for practical purposes, writes the points that will define the histogram area
+    step = y[1] - y[0]
+    if bin_position == 0:
+        bin_left = y - 0.5 * step
+    elif bin_position == 1:
+        bin_left = y
+    elif bin_position == 2:
+        bin_left = y + 0.5 * step
+
+    bin_right = bin_left + step
+
+    tmp_b = []
+    tmp_h = []
+    for s, t, v in zip(bin_left, bin_right, hy):
+        tmp_b.append(s)
+        tmp_h.append(v)
+        tmp_b.append(t)
+        tmp_h.append(v)
+    histogram_path = numpy.array(tmp_h)
+    bin_path = numpy.array(tmp_b)
+    return bin_path, histogram_path
 
 def plot(*positional_parameters, title="", xtitle="", ytitle="",
          xrange=None, yrange=None, show=1, legend=None, legend_position=None, color=None, marker=None, linestyle=None,
