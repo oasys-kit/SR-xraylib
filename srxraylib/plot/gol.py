@@ -126,7 +126,7 @@ def plot_image_with_histograms(*positional_parameters,
     Parameters
     ----------
     *positional_parameters : tuple(s)
-        z [, x, y]  Note that here, z array has Y in the first index z(y,x)!!!!
+        z [, x, y]
     title : str, optional
         The main title.
     xtitle : str, optional
@@ -178,10 +178,10 @@ def plot_image_with_histograms(*positional_parameters,
         raise Exception("Bad number of inputs")
 
     if xrange is None:
-        xrange = [x.min(),x.max()]
+        xrange = [x.min(), x.max()]
 
     if yrange is None:
-        yrange = [y.min(),y.max()]
+        yrange = [y.min(), y.max()]
 
 
     figure = plt.figure(figsize=figsize)
@@ -207,29 +207,26 @@ def plot_image_with_histograms(*positional_parameters,
     if aspect == 'equal':
         axScatter.set_aspect(aspect)
 
-    axScatter.axis(xmin=hfactor*xrange[0],xmax=xrange[1])
-    axScatter.axis(ymin=vfactor*yrange[0],ymax=yrange[1])
-
-
+    axScatter.axis(xmin=hfactor*xrange[0], xmax=xrange[1])
+    axScatter.axis(ymin=vfactor*yrange[0], ymax=yrange[1])
 
     axs = axScatter.pcolormesh(x,y,z,cmap=cmap)
 
     #
     #histograms
     #
-
     if aspect == 'equal':
         pos0 = axScatter.get_position()
         mm = np.min((pos0.height, pos0.width)) * 0.6
-        axHistx = figure.add_axes([pos0.x0, pos0.y0 +pos0.height, pos0.width, mm], sharex=axScatter)
+        axHistx = figure.add_axes([pos0.x0, pos0.y0 + pos0.height, pos0.width, mm], sharex=axScatter)
         axHisty = figure.add_axes([pos0.x0 + pos0.width, pos0.y0, mm * figsize[1] / figsize[0], pos0.height], sharey=axScatter)
     else:
         axHistx = figure.add_axes(rect_histx, sharex=axScatter)
         axHisty = figure.add_axes(rect_histy, sharey=axScatter)
 
     if use_profiles_instead_histograms:
-        hx = z[z.shape[0]//2, :]
-        hy = z[:, z.shape[1]//2]
+        hx = z[z.shape[0] // 2, :]
+        hy = z[:, z.shape[1] // 2]
     else:
         hx = z.sum(axis=0)
         hy = z.sum(axis=1)
@@ -238,14 +235,15 @@ def plot_image_with_histograms(*positional_parameters,
             x, hx = histo_path(x, hx)
             y, hy = histo_path(y, hy)
 
-    axHistx.plot(x,hx)
-    axHisty.plot(hy,y)
+    axHistx.plot(x, hx)
+    axHisty.plot(hy, y)
 
-    # supress ordinates labels ans ticks
+    # supress ordinates labels and ticks
     axHistx.get_yaxis().set_visible(False)
     axHisty.get_xaxis().set_visible(False)
-    axHistx.set_ylim(ymin=0, ymax=hy.max()*1.1)
-    axHisty.set_xlim(xmin=0, xmax=hx.max() * 1.1)
+    axHistx.set_ylim(ymin=0, ymax=hx.max() * 1.1)
+    axHisty.set_xlim(xmin=0, xmax=hy.max() * 1.1)
+
     # supress abscissas labels (keep ticks)
     for tl in axHistx.get_xticklabels(): tl.set_visible(False)
     for tl in axHisty.get_yticklabels(): tl.set_visible(False)

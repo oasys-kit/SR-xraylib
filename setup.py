@@ -9,7 +9,7 @@ except AttributeError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.60'
+VERSION = '1.0.61'
 ISRELEASED = True
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
