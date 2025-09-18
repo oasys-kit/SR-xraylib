@@ -23,16 +23,16 @@ MAINTAINER = 'Luca Rebuffi'
 MAINTAINER_EMAIL = 'lrebuffi@anl.gov'
 LICENSE = 'GPLv3'
 
-KEYWORDS = (
+KEYWORDS = [
     'x-ray'
     'synchrotron radiation',
     'wavefront propagation'
     'ray tracing',
     'surface metrology',
     'simulation',
-)
+]
 
-CLASSIFIERS = (
+CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Environment :: Console',
     'Environment :: Plugins',
@@ -46,7 +46,7 @@ CLASSIFIERS = (
     'Intended Audience :: Education',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Developers',
-)
+]
 
 INSTALL_REQUIRES = (
     'setuptools',
