@@ -33,11 +33,10 @@ import numpy
 import copy
 
 # to manage input parameters from command-line argument
-import sys
+import ssl
 import argparse
 import json
 import os
-from io import StringIO
 
 from urllib.request import urlopen
 
@@ -1472,7 +1471,15 @@ class dabam(object):
             # metadata file
             myfileurl = self.server+self.file_metadata()
             try:
-                u = urlopen(myfileurl)
+                try:
+                    u = urlopen(myfileurl)
+                except:
+                    context = ssl.create_default_context()
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+
+                    u = urlopen(myfileurl, context=context)
+
             except Exception as e:
                 raise Exception("Failed to access url: %s" % myfileurl + "\n" + str(e))
             ur = u.read()
@@ -1937,7 +1944,14 @@ class dabam(object):
             # data
             myfileurl = self.server + self.file_data()
             try:
-                u = urlopen(myfileurl)
+                try:
+                    u = urlopen(myfileurl)
+                except:
+                    context = ssl.create_default_context()
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+
+                    u = urlopen(myfileurl, context=context)
             except:
                 print ("_load_file_data: Error accessing remote file: " + myfileurl + " does not exist.")
                 return None
@@ -2096,11 +2110,19 @@ class dabam(object):
 
         """
         if filename is None:
-
             if self.is_remote_access:
                 # json summary file
                 myfileurl = self.server + "dabam-summary.json"
-                u = urlopen(myfileurl)
+
+                try:
+                    u = urlopen(myfileurl)
+                except:
+                    context = ssl.create_default_context()
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+
+                    u = urlopen(myfileurl, context=context)
+
                 ur = u.read()
                 ur1 = ur.decode(encoding='UTF-8')
                 h = json.loads(ur1) # dictionnary with summary
