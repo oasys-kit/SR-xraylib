@@ -2187,8 +2187,18 @@ class dabam(object):
                 break
             tmp = self._dictionary_line()
 
-            if verbose:
-                print(">>>>>>>>>>>>>>>>>>>>>>", i, "loaded")
+            if verbose: print(">>>>>>>>>>>>>>>>>>>>>>", i, "loaded")
+            if not tmp["surface"] is None:
+                current_surface = tmp["surface"]
+                if not type(tmp["surface"]) == str:
+                    current_surface = f"Unknown"
+                    if   int(tmp["surface"]) == 1: current_surface = "Plane"
+                    elif int(tmp["surface"]) == 2: current_surface = "Cylindrical"
+                    elif int(tmp["surface"]) == 3: current_surface = "Elliptical"
+                    elif int(tmp["surface"]) == 4: current_surface = "Toroidal"
+                    elif int(tmp["surface"]) == 5: current_surface = "Spherical"
+                tmp["surface"] = current_surface
+
             add_element = True
             if not surface is None and not tmp["surface"] is None:
                 add_element = tmp["surface"].capitalize() == surface.capitalize()
@@ -2198,8 +2208,8 @@ class dabam(object):
                 add_element = tmp["length"] >= length_from and tmp["length"] <= length_to
             if add_element:
                 out.append(tmp)
-                if verbose:
-                    print(">>>>>>>>>>>>>>>>>>>>>>", i, "appended")
+                if verbose: print(">>>>>>>>>>>>>>>>>>>>>>", i, "appended")
+
         return (out)
 
     def dabam_summary_dictionary_from_json_indexation(self,
@@ -2236,9 +2246,20 @@ class dabam(object):
         for key in h.keys():
             tmp = h[key]
 
+            if not tmp["surface"] is None:
+                current_surface = tmp["surface"]
+                if not type(tmp["surface"]) == str:
+                    current_surface = f"Unknown"
+                    if   int(tmp["surface"]) == 1: current_surface = "Plane"
+                    elif int(tmp["surface"]) == 2: current_surface = "Cylindrical"
+                    elif int(tmp["surface"]) == 3: current_surface = "Elliptical"
+                    elif int(tmp["surface"]) == 4: current_surface = "Toroidal"
+                    elif int(tmp["surface"]) == 5: current_surface = "Spherical"
+                tmp["surface"] = current_surface.capitalize()
+
             add_element = True
             if not surface is None and not tmp["surface"] is None:
-                add_element = tmp["surface"].capitalize() == surface.capitalize()
+                add_element    =  tmp["surface"].capitalize() == surface.capitalize()
             if add_element and not slp_err_from is None and not slp_err_to is None:
                 add_element = tmp["slp_err"] >= slp_err_from and tmp["slp_err"] <= slp_err_to
             if add_element and not length_from is None and not length_to is None:
