@@ -9,7 +9,7 @@
 ##
 ## @author Herman Tulleken (herman.tulleken@gmail.com)
 ##
-
+from __future__ import division
 from math import exp
 
 newSampleCount = 1000
@@ -362,7 +362,7 @@ def distribution_from_grid(grid, x_cells, y_cells):
 # but it is hard to remember which, so it is better to clone both (?).
 #
 
-from __future__ import division
+
 from random import randint
 from math import ceil
 
