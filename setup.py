@@ -9,7 +9,7 @@ except AttributeError:
 
 NAME = 'srxraylib'
 
-VERSION = '1.0.65'
+VERSION = '1.0.66'
 ISRELEASED = True
 
 DESCRIPTION = 'Synchrotron Radiation X-ray library'
@@ -37,10 +37,6 @@ CLASSIFIERS = [
     'Environment :: Console',
     'Environment :: Plugins',
     'Programming Language :: Python :: 3',
-    'License :: OSI Approved :: '
-    'GNU General Public License v3 or later (GPLv3+)',
-    'Operating System :: POSIX',
-    'Operating System :: Microsoft :: Windows',
     'Topic :: Scientific/Engineering :: Visualization',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Intended Audience :: Education',
@@ -52,10 +48,6 @@ INSTALL_REQUIRES = (
     'setuptools',
     'numpy',
     'scipy',
-)
-
-SETUP_REQUIRES = (
-    'setuptools',
 )
 
 PACKAGES = [
@@ -99,7 +91,6 @@ def setup_package():
         zip_safe=False,  # the package can run out of an .egg file
         include_package_data=True,
         install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
     )
 
 if __name__ == '__main__':

@@ -2305,7 +2305,7 @@ def cdf(sy, sz, method=1):
         zprof = numpy.cumsum(sz*steps)
     else:
         for i in range(sz.size):
-          zprof[i]= numpy.trapz(sz[0:i+1], x = sy[0:i+1])
+          zprof[i]= numpy.trapezoid(sz[0:i+1], x = sy[0:i+1])
 
     return zprof
 
