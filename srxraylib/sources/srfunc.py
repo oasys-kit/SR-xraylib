@@ -1370,13 +1370,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     if b_from == 1:
         betax = numpy.zeros(nTrajPoints)
         for i in range(1,nTrajPoints):
-            # be careful [0:i] goes from 0 to i-1!!!!!!
-            #betax[i] = scipy.integrate.simps(bz[0:i+1],yy[0:i+1])
-            #betax[i] = numpy.sum(bz[0:i+1]*mystep[0:i+1])
-
-            #betax[i] = numpy.trapezoid(bz[0:i+1],x=yy[0:i+1])
-            #srio@esrf.eu changed sign of magnetic field to get the right curvature for ELECTRONS!
-            betax[i] = numpy.trapezoid(-bz[0:i+1],x=yy[0:i+1])
+            try:    betax[i] = numpy.trapezoid(-bz[0:i+1],x=yy[0:i+1])
+            except: betax[i] = numpy.trapz(-bz[0:i+1],x=yy[0:i+1])
         yInt = betax[-1]
     else:
         phase0 = numpy.zeros(nTrajPoints) - numpy.pi
@@ -1407,9 +1402,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     if b_from == 1:
         for i in range(1,nTrajPoints):
             # be carefil [0:i] goes from 0 to i-1!!!!!!
-            yx[i] = numpy.trapezoid(betax[0:i+1],x=yy[0:i+1])
-            #yx[i] = scipy.integrate.simps(betax[0:i+1],yy[0:i+1])
-            #yx[i] = numpy.sum(betax[0:i+1]*mystep[0:i+1])
+            try:    yx[i] = numpy.trapezoid(betax[0:i+1],x=yy[0:i+1])
+            except: yx[i] = numpy.trapz(betax[0:i+1],x=yy[0:i+1])
     else:
         for n in range(nharm):
             phase = yy * (2.0*numpy.pi/per)
