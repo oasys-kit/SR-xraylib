@@ -1,3 +1,6 @@
+"""
+Polarization class (deprecated, use wofry/wofrylib instead).
+"""
 from srxraylib import DeprecatedClassMeta
 
 class Polarization(metaclass=DeprecatedClassMeta):

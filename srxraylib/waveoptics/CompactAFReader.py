@@ -1,3 +1,6 @@
+"""
+Reader for Compact AF (coherent mode) data files (under development).
+"""
 #
 # Propagation of coherent modes in python, then sampling rays for SHADOW
 #

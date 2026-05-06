@@ -1,3 +1,6 @@
+"""
+1D wave-optics propagators.
+"""
 import numpy
 
 from srxraylib import deprecated

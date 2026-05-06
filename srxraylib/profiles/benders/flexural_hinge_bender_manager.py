@@ -1,3 +1,6 @@
+"""
+Bender manager for flexural-hinge mirror bender systems.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

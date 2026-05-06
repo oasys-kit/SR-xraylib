@@ -1,3 +1,6 @@
+"""
+2D wave-optics propagators: Fraunhofer, Fresnel, etc.
+"""
 import numpy
 
 #

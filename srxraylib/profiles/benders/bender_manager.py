@@ -1,3 +1,6 @@
+"""
+Base class for mirror bender managers.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

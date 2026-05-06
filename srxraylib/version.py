@@ -1,3 +1,6 @@
+"""
+Auto-generated version information for srxraylib.
+"""
 
 # THIS FILE IS GENERATED FROM OASYS SETUP.PY
 short_version = '1.0.24'

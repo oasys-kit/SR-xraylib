@@ -1,3 +1,6 @@
+"""
+I/O utilities for mirror bender profiles.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

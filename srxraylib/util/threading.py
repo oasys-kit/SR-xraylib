@@ -1,3 +1,6 @@
+"""
+Threading utilities for parallel calculations.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

@@ -1,3 +1,6 @@
+"""
+Calculator for the diaboloid mirror surface shape.
+"""
 ################## LSBL Reports #################################################################
 
 # Yashchuk, V. V., “An analytical solution for shape of diaboloid mirror,” Light

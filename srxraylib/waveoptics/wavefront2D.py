@@ -1,3 +1,6 @@
+"""
+2D wavefront class (deprecated, use wofry/wofrylib instead).
+"""
 
 import numpy
 from srxraylib import DeprecatedClassMeta

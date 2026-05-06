@@ -1,3 +1,6 @@
+"""
+Utilities for parsing and computing properties of chemical formulas.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

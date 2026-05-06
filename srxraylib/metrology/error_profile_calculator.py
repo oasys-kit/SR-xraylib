@@ -1,3 +1,6 @@
+"""
+Error profile calculator for mirror surface metrology.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

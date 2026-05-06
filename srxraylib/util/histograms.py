@@ -1,3 +1,6 @@
+"""
+Histogram utilities for beam and profile data analysis.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

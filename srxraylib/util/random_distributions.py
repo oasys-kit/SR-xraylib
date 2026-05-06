@@ -1,3 +1,6 @@
+"""
+Random number generation with arbitrary probability distributions.
+"""
 ## @package random_distributions
 ## This module provides functionality to generate random numbers with arbitrary 
 ## distributions. 

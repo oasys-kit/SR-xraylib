@@ -1,3 +1,6 @@
+"""
+Tests for the dabam metrology module.
+"""
 #
 # tests
 #

@@ -1,3 +1,6 @@
+"""
+Conversion utilities from NumPy arrays to SRW format (deprecated).
+"""
 import numpy
 from oasys_srw.srwlib import *
 import numpy as np

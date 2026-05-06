@@ -1,3 +1,6 @@
+"""
+Bender manager for fixed-rod mirror bender systems.
+"""
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------- #

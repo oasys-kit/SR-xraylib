@@ -1,3 +1,6 @@
+"""
+Custom probability distribution sampler via inverse CDF.
+"""
 import numpy
 
 class CustomDistribution(object):

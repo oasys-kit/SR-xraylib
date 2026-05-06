@@ -1,3 +1,6 @@
+"""
+1D wavefront class (deprecated, use wofry/wofrylib instead).
+"""
 
 import numpy
 import warnings
