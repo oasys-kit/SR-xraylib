@@ -31,7 +31,8 @@ PYTHON = os.path.expanduser("~/venv/oasys2/bin/python")
 # Paths are relative to the examples/ directory.
 # ---------------------------------------------------------------------------
 EXAMPLES = [
-    # gol_examples.py excluded: plot_surface uses deprecated fig.gca(projection='3d')
+    ("gol_examples.py",
+     "Plots with GOL"),
     ("srfunc_examples.py",
      "Synchrotron source calculations with srfunc"),
     ("waveoptics/example_ideal_lens.py",

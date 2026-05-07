@@ -129,10 +129,15 @@ def example_plot_table_with_errorbars():
                legend=["Statistical error","Constant error"],color=['black','magenta'],show=1)
 
 def example_plot_image_ascent():
-    from scipy.misc import ascent
+    # scipy.misc.ascent was removed in scipy 2.0; use skimage.data.camera() instead
+    try:
+        from skimage.data import camera
+        img = camera()
+    except ImportError:
+        img = np.random.randint(0, 256, (512, 512), dtype=np.uint8)
 
-    ascent = np.rot90(ascent(),-1)
-    plot_image(ascent,np.arange(0,ascent.shape[0]),np.arange(0,ascent.shape[1]),cmap='gray' )
+    img = np.rot90(img, -1)
+    plot_image(img, np.arange(0, img.shape[0]), np.arange(0, img.shape[1]), cmap='gray')
 #
 # main
 #

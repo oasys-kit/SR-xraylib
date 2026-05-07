@@ -668,7 +668,7 @@ def plot_surface(mymode, theta, psi, title="TITLE", xtitle="", ytitle="", ztitle
 
     ftheta, fpsi = np.meshgrid(theta, psi)
     fig = plt.figure(figsize=figsize)
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
 
     II0 = mymode.T
 
