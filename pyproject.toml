@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "srxraylib"
+version = "1.0.68"
+description = "Synchrotron Radiation X-ray library"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+authors = [
+    { name = "Luca Rebuffi", email = "lrebuffi@anl.gov" },
+    { name = "Manuel Sanchez del Rio" },
+    { name = "Mark Glass" },
+]
+maintainers = [
+    { name = "Luca Rebuffi", email = "lrebuffi@anl.gov" },
+]
+keywords = [
+    "x-ray",
+    "synchrotron radiation",
+    "wavefront propagation",
+    "ray tracing",
+    "surface metrology",
+    "simulation",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Plugins",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "setuptools",
+    "numpy",
+    "scipy",
+]
+
+[project.urls]
+Homepage = "https://github.com/oasys-kit/SR-xraylib"
+Download = "https://github.com/oasys-kit/SR-xraylib"
+Documentation = "https://srxraylib.readthedocs.io/"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+packages = [
+    "srxraylib",
+    "srxraylib.metrology",
+    "srxraylib.sources",
+    "srxraylib.util",
+    "srxraylib.waveoptics",
+    "srxraylib.profiles",
+    "srxraylib.profiles.benders",
+    "srxraylib.profiles.diaboloid",
+    "srxraylib.plot",
+]
+
+[tool.setuptools.package-data]
+"srxraylib.metrology" = ["*.txt"]
+"srxraylib.sources" = ["data/*.*"]
+"srxraylib.util" = ["data/*.*"]
