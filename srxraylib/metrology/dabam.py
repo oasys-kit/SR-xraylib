@@ -30,6 +30,11 @@ __copyright = "ESRF, 2013-2015; LBNL, 2019"
 
 
 import numpy
+
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid  # numpy < 2.0 has no numpy.trapezoid
 import copy
 
 # to manage input parameters from command-line argument
@@ -2305,7 +2310,7 @@ def cdf(sy, sz, method=1):
         zprof = numpy.cumsum(sz*steps)
     else:
         for i in range(sz.size):
-          try:    zprof[i]= numpy.trapezoid(sz[0:i+1], x = sy[0:i+1])
+          try:    zprof[i]= trapezoid(sz[0:i+1], x = sy[0:i+1])
           except: zprof[i]= numpy.trapz(sz[0:i+1], x = sy[0:i+1])
 
     return zprof

@@ -38,6 +38,11 @@ __copyright__ = "ESRF, 2002-2014-2023"
 
 
 import numpy
+
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid  # numpy < 2.0 has no numpy.trapezoid
 import scipy.special
 import scipy.constants as codata
 from scipy.interpolate import interp1d
@@ -1370,7 +1375,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     if b_from == 1:
         betax = numpy.zeros(nTrajPoints)
         for i in range(1,nTrajPoints):
-            try:    betax[i] = numpy.trapezoid(-bz[0:i+1],x=yy[0:i+1])
+            try:    betax[i] = trapezoid(-bz[0:i+1],x=yy[0:i+1])
             except: betax[i] = numpy.trapz(-bz[0:i+1],x=yy[0:i+1])
         yInt = betax[-1]
     else:
@@ -1402,7 +1407,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     if b_from == 1:
         for i in range(1,nTrajPoints):
             # be carefil [0:i] goes from 0 to i-1!!!!!!
-            try:    yx[i] = numpy.trapezoid(betax[0:i+1],x=yy[0:i+1])
+            try:    yx[i] = trapezoid(betax[0:i+1],x=yy[0:i+1])
             except: yx[i] = numpy.trapz(betax[0:i+1],x=yy[0:i+1])
     else:
         for n in range(nharm):
