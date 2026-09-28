@@ -431,8 +431,12 @@ class ScaledMatrix(object):
 
             # Problem in comparison between float64 and numpy.float64:
             # reduce precision to avoid crazy research results
+            # (do NOT round scale_step before multiplying: for scale_step below ~5e-13
+            # the rounded step underflows to exactly 0.0, collapsing the whole scale
+            # to a constant value; rounding only the offset is enough to fix the
+            # float64/numpy.float64 comparison issue)
 
-            scale = numpy.round(initial_scale_value, 12) + numpy.arange(0, (self.stored_shape[axis])) * numpy.round(scale_step, 12)
+            scale = numpy.round(initial_scale_value, 12) + numpy.arange(0, (self.stored_shape[axis])) * scale_step
             if axis == 0:
                 self.x_coord = scale
                 self.stored_delta_x = self._delta_x()
@@ -738,8 +742,12 @@ class ScaledArray(object):
         if self.size() > 0:
             # Problem in comparison between float64 and numpy.float64:
             # reduce precision to avoid crazy research results
+            # (do NOT round scale_step before multiplying: for scale_step below ~5e-13
+            # the rounded step underflows to exactly 0.0, collapsing the whole scale
+            # to a constant value; rounding only the offset is enough to fix the
+            # float64/numpy.float64 comparison issue)
 
-            self.scale = numpy.round(initial_scale_value, 12) + numpy.arange(0, len(self.np_array)) * numpy.round(scale_step, 12)
+            self.scale = numpy.round(initial_scale_value, 12) + numpy.arange(0, len(self.np_array)) * scale_step
 
             self.stored_offset = self._offset()
             self.stored_delta = self._delta()
