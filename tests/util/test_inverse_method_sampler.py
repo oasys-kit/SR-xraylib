@@ -7,7 +7,7 @@ __date__ = "30/08/2018"
 import numpy
 from srxraylib.util.inverse_method_sampler import Sampler1D, Sampler2D, Sampler3D
 from scipy import interpolate
-from srxraylib.plot.gol import plot, plot_image, plot_scatter, plot, set_qt
+from srxraylib.plot.gol import plot, plot_image, plot_scatter, plot
 
 # used in test2d_bis()
 from PIL import Image
@@ -22,7 +22,6 @@ RUN_3D = True
 
 
 do_plots = False
-set_qt()
 
 def Std_zero_mean(array): # std for zero mean!!!
     return numpy.sqrt( (array**2).sum() / (array.size-1) )
@@ -428,3 +427,54 @@ class TestSamplers(unittest.TestCase):
 
         RR = numpy.sqrt(X*X+Y*Y)
         assert ( numpy.abs(RR.max()) - R < 0.05 * R) # 5% difference
+
+
+class TestSamplersCentering(unittest.TestCase):
+    #
+    # The sampled points must be centered on the pdf abscissas: a cdf computed with numpy.cumsum corresponds to the
+    # right edges of the bins and shifts the sampled points by half a bin (visible with coarse grids).
+    #
+    def test_1d_symmetric_coarse(self):
+        x = numpy.linspace(-1, 1, 11)                 # coarse grid: half bin = 0.1
+        sigma = 0.3
+        s = Sampler1D(numpy.exp(-x ** 2 / 2 / sigma ** 2), x)
+        xs = s.get_n_sampled_points(200000, seed=1)
+        assert abs(xs.mean()) < 4 * xs.std() / numpy.sqrt(xs.size)
+        assert abs(numpy.sum(xs > 0) - numpy.sum(xs < 0)) < 4 * numpy.sqrt(xs.size)
+        assert xs.min() >= x[0] and xs.max() <= x[-1]
+
+    def test_1d_mean_coarse(self):
+        x = numpy.linspace(0, 10, 21)                 # half bin = 0.25
+        x0, sigma = 4.3, 1.2
+        pdf = numpy.exp(-(x - x0) ** 2 / 2 / sigma ** 2)
+        xs = Sampler1D(pdf, x).get_n_sampled_points(200000, seed=2)
+        assert abs(xs.mean() - x0) < 0.02             # (the shifted cdf gave x0 - 0.25)
+        assert abs(xs.std() - sigma) < 0.05
+
+    def test_2d_means_and_conditional(self):
+        x0 = numpy.linspace(-2, 2, 21)                # half bins 0.1 and 0.075
+        x1 = numpy.linspace(-1.5, 1.5, 21)
+        X0, X1 = numpy.meshgrid(x0, x1, indexing='ij')
+        a = 0.5                                       # correlation: <x1 | x0> = a * x0
+        pdf = numpy.exp(-(X0 - 0.2) ** 2 / 2 / 0.6 ** 2) * numpy.exp(-(X1 - a * X0) ** 2 / 2 / 0.3 ** 2)
+        s = Sampler2D(pdf, x0, x1)
+        xs0, xs1 = s.get_n_sampled_points(100000, seed=3)
+        expected0 = (pdf.sum(axis=1) * x0).sum() / pdf.sum()
+        expected1 = (pdf * X1).sum() / pdf.sum()
+        assert abs(xs0.mean() - expected0) < 0.02
+        assert abs(xs1.mean() - expected1) < 0.02
+        slope = numpy.polyfit(xs0, xs1, 1)[0]
+        assert abs(slope - a) < 0.05
+
+    def test_3d_means(self):
+        x0 = numpy.linspace(-2, 2, 15)
+        x1 = numpy.linspace(-2, 2, 13)
+        x2 = numpy.linspace(-2, 2, 11)
+        X0, X1, X2 = numpy.meshgrid(x0, x1, x2, indexing='ij')
+        c = (0.3, -0.4, 0.5)
+        pdf = numpy.exp(-((X0 - c[0]) ** 2 + (X1 - c[1]) ** 2 + (X2 - c[2]) ** 2) / 2 / 0.5 ** 2)
+        s = Sampler3D(pdf, x0, x1, x2)
+        xs = s.get_n_sampled_points(100000, seed=4)
+        for k, X in enumerate([X0, X1, X2]):
+            expected = (pdf * X).sum() / pdf.sum()
+            assert abs(xs[k].mean() - expected) < 0.02, "axis %d: %f %f" % (k, xs[k].mean(), expected)

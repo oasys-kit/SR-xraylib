@@ -10,6 +10,46 @@ __date__ = "27/08/2018"
 
 import numpy
 
+def _cdf_trapezoid(pdf, axis=-1):
+    """
+    Cumulative distribution function at the abscissas of the pdf, computed with the trapezoidal rule along an axis,
+    and normalized to one (unless all the values are zero).
+
+    Note: the cdf computed with numpy.cumsum(pdf) corresponds to the right edges of the bins, and interpolating it at
+    the abscissas shifts the sampled points by half a bin. The trapezoidal cdf is centered at the abscissas.
+
+    Parameters
+    ----------
+    pdf : numpy array
+        The (non-normalized) pdf at equally spaced abscissas.
+    axis : int, optional
+        The axis along which the cdf is computed.
+
+    Returns
+    -------
+    numpy array
+        The cdf, with the same shape as pdf, starting at zero.
+    """
+    pdf = numpy.moveaxis(numpy.asarray(pdf, dtype=float), axis, -1)
+    cdf = numpy.zeros_like(pdf)
+    cdf[..., 1:] = numpy.cumsum(0.5 * (pdf[..., 1:] + pdf[..., :-1]), axis=-1)
+    norm = cdf[..., -1:].copy()
+    norm[norm == 0] = 1.0
+    cdf /= norm
+    return numpy.moveaxis(cdf, -1, axis)
+
+
+def _nearest_index(ival, idelta, size, cdf_last=None):
+    # Index of the grid point closest to the sampled point x[ival] + idelta * dx (0 <= idelta < 1), used to select
+    # the conditional cdf. cdf_last (optional) contains the last value of the conditional cdfs (zero for an empty
+    # row, e.g., a pdf vanishing at a border): an empty row is replaced by its neighbor in the interval.
+    i_near = int(min(ival + (1 if idelta >= 0.5 else 0), size - 1))
+    if cdf_last is not None and cdf_last[i_near] == 0:
+        i_other = int(min(ival + 1, size - 1)) if i_near == ival else int(ival)
+        if cdf_last[i_other] != 0: i_near = i_other
+    return i_near
+
+
 class Sampler1D(object):
 
     """
@@ -203,14 +243,11 @@ class Sampler1D(object):
         if self._cdf_interpolation_factor != 1:
             xx = numpy.linspace(self.abscissas()[0],self.abscissas()[-1],self.abscissas().size*2)
             yy = numpy.interp(xx,self.abscissas(),self.pdf())
-            self._cdf = numpy.cumsum(yy)
+            self._cdf = _cdf_trapezoid(yy)
             self._cdf_x = xx
         else:
-            self._cdf = numpy.cumsum(self._pdf)
+            self._cdf = _cdf_trapezoid(self._pdf)
             self._cdf_x = self._pdf_x.copy()
-        self._cdf -= self._cdf[0]
-        if self._cdf.max() != 0.0:
-            self._cdf /= self._cdf.max()
 
     def _get_index(self,edge):
         try:
@@ -226,7 +263,7 @@ class Sampler1D(object):
             delta = 0.0
         else:
             pendent = self._cdf[ix + 1] - self._cdf[ix]
-            delta = (edge - self._cdf[ix]) / pendent
+            delta = (edge - self._cdf[ix]) / pendent if pendent != 0 else 0.0
 
         return ix//self._cdf_interpolation_factor,delta,pendent
 
@@ -319,7 +356,8 @@ class Sampler2D(object):
             for i,cdf_rand0 in enumerate(y0):
                 ival,idelta,pendent = self._get_index0(cdf_rand0)
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
-                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival+1)  # <==================== changed to ival+1
+                ival1,idelta1,pendent1 = self._get_index1(y1[i],_nearest_index(ival,idelta,self._pdf_x0.size,
+                                                                               self._cdf2[:, -1]))
                 x1_rand_array[i] = self._pdf_x1[ival1] + idelta1*(self._pdf_x1[1]-self._pdf_x1[0])
             return x0_rand_array, x1_rand_array
         else:
@@ -358,9 +396,10 @@ class Sampler2D(object):
             for i,cdf_rand0 in enumerate(y0):
                 ival, idelta, pendent = self._get_index0(cdf_rand0)
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
-                ival10, idelta10, pendent10 = self._get_index1(y10[i], ival+1)  # <==================== changed to ival+1
+                i0 = _nearest_index(ival, idelta, self._pdf_x0.size, self._cdf2[:, -1])
+                ival10, idelta10, pendent10 = self._get_index1(y10[i], i0)
                 x10_rand_array[i] = self._pdf_x1[ival10] + idelta10 * (self._pdf_x1[1] - self._pdf_x1[0])
-                ival11, idelta11, pendent11 = self._get_index1(y11[i], ival+1)  # <==================== changed to ival+1
+                ival11, idelta11, pendent11 = self._get_index1(y11[i], i0)
                 x11_rand_array[i] = self._pdf_x1[ival11] + idelta11 * (self._pdf_x1[1] - self._pdf_x1[0])
             return x0_rand_array, x10_rand_array, x11_rand_array
         else:
@@ -429,15 +468,8 @@ class Sampler2D(object):
         pdf2 = self._pdf
         pdf1 = pdf2.sum(axis=1)
 
-        cdf2 = numpy.zeros_like(pdf2)
-        for i in range(cdf2.shape[0]):
-            cdf2[i,:] = numpy.cumsum(pdf2[i,:])
-            cdf2[i,:] -= cdf2[i,:][0]
-            cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
-
-        cdf1 = numpy.cumsum(pdf1)
-        cdf1 -= cdf1[0]
-        cdf1 /= cdf1.max()
+        cdf2 = _cdf_trapezoid(pdf2, axis=1)   # conditional cdf along axis 1 for each point of axis 0
+        cdf1 = _cdf_trapezoid(pdf1)           # marginal cdf along axis 0
 
         return cdf2,cdf1
 
@@ -456,7 +488,7 @@ class Sampler2D(object):
             delta = 0.0
         else:
             pendent = self._cdf1[ix+1] - self._cdf1[ix]
-            delta = (edge - self._cdf1[ix]) / pendent
+            delta = (edge - self._cdf1[ix]) / pendent if pendent != 0 else 0.0
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
@@ -474,7 +506,7 @@ class Sampler2D(object):
             delta = 0.0
         else:
             pendent = self._cdf2[index0,(ix+1)] - self._cdf2[index0,ix]
-            delta = (edge - self._cdf2[index0,ix]) / pendent
+            delta = (edge - self._cdf2[index0,ix]) / pendent if pendent != 0 else 0.0
         return ix,delta,pendent
 
 
@@ -578,10 +610,12 @@ class Sampler3D(object):
                 ival,idelta,pendent = self._get_index0(cdf_rand0)
                 x0_rand_array[i] = self._pdf_x0[ival] + idelta*(self._pdf_x0[1]-self._pdf_x0[0])
 
-                ival1,idelta1,pendent1 = self._get_index1(y1[i],ival+1) # <==================== TODO: test changed to ival+1
+                i0 = _nearest_index(ival, idelta, self._pdf_x0.size, self._cdf2[:, -1])
+                ival1,idelta1,pendent1 = self._get_index1(y1[i],i0)
                 x1_rand_array[i] = self._pdf_x1[ival1] + idelta1*(self._pdf_x1[1]-self._pdf_x1[0])
 
-                ival2,idelta2,pendent2 = self._get_index2(y2[i],ival+1,ival1+1)  # <==================== TODO: test changed to ival+1,ival1+1
+                i1 = _nearest_index(ival1, idelta1, self._pdf_x1.size, self._cdf3[i0, :, -1])
+                ival2,idelta2,pendent2 = self._get_index2(y2[i],i0,i1)
                 x2_rand_array[i] = self._pdf_x2[ival2] + idelta2*(self._pdf_x2[1]-self._pdf_x2[0])
 
             return x0_rand_array,x1_rand_array,x2_rand_array
@@ -626,26 +660,9 @@ class Sampler3D(object):
         pdf2 = pdf3.sum(axis=2)
         pdf1 = pdf2.sum(axis=1)
 
-        cdf3 = numpy.zeros_like(pdf3)
-        cdf2 = numpy.zeros_like(pdf2)
-
-        for i in range(cdf3.shape[0]):
-            for j in range(cdf3.shape[1]):
-                tmp = numpy.cumsum(pdf3[i,j,:])
-                cdf3[i, j, :] = tmp
-                cdf3[i,j,:] -= cdf3[i,j,0]
-                cdf3[i,j,:] = cdf3[i,j,:] / float(cdf3[i,j,:].max())
-        #
-        for i in range(cdf3.shape[0]):
-            tmp = numpy.cumsum(pdf2[i,:])
-            cdf2[i, :] = tmp
-            cdf2[i,:] -= cdf2[i,0]
-            cdf2[i,:] = cdf2[i,:] / float(cdf2[i,:].max())
-        #
-        #
-        cdf1 = numpy.cumsum(pdf1)
-        cdf1 -= cdf1[0]
-        cdf1 /= cdf1.max()
+        cdf3 = _cdf_trapezoid(pdf3, axis=2)   # conditional cdf along axis 2 for each point of axes 0, 1
+        cdf2 = _cdf_trapezoid(pdf2, axis=1)   # conditional cdf along axis 1 for each point of axis 0
+        cdf1 = _cdf_trapezoid(pdf1)           # marginal cdf along axis 0
 
         return cdf3,cdf2,cdf1
 
@@ -662,7 +679,7 @@ class Sampler3D(object):
             delta = 0.0
         else:
             pendent = self._cdf1[ix+1] - self._cdf1[ix]
-            delta = (edge - self._cdf1[ix]) / pendent
+            delta = (edge - self._cdf1[ix]) / pendent if pendent != 0 else 0.0
         return ix,delta,pendent
 
     def _get_index1(self,edge,index0):
@@ -677,7 +694,7 @@ class Sampler3D(object):
             delta = 0.0
         else:
             pendent = self._cdf2[index0,(ix+1)] - self._cdf2[index0,ix]
-            delta = (edge - self._cdf2[index0,ix]) / pendent
+            delta = (edge - self._cdf2[index0,ix]) / pendent if pendent != 0 else 0.0
         return ix,delta,pendent
 
 
@@ -694,6 +711,6 @@ class Sampler3D(object):
             delta = 0.0
         else:
             pendent = self._cdf3[index0,index1,(ix+1)] - self._cdf3[index0,index1,ix]
-            delta = (edge - self._cdf3[index0,index1,ix]) / pendent
+            delta = (edge - self._cdf3[index0,index1,ix]) / pendent if pendent != 0 else 0.0
         return ix,delta,pendent
 
