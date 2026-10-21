@@ -1375,8 +1375,8 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     if b_from == 1:
         betax = numpy.zeros(nTrajPoints)
         for i in range(1,nTrajPoints):
-            try:    betax[i] = trapezoid(-bz[0:i+1],x=yy[0:i+1])
-            except: betax[i] = numpy.trapz(-bz[0:i+1],x=yy[0:i+1])
+            try:    betax[i] = trapezoid(bz[0:i+1],x=yy[0:i+1])
+            except: betax[i] = numpy.trapz(bz[0:i+1],x=yy[0:i+1])
         yInt = betax[-1]
     else:
         phase0 = numpy.zeros(nTrajPoints) - numpy.pi
@@ -1386,9 +1386,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
         phase = 2.0*numpy.pi*(yy/per)
         for n in range(nharm): 
             bz = bz + bh[n] * numpy.cos(phase*(n+1))
-            #srio@esrf.eu changed sign of magnetic field to get the right curvature for ELECTRONS!
-            #tmp = (numpy.sin(phase*(n+1))-numpy.sin(phase0*(n+1)))*(bh[n]/(n+1))
-            tmp = (numpy.sin(phase*(n+1))-numpy.sin(phase0*(n+1)))*(-bh[n]/(n+1))
+            tmp = (numpy.sin(phase*(n+1))-numpy.sin(phase0*(n+1)))*(bh[n]/(n+1))
             betax = betax + tmp
         betax = betax*(per/2.0/numpy.pi)
 
@@ -1396,6 +1394,12 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
         print(" integral of b = %20.12e T.m "%(betax[nTrajPoints-1]))
     #;
     #;    rescale b to speeds v/c = 0.3/e[gev] * integral (bz [t] ds[m])
+    #;
+    #;    Sign convention (electrons, charge -|e|, Lorentz force F = -|e| v x B), in the SHADOW frame (y along the
+    #;    beam, z up, x toward the interior of the ring for a ring turning clockwise seen from above):
+    #;    d betax / dy = d^2 x / dy^2 = -|e| B_z / (gamma m_e c), i.e., B_z < 0 deflects toward +x (as in the
+    #;    SHADOW4 bending magnet). (Before 2026-10, the opposite sign was used, i.e., the trajectory of a positive
+    #;    charge, mirrored in x.)
     #;
     betax = -codata.c*1e-9/ener_gev*betax
     betay = numpy.sqrt(beta0*beta0 - betax*betax)
@@ -1413,7 +1417,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
         for n in range(nharm):
             phase = yy * (2.0*numpy.pi/per)
             yx = yx - (numpy.cos(phase*(n+1)) - numpy.cos(phase0*(n+1))) * \
-                      (-bh[n]/numpy.power(n+1,2))
+                      (bh[n]/numpy.power(n+1,2))
 
         yx = yx * (-codata.c*1e-9/ener_gev) * numpy.power(per/2.0/numpy.pi,2)
     #;
@@ -1453,7 +1457,7 @@ def wiggler_trajectory(b_from=0, inData="", nPer=12, nTrajPoints=100,
     # calculate curvature
     #
 
-    curv = emc*bz/beta0
+    curv = -emc*bz/beta0  # d^2 x / dy^2 = -|e| B_z / (gamma m_e c beta) for electrons (see above)
 
     #
     # correct orbits
